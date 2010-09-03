@@ -290,5 +290,15 @@ abstract class eZDBBasedClusterFileHandlerAbstractTest extends eZClusterFileHand
 
         self::assertFileNotExists( $path );
     }
+
+    public function testRequiresClusterizing()
+    {
+        self::assertTrue( eZClusterFileHandler::instance()->requiresClusterizing() );
+    }
+
+    public function testRequiresBinaryPurge()
+    {
+        self::assertTrue( eZClusterFileHandler::instance()->requiresBinaryPurge() );
+    }
 }
 ?>

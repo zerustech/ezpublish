@@ -277,6 +277,7 @@ abstract class eZClusterFileHandlerAbstractTest extends ezpDatabaseTestCase
         $ch->storeContents( $contents, 'test', 'plain/text', false );
         $ch->loadMetaData( true );
         self::assertTrue( $ch->exists() );
+        self::assertEquals( $contents, $ch->fetchContents() );
     }
 
     /**
@@ -539,7 +540,9 @@ abstract class eZClusterFileHandlerAbstractTest extends ezpDatabaseTestCase
      */
     public function testStat()
     {
-        self::markTestIncomplete();
+        $ch = $this->createFile( 'var/tests/' . __FUNCTION__ . '/file.txt' );
+        self::assertEquals( $ch->metaData, $ch->stat(), "stat didn't return the metadata" );
+        self::deleteLocalFiles( $ch->filePath );
     }
 
     /**
@@ -835,6 +838,16 @@ abstract class eZClusterFileHandlerAbstractTest extends ezpDatabaseTestCase
         $ch2 = eZClusterFileHandler::instance( $path2 );
         $ch2->fetch( true );
         self::assertFileExists( $path2, "$path2 doesn't exist (\$noLocalCache=true) locally" );
+    }
+
+    public function testRequiresClusterizing()
+    {
+        self::assertFalse( eZClusterFileHandler::instance()->requiresClusterizing() );
+    }
+
+    public function testRequiresBinaryPurge()
+    {
+        self::assertFalse( eZClusterFileHandler::instance()->requiresBinaryPurge() );
     }
 }
 ?>

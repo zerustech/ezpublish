@@ -996,8 +996,8 @@ class eZDBFileHandler
         @unlink( $path );
     }
 
-    /*!
-     Purge local and remote file data for current file.
+    /**
+     * Purge local and remote file data for current file.
      */
     function purge( $printCallback = false, $microsleep = false, $max = false, $expiry = false )
     {

@@ -230,6 +230,8 @@ class eZDFSFileHandlerTest extends eZDBBasedClusterFileHandlerAbstractTest
         // create local file
         if ( $createLocalFile )
             eZFile::create( basename( $filePath ), dirname( $filePath ), $fileContents );
+
+        return eZClusterFileHandler::instance( $filePath );
     }
 
     /**
@@ -629,7 +631,7 @@ class eZDFSFileHandlerTest extends eZDBBasedClusterFileHandlerAbstractTest
 
         $clusterHandler = eZClusterFileHandler::instance( $testFile );
         $stat = $clusterHandler->stat();
-        $this->assertType( PHPUnit_Framework_Constraint_IsType::TYPE_ARRAY, $stat );
+        $this->assertType( 'array', $stat );
         $this->assertArrayHasKey( 'name', $stat );
 
         $this->removeFile( $testFile );
@@ -906,12 +908,6 @@ class eZDFSFileHandlerTest extends eZDBBasedClusterFileHandlerAbstractTest
         {
             $this->removeFile( $file );
         }
-    }
-
-    public function testRequiresClusterizing()
-    {
-        $handler = eZClusterFileHandler::instance();
-        $this->assertTrue( $handler->requiresClusterizing() );
     }
 }
 ?>
