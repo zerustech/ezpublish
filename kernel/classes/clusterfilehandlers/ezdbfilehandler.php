@@ -1,19 +1,38 @@
 <?php
-/**
- * File containing the eZDBFileHandler class.
- *
- * @copyright Copyright (C) 1999-2010 eZ Systems AS. All rights reserved.
- * @license http://ez.no/licenses/gnu_gpl GNU GPL v2
- * @version //autogentag//
- * @package kernel
- */
+//
+// Definition of eZDBFileHandler class
+//
+// Created on: <19-Apr-2006 16:01:30 vs>
+//
+// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
+// SOFTWARE NAME: eZ Publish
+// SOFTWARE RELEASE: 4.1.x
+// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
+// SOFTWARE LICENSE: GNU General Public License v2.0
+// NOTICE: >
+//   This program is free software; you can redistribute it and/or
+//   modify it under the terms of version 2.0  of the GNU General
+//   Public License as published by the Free Software Foundation.
+//
+//   This program is distributed in the hope that it will be useful,
+//   but WITHOUT ANY WARRANTY; without even the implied warranty of
+//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//   GNU General Public License for more details.
+//
+//   You should have received a copy of version 2.0 of the GNU General
+//   Public License along with this program; if not, write to the Free
+//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+//   MA 02110-1301, USA.
+//
+//
+// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
+//
 
-/**
- * Note: Not all code is using this class for cluster access, see {@ see index_image_mysql.php} and {@see index_image_pgsql.php}
- * for more custom code.
- *
- * @property-read array metaData
+/*! \file
+
+  Note: Not all code is using this class for cluster access, see index_image_mysql.php and index_image_pgsql.php for more custom code.
 */
+
 class eZDBFileHandler
 {
     /*!

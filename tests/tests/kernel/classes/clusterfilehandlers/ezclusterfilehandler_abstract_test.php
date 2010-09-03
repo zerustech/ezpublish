@@ -40,19 +40,11 @@ abstract class eZClusterFileHandlerAbstractTest extends ezpDatabaseTestCase
     /**
      * Helper function that creates a cluster file
      */
-    protected function createFile( $path, $contents = false, $params = array() )
+    protected function createFile( $path, $contents, $params = array() )
     {
-        if ( $contents = false )
-            $contents = md5( time() );
-
-        $scope = isset( $params['scope'] ) ? $params['scope'] : false;
-        $datatype = isset( $params['datatype'] ) ? $params['datatype'] : false;
-
         $ch = eZClusterFileHandler::instance( $path );
-        $ch->storeContents( $contents, $scope, $datatype );
+        $ch->storeContents( $contents );
         $ch->loadMetaData( true );
-
-        return $ch;
     }
 
     /**
