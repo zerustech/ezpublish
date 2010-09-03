@@ -108,6 +108,7 @@ class eZClusterFileHandler
                 $generatingFile->abortCacheGeneration();
                 self::removeGeneratingFile( $generatingFile );
             }
+            return true;
         }
 
     }

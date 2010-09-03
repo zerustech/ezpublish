@@ -24,6 +24,9 @@ abstract class eZDBBasedClusterFileHandlerAbstractTest extends eZClusterFileHand
      */
     public function testShutdownHandler()
     {
+        // Call the cleanup handler called by eZExecution::cleanExit()
+        self::assertFalse( eZClusterFileHandler::cleanupGeneratingFiles() );
+
         $path1 = 'var/tests/' . __FUNCTION__ . 'uncleanfile1.txt';
         $path2 = 'var/tests/' . __FUNCTION__ . '/uncleanfile2.txt';
         $path3 = 'var/tests/' . __FUNCTION__ . '/uncleanfile3.txt';
@@ -50,7 +53,7 @@ abstract class eZDBBasedClusterFileHandlerAbstractTest extends eZClusterFileHand
         $this->assertStringEndsWith(    '.generating', $file3->filePath, '$file3 is not generating' );
 
         // Call the cleanup handler called by eZExecution::cleanExit()
-        eZClusterFileHandler::cleanupGeneratingFiles();
+        self::assertTrue( eZClusterFileHandler::cleanupGeneratingFiles() );
 
         // Check that all files are no longer marked as generating
         $this->assertStringEndsNotWith( '.generating', $file1->filePath, '$file1 is still generating' );
@@ -189,6 +192,8 @@ abstract class eZDBBasedClusterFileHandlerAbstractTest extends eZClusterFileHand
         $ch->storeContents( 'contents' );
 
         self::assertTrue( $ch->checkCacheGenerationTimeout() );
+
+        $ch->abortCacheGeneration();
     }
 
     /**

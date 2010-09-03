@@ -99,6 +99,9 @@ abstract class eZClusterFileHandlerAbstractTest extends ezpDatabaseTestCase
         // no parameter
         $ch = eZClusterFileHandler::instance();
         self::assertFalse( $ch->filePath, "Path to empty instance should have been null" );
+        // call two times to cover the GLOBALS copy
+        $ch = eZClusterFileHandler::instance();
+        self::assertFalse( $ch->filePath, "Path to empty instance should have been null" );
         unset( $ch );
 
         // non existing file
@@ -118,6 +121,7 @@ abstract class eZClusterFileHandlerAbstractTest extends ezpDatabaseTestCase
         self::assertTrue( $ch->exists(), "File should exist" );
         if ( file_exists( $path ) )
             unlink( $path );
+        $ch = eZClusterFileHandler::instance( $path );
     }
 
     /**
@@ -319,7 +323,7 @@ abstract class eZClusterFileHandlerAbstractTest extends ezpDatabaseTestCase
             null, null, array() );
         $ch->loadMetaData( true );
         self::assertEquals( $expected, $result );
-        // self::assertTrue( $ch->exists(), "Cache file '$path' doesn't exist" );
+        $ch->abortCacheGeneration();
 
         self::deleteLocalFiles( $path );
     }
