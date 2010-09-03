@@ -231,5 +231,64 @@ abstract class eZDBBasedClusterFileHandlerAbstractTest extends eZClusterFileHand
             ),
         );
     }
+
+    /**
+     * Validates the cache feature used by the loadMetaData() method
+     */
+    public function testLoadMetaDataCache()
+    {
+        $class = $this->clusterClass;
+
+        $files = array();
+
+        // generate more files than the cache limit so that the
+        for( $i = 1; $i <= $class::INFOCACHE_MAX + 10; $i++ )
+        {
+            $ch = eZClusterFileHandler::instance( "var/tests/" . __FUNCTION__ . "/{$i}.txt" );
+            $ch->loadMetaData();
+            self::assertType( $class, $ch, "Object #{$i} is not a cluster file handler" );
+            $files[] = $ch->filePath;
+        }
+
+        // reload the same files to trigger loading from cache
+        foreach( $files as $filePath )
+        {
+            $ch = eZClusterFileHandler::instance( $filePath );
+            $ch->loadMetaData();
+            self::assertType( $class, $ch, "Object #{$i} is not a cluster file handler" );
+        }
+    }
+
+    /**
+     * Unit test for fileDeleteLocal()
+     */
+    public function testFiledeleteLocal()
+    {
+        $path = 'var/tests/' . __FUNCTION__ . '/file.txt';
+        $ch = $this->createFile( $path );
+        $ch->fetch();
+
+        self::assertFileExists( $path );
+
+        $ch->fileDeleteLocal( $path );
+
+        self::assertFileNotExists( $path );
+    }
+
+    /**
+     * Unit test for deleteLocal()
+     */
+    public function testDeleteLocal()
+    {
+        $path = 'var/tests/' . __FUNCTION__ . '/file.txt';
+        $ch = $this->createFile( $path );
+        $ch->fetch();
+
+        self::assertFileExists( $path );
+
+        $ch->deleteLocal( $path );
+
+        self::assertFileNotExists( $path );
+    }
 }
 ?>

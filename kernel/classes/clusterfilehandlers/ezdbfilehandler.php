@@ -162,11 +162,13 @@ class eZDBFileHandler
     }
 
     /**
-     * Store file contents.
+     * eZDBFileHandler::storeContents()
      *
-     * \public
-     *
-     * \param $storeLocally If true the file will also be stored on the local file system.
+     * @param string $contents
+     * @param string $scope
+     * @param string $datatype
+     * @param bool $storeLocally If true the file will also be stored on the local file system
+     * @return void
      */
     function storeContents( $contents, $scope = false, $datatype = false, $storeLocally = false )
     {
@@ -773,8 +775,9 @@ class eZDBFileHandler
 
     /**
      * Fetches file from db and saves it in FS under the same name.
+     * If the file already exists there and is still valid, it won't be fetched from the database unless
      *
-     * \public
+     * @param bool $noLocalCache Set to true to bypass the locally cached file and fetch it from the database
      */
     function fetch( $noLocalCache = false )
     {
@@ -782,7 +785,7 @@ class eZDBFileHandler
         $metaData = $this->backend->_fetchMetadata( $filePath );
         $mtime = @filemtime( $filePath );
         if ( !$noLocalCache ||
-             $metaData === false ||
+             $metaData === false || // @todo Does that even make sense ? Why fetch a file that we know has no metadata and thus doesn't exist ?
              $mtime === false ||
              $mtime < $metaData['mtime'] ||
              @filesize( $filePath ) != $metaData['size'] ||
