@@ -42,7 +42,7 @@ abstract class eZClusterFileHandlerAbstractTest extends ezpDatabaseTestCase
      */
     protected function createFile( $path, $contents = false, $params = array() )
     {
-        if ( $contents = false )
+        if ( $contents === false )
             $contents = md5( time() );
 
         $scope = isset( $params['scope'] ) ? $params['scope'] : false;
