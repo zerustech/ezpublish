@@ -93,5 +93,60 @@ class eZDBFileHandlerTest extends eZDBBasedClusterFileHandlerAbstractTest
 
         parent::tearDown();
     }
+
+    public function testPurgeMultipleFiles()
+    {
+        // create multiple files in a folder for deletion
+        for( $i = 0; $i < 10; $i++ )
+        {
+            $files[$i] = 'var/tests/' . __FUNCTION__ . "/MultipleFiles/{$i}.txt";
+            $ch = $this->createFile( $files[$i] );
+            $ch->fetch();
+            $ch->delete();
+        }
+        // and a few other files to check if we don't delete anything that shouldn't be
+        for( $i = 0; $i < 5; $i++ )
+        {
+            $otherFiles[$i] = 'var/tests/' . __FUNCTION__ . "/OtherFiles/{$i}.txt";
+            $ch = $this->createFile( $otherFiles[$i] );
+            $ch->fetch();
+            self::assertFileExists( $otherFiles[$i] );
+        }
+
+        $clusterHandler = eZClusterFileHandler::instance( 'var/tests/' . __FUNCTION__ . '/MultipleFiles');
+        $clusterHandler->purge();
+
+        // check if files supposed to be deleted were
+        foreach( $files as $file )
+        {
+            self::assertFalse( $clusterHandler->fileExists( $file ), "DB file $file still exists" );
+            self::assertFileNotExists( $file );
+        }
+
+        // and if files not supposed to be deleted weren't
+        foreach( $otherFiles as $file )
+        {
+            self::assertTrue( $clusterHandler->fileExists( $file ), "DB file $file has been removed" );
+            self::assertFileExists( $file );
+        }
+
+        // remove all of 'em
+        self::deleteLocalFiles( array_merge( $files, $otherFiles ) );
+    }
+
+    public function testPurgeSingleFile()
+    {
+        $testFile = 'var/tests/' . __FUNCTION__ . '/file.txt';
+        $this->createFile( $testFile );
+
+        $clusterHandler = eZClusterFileHandler::instance( $testFile );
+        $clusterHandler->delete();
+        $clusterHandler->purge();
+
+        self::assertFalse( $clusterHandler->fileExists( $testFile ), "File still exists" );
+        self::assertFileNotExists( $testFile, "Local file still exists" );
+
+        self::deleteLocalFiles( $testFile );
+    }
 }
 ?>

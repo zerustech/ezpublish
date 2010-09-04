@@ -874,17 +874,17 @@ class eZDFSFileHandlerTest extends eZDBBasedClusterFileHandlerAbstractTest
         // create multiple files in a folder for deletion
         for( $i = 0; $i < 10; $i++ )
         {
-            $files[$i] = "var/testPurge/MultipleFiles-{$i}";
+            $files[$i] = "var/tests/" . __FUNCTION__ . "/Files/{$i}.txt";
             $this->createFile( $files[$i], 'foocontent', $createParams );
         }
         // and a few other files to check if we don't delete anything that shouldn't be
         for( $i = 0; $i < 5; $i++ )
         {
-            $otherFiles[$i] = "var/testOtherFiles/File-{$i}";
+            $otherFiles[$i] = "var/tests/" . __FUNCTION__ . "/OtherFiles/{$i}.txt";
             $this->createFile( $otherFiles[$i], 'foocontent', $createParams );
         }
 
-        $clusterHandler = eZClusterFileHandler::instance( 'var/testPurge' );
+        $clusterHandler = eZClusterFileHandler::instance( 'var/tests/' . __FUNCTION__ . '/Files' );
         $clusterHandler->purge();
 
         // check if files supposed to be deleted were

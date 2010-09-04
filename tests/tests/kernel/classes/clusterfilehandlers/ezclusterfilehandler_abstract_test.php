@@ -318,7 +318,7 @@ abstract class eZClusterFileHandlerAbstractTest extends ezpDatabaseTestCase
     }
 
     /**
-     * Test for the processCache() method
+     * processCache() test: no cache doesn't exist and no generate callback
      */
     public function testProcessCacheTwo()
     {
@@ -671,14 +671,6 @@ abstract class eZClusterFileHandlerAbstractTest extends ezpDatabaseTestCase
     }
 
     /**
-     * Test for the purge() method
-     */
-    public function testPurge()
-    {
-        self::markTestIncomplete();
-    }
-
-    /**
      * Test for the exists() method
      */
     public function testExists()
@@ -694,6 +686,8 @@ abstract class eZClusterFileHandlerAbstractTest extends ezpDatabaseTestCase
         $ch->loadMetaData( true );
 
         self::assertTrue( $ch->exists(), "The  file been created, exists() should have returned true" );
+
+        self::deleteLocalFiles( $path );
     }
 
     /**
@@ -712,6 +706,8 @@ abstract class eZClusterFileHandlerAbstractTest extends ezpDatabaseTestCase
         $ch->loadMetaData( true );
 
         self::assertTrue( $ch->fileExists( $path ), "The  file been created, exists() should have returned true" );
+
+        self::deleteLocalFiles( $path );
     }
 
     /**

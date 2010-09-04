@@ -300,5 +300,76 @@ abstract class eZDBBasedClusterFileHandlerAbstractTest extends eZClusterFileHand
     {
         self::assertTrue( eZClusterFileHandler::instance()->requiresBinaryPurge() );
     }
+
+    /**
+     * Tests the stalecache behaviour through processCache()
+     */
+    public function testStaleCache()
+    {
+        $path = 'var/tests/'  . __FUNCTION__ . '/cache.txt';
+        $content = array( __METHOD__, 2, 3, 4 );
+        $newContent = array( __METHOD__, 5, 6, 7 );
+        $extradata = array( 'content' => $content );
+
+        // create a cache file
+        $ch = eZClusterFileHandler::instance( $path );
+        $result = $ch->processCache(
+            array( $this, 'processCacheRetrieveCallback' ),
+            array( $this, 'processCacheGenerateCallback' ),
+            null, null, $extradata );
+        $ch->loadMetaData( true );
+        self::assertEquals( $content, $result, "Initial cache contents" );
+        self::assertTrue( $ch->exists(), "Cache file exists #1" );
+
+        // expire it
+        $ch->delete();
+        $ch->loadMetaData( true );
+        self::assertFalse( $ch->exists(), "Cache file exists #2" );
+        unset( $ch );
+
+        // re-process it without a generate callback (stay in generation mode)
+        $chGenerate = eZClusterFileHandler::instance( $path );
+        $result = $chGenerate->processCache(
+            array( $this, 'processCacheRetrieveCallback' ),
+            null,
+            null, null, $extradata );
+        self::assertNotEquals( $content, $result, "Generation start" );
+        self::assertType( 'eZClusterFileFailure', $result, "Generation start" );
+
+        // call the same function another time to trigger stalecache
+        $ch = eZClusterFileHandler::instance( $path );
+        $result = $ch->processCache(
+            array( $this, 'processCacheRetrieveCallback' ),
+            array( $this, 'processCacheGenerateCallback' ),
+            null, null, $extradata );
+        self::assertEquals( $content, $result, "Stalecache content" );
+
+        // delete the local cache file to trigger DB based stale cache
+        $ch->deleteLocal();
+        $result = $ch->processCache(
+            array( $this, 'processCacheRetrieveCallback' ),
+            array( $this, 'processCacheGenerateCallback' ),
+            null, null, $extradata );
+        self::assertEquals( $content, $result, "Stalecache content" );
+        unset( $ch );
+
+        // store the new cache contents
+        $chGenerate->storeCache(
+            self::processCacheGenerateCallback( $path, array('content' => $newContent ) ) );
+        $chGenerate->loadMetaData( true );
+        unset( $chGenerate );
+
+        // re-request the cache a last time and check that it matches the new content
+        $ch = eZClusterFileHandler::instance( $path );
+        $result = $ch->processCache(
+            array( $this, 'processCacheRetrieveCallback' ),
+            array( $this, 'processCacheGenerateCallback' ),
+            null, null, $extradata );
+        self::assertEquals( $newContent, $result, "New content" );
+        unset( $ch );
+
+        self::deleteLocalFiles( $path );
+    }
+
 }
 ?>
