@@ -711,6 +711,20 @@ class eZFS2FileHandler extends eZFSFileHandler
     }
 
     /**
+     * Check if given file/dir exists.
+     *
+     * NOTE: this function does not interact with filesystem.
+     * Instead, it just returns existance status determined in the constructor.
+     */
+    function exists()
+    {
+        $path = $this->filePath;
+        $rc = ( isset( $this->metaData['mtime'] ) && ( $this->metaData['mtime'] != self::EXPIRY_TIMESTAMP ) );
+        eZDebugSetting::writeDebug( 'kernel-clustering', "fs2::exists( '$path' ): " . ( $rc ? 'true' :'false' ), __METHOD__ );
+        return $rc;
+    }
+
+    /**
     * Expire the given file
     * @param string $path Path of the file to expire
     * @return bool

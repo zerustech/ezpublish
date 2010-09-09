@@ -669,13 +669,14 @@ abstract class eZClusterFileHandlerAbstractTest extends ezpDatabaseTestCase
         $ch = eZClusterFileHandler::instance( $path );
 
         // Check if it exists
-        self::assertTrue( $ch->exists(), "File doesn't exist after creation"  );
+        self::assertTrue( $ch->exists(), "$path doesn't exist after creation"  );
 
         // Delete the file
         $ch->delete();
 
         // Re-check the file
-        self::assertFalse( $ch->exists(), "File still exists after deletion" );
+        $ch->loadMetadata( true );
+        self::assertFalse( $ch->exists(), "$path still exists after deletion" );
     }
 
     /**
