@@ -180,6 +180,7 @@ abstract class eZDBBasedClusterFileHandlerAbstractTest extends eZClusterFileHand
         self::assertFalse( $ch->exists() );
     }
 
+
     /**
      * Test for the cacheGenerationTimeout() method
      */
