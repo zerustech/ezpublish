@@ -348,7 +348,12 @@ abstract class eZClusterFileHandlerAbstractTest extends ezpDatabaseTestCase
         /** Add random content ?
         * Idea: use extra data to carry options around from {@link testProcessCache}
         */
-        return array( 'content' => $extraData['content'], 'scope' => 'test', 'datatype' => 'text/plain' );
+        return array(
+            'content' => $extraData['content'],
+            'scope' => 'test',
+            'datatype' => 'text/plain',
+            'store' => true // required because eZFS2 doesn't store by default. See the todo at the end of the processCache method.
+        );
     }
 
     /**

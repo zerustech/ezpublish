@@ -275,6 +275,8 @@ class eZFS2FileHandler extends eZFSFileHandler
                     $args[] = $extraData;
                 $fileData = call_user_func_array( $generateCallback, $args );
 
+                // @todo This is inconsistent with other handlers, even though it does work with existing caches
+                // @todo The default action should be to store, not to not store
                 if( !isset( $fileData['store'] ) )
                     $storeCache = false;
                 else
@@ -775,7 +777,7 @@ class eZFS2FileHandler extends eZFSFileHandler
     /**
      * eZFS2 doesn't require purge as it already purges files in realtime
      * (FS based)
-     * 
+     *
      * @since 4.3
      */
     public function requiresBinaryPurge()
