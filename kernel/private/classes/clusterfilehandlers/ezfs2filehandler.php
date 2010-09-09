@@ -693,6 +693,24 @@ class eZFS2FileHandler extends eZFSFileHandler
     }
 
     /**
+     * Check if given file/dir exists.
+     *
+     * \public
+     * \static
+     */
+    function fileExists( $path )
+    {
+        $rc = parent::fileExists( $path );
+
+        eZDebugSetting::writeDebug( 'kernel-clustering', "fs2::fileExists( '$path' )", __METHOD__ );
+        // extra check with the eZFS2 expiry timestamp
+        if ( $rc === true && ( filemtime( $path ) == self::EXPIRY_TIMESTAMP ) )
+            $rc = false;
+
+        return $rc;
+    }
+
+    /**
     * Expire the given file
     * @param string $path Path of the file to expire
     * @return bool

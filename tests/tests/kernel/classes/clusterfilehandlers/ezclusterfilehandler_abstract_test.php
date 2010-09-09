@@ -596,13 +596,14 @@ abstract class eZClusterFileHandlerAbstractTest extends ezpDatabaseTestCase
         $ch = eZClusterFileHandler::instance();
 
         // Check if it exists
-        self::assertTrue( $ch->fileExists( $path ) );
+        self::assertTrue( $ch->fileExists( $path ), "$path does not exist" );
 
         // Delete the file
         $ch->fileDelete( $path );
 
         // Re-check the file
-        self::assertFalse( $ch->fileExists( $path ) );
+        clearstatcache( $path );
+        self::assertFalse( $ch->fileExists( $path ), "$path still exists" );
     }
 
     /**
@@ -642,12 +643,14 @@ abstract class eZClusterFileHandlerAbstractTest extends ezpDatabaseTestCase
         // Check that the files in $fileset1 were deleted
         foreach( $fileset1 as $file )
         {
+            clearstatcache( $file );
             self::assertFalse( $ch->fileExists( $file ), "$file still exists" );
         }
 
         // Check that the files in $fileset2 haven't been deleted
         foreach( $fileset2 as $file )
         {
+            clearstatcache( $file );
             self::assertTrue( $ch->fileExists( $file ), "$file no longer exists" );
         }
 
