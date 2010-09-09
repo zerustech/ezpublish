@@ -369,6 +369,17 @@ abstract class eZDBBasedClusterFileHandlerAbstractTest extends eZClusterFileHand
         self::assertEquals( $newContent, $result, "New content" );
         unset( $ch );
 
+        // re-request the cache after making the local file expire (make it older)
+        $ch = eZClusterFileHandler::instance( $path );
+        touch( $path, strtotime( '-1 hour' ) );
+        clearstatcache( $path );
+        $result = $ch->processCache(
+            array( $this, 'processCacheRetrieveCallback' ),
+            array( $this, 'processCacheGenerateCallback' ),
+            null, null, $extradata );
+        self::assertEquals( $newContent, $result, "New content" );
+        unset( $ch );
+
         self::deleteLocalFiles( $path );
     }
 
