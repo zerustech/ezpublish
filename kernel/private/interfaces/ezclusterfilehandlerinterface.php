@@ -400,5 +400,11 @@ interface eZClusterFileHandlerInterface
      * @since 4.3
      */
     public function requiresBinaryPurge();
+
+    /**
+     * Indicates if the handler supports the stalecache feature
+     * @return bool
+     */
+    public function hasStaleCacheSupport();
 }
 ?>

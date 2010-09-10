@@ -1342,6 +1342,11 @@ class eZDBFileHandler
         return $this->backend->expiredFilesList( array( 'image', 'binaryfile' ), $limit );
     }
 
+    public function hasStaleCacheSupport()
+    {
+        return true;
+    }
+
     /**
     * Database backend class
     * @var eZDBFileHandlerMysqlBackend

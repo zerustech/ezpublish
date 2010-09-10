@@ -215,7 +215,7 @@ abstract class eZClusterFileHandlerAbstractTest extends ezpDatabaseTestCase
         // 2. Check that the created file exists
         $ch2 = eZClusterFileHandler::instance( $localFile );
         self::assertTrue( $ch2->exists() );
-        if ( !$this instanceof eZFSFileHandlerTest )
+        if ( !$ch instanceof eZFSFileHandler )
         {
             self::assertEquals( 'text/plain', $ch2->metaData['datatype'] );
             self::assertEquals( 'test', $ch2->metaData['scope'] );
@@ -240,7 +240,7 @@ abstract class eZClusterFileHandlerAbstractTest extends ezpDatabaseTestCase
         // 2. Check that the created file exists
         $ch2 = eZClusterFileHandler::instance( $localFile );
         self::assertTrue( $ch2->exists() );
-        if ( !$this instanceof eZFSFileHandlerTest )
+        if ( !$ch instanceof eZFSFileHandler )
         {
             self::assertEquals( 'text/plain', $ch2->metaData['datatype'] );
             self::assertEquals( 'test', $ch2->metaData['scope'] );

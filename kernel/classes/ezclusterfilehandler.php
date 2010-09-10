@@ -102,7 +102,7 @@ class eZClusterFileHandler
         }
         else
         {
-            eZDebug::writeWarning( "Execution was stopped while one or more files were generating. This should not happen.", __METHOD__ );
+            eZDebug::writeWarning( 'Execution was stopped while one or more files were generating. This should not happen.', __METHOD__ );
             foreach( self::$generatingFiles as $generatingFile )
             {
                 $generatingFile->abortCacheGeneration();
@@ -122,7 +122,8 @@ class eZClusterFileHandler
      */
     public static function addGeneratingFile( $file )
     {
-        if ( !( $file instanceof eZDBFileHandler ) && !( $file instanceof eZDFSFileHandler ) )
+        // @todo Make this cleaner, using a handler method that says if this is required
+        if ( !$file->hasStaleCacheSupport() )
             return false; // @todo Exception
 
         self::$generatingFiles[$file->filePath] = $file;
@@ -138,12 +139,13 @@ class eZClusterFileHandler
     */
     public static function removeGeneratingFile( $file )
     {
-        if ( !( $file instanceof eZDBFileHandler ) && !( $file instanceof eZDFSFileHandler ) )
+        if ( !$file->hasStaleCacheSupport() )
             return false; // @todo Exception
 
         if ( isset( self::$generatingFiles[$file->filePath] ) )
             unset( self::$generatingFiles[$file->filePath] );
     }
+
     /**
      * Global list of currently generating files. Used by handlers that support stalecache.
      * @var array(filename => eZClusterFileHandlerInterface)
