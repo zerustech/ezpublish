@@ -511,12 +511,18 @@ class eZFS2FileHandler extends eZFSFileHandler
      **/
     public function abortCacheGeneration()
     {
+        // @todo Raise an exception
+        if ( $this->realFilePath === null )
+            return false;
+
         eZDebugSetting::writeDebug( 'kernel-clustering', $this->realFilePath, __METHOD__ );
         @unlink( $this->filePath );
         $this->filePath = $this->realFilePath;
         $this->realFilePath = null;
         $this->remainingCacheGenerationTime = false;
         eZClusterFileHandler::removeGeneratingFile( $this );
+
+        return true;
     }
 
     /**

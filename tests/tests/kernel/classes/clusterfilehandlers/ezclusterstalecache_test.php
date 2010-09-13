@@ -130,8 +130,9 @@ abstract class eZClusterStaleCacheTest extends ezpDatabaseTestCase
 
         self::assertEquals( $path, $ch->filePath );
         self::assertFalse( $ch->exists() );
-    }
 
+        self::deleteLocalFiles( $path );
+    }
 
     /**
      * Test for the cacheGenerationTimeout() method
