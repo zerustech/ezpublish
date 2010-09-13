@@ -965,14 +965,17 @@ class eZDFSFileHandler implements eZClusterFileHandlerInterface
     }
 
     /**
-     * Deletes a list of files based on directory / filename components
+     * Delete files located in a list directories from dirList, with common prefix specified by
+     * commonPath, and common suffix with added wildcard at the end
      *
-     * @param array  $dirList Array of directory that will be prefixed with
-     *                        $commonPath when looking for files
-     * @param string $commonPath Starting path common to every delete request
-     * @param string $commonSuffix Suffix appended to every delete request
-     * @return void
-     * @todo -ceZDFSFileHandler write unit test
+     * @example fileDeleteByDirList( array( 'folder1', 'folder2' ), 'var/prefix', 'file' )
+     * Will delete files with a GLOB request like this one: var/prefix/{folder1,folder2}/file*
+     *
+     * @param array $dirList
+     * @param string $commonPath
+     * @param string $commonSuffix
+     *
+     * @see fileDeleteByRegex()
      */
     public function fileDeleteByDirList( $dirList, $commonPath, $commonSuffix )
     {

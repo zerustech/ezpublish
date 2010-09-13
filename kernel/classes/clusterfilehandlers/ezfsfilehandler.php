@@ -692,12 +692,17 @@ class eZFSFileHandler
 
 
     /**
-     * Delete files located in a directories from dirList, with common prefix specified by
+     * Delete files located in a list directories from dirList, with common prefix specified by
      * commonPath, and common suffix with added wildcard at the end
      *
-     * \public
-     * \static
-     * \sa fileDeleteByRegex()
+     * @example fileDeleteByDirList( array( 'folder1', 'folder2' ), 'var/prefix', 'file' )
+     * Will delete files with a GLOB request like this one: var/prefix/{folder1,folder2}/file*
+     *
+     * @param array $dirList
+     * @param string $commonPath
+     * @param string $commonSuffix
+     *
+     * @see fileDeleteByRegex()
      */
     function fileDeleteByDirList( $dirList, $commonPath, $commonSuffix )
     {

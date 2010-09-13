@@ -587,7 +587,43 @@ abstract class eZClusterFileHandlerAbstractTest extends ezpDatabaseTestCase
      */
     public function testFileDeleteByDirList()
     {
-        self::markTestIncomplete();
+        // Create a set of files in 3 different folders that will be deleted
+        $folders = array( 'folder1', 'folder2', 'folder3' );
+        $prefix = 'var/tests/' . __FUNCTION__;
+        $deleteSuffix = 'fileToDelete';
+        $keepSuffix = 'fileToKeep';
+        $deleteFiles = $keepFiles = array();
+
+        foreach( $folders as $folder )
+        {
+            for( $i = 0; $i < 5; $i++ )
+            {
+                $path = "{$prefix}/{$folder}/{$deleteSuffix}-" . uniqid();
+                self::createFile( $path );
+                $deleteFiles[] = $path;
+
+                $path = "{$prefix}/{$folder}/{$keepSuffix}-" . uniqid();
+                self::createFile( $path );
+                $keepFiles[] = $path;
+            }
+        }
+
+        $ch = eZClusterFileHandler::instance();
+        $ch->fileDeleteByDirList( $folders, $prefix, $deleteSuffix );
+
+        // check if all the deleteFiles were deleted
+        foreach ( $deleteFiles as $file )
+        {
+            self::assertFalse( $ch->fileExists( $file ), "deleteFile $file SHOULD have been deleted" );
+        }
+
+        // check if all the keepFiles were kept
+        foreach ( $keepFiles as $file )
+        {
+            self::assertTrue( $ch->fileExists( $file ), "deleteFile $file SHOULD NOT have been deleted" );
+        }
+
+        self::deleteLocalFiles( $keepFiles, $deleteFiles );
     }
 
     /**

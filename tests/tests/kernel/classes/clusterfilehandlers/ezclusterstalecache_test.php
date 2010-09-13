@@ -157,11 +157,12 @@ abstract class eZClusterStaleCacheTest extends ezpDatabaseTestCase
      */
     public function testStaleCache()
     {
+        eZDir::recursiveDelete( 'var/tests/'  . __FUNCTION__ );
         $i = 0;
 
         $path = 'var/tests/'  . __FUNCTION__ . '/cache.txt';
         $content = array( __METHOD__, 2, 3, 4 );
-        $newContent = array( __FILE__, 5, 6, 7 );
+        $newContent = array( __METHOD__, 5, 6, 7 );
         $extradata = array( 'content' => $content );
 
         // Create the cache item, and expire it
@@ -229,7 +230,13 @@ abstract class eZClusterStaleCacheTest extends ezpDatabaseTestCase
         self::assertEquals( $newContent, $result, "New content" );
         unset( $ch );
 
-        // expire cache completely again
+        /* This test isn't really useful: we delete the local & DB file, and will of course end-up waiting for the generation to be finished
+           Possibilities:
+           - 'generate' mode instead of a 'wait' one
+           - reduce the timeout to a few seconds, and check that the wait has occured
+        */
+
+        /*// expire cache completely again
         $ch = eZClusterFileHandler::instance( $path );
         $ch->delete();
         $ch->purge();
@@ -258,7 +265,7 @@ abstract class eZClusterStaleCacheTest extends ezpDatabaseTestCase
         $chGenerate->storeCache(
             self::processCacheGenerateCallback( $path, array('content' => $newContent ) ) );
         $chGenerate->loadMetaData( true );
-        unset( $chGenerate );
+        unset( $chGenerate );*/
 
         self::deleteLocalFiles( $path );
     }
