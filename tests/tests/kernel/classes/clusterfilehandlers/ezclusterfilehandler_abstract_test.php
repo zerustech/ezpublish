@@ -314,6 +314,12 @@ abstract class eZClusterFileHandlerAbstractTest extends ezpDatabaseTestCase
         self::assertEquals( $extradata['content'], $result );
         self::assertTrue( $ch->exists(), "Cache file '$path' doesn't exist" );
 
+        // expire it
+        $ch->delete();
+        $ch->loadMetaData( true );
+        self::assertFalse( $ch->exists(), "Cache file exists #2" );
+        unset( $ch );
+
         self::deleteLocalFiles( $path );
     }
 
