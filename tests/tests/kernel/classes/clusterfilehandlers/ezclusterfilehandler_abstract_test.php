@@ -1006,5 +1006,31 @@ abstract class eZClusterFileHandlerAbstractTest extends ezpDatabaseTestCase
 
         self::deleteLocalFiles( $files, $otherFiles);
     }
+
+    /**
+     * fileDeleteLocal has no effect on FS based handlers (no remote copy)
+     */
+    public function testFileDeleteLocal()
+    {
+        $path = 'var/tests/'.__FUNCTION__.'/file.txt';
+
+        $ch = self::createFile( $path );
+        self::assertFileExists( $path );
+        eZClusterFileHandler::instance()->fileDeleteLocal( $path );
+        self::assertFileExists( $path );
+    }
+
+    /**
+     * deleteLocal has no effect on FS based handlers (no remote copy)
+     */
+    public function testDeleteLocal()
+    {
+        $path = 'var/tests/'.__FUNCTION__.'/file.txt';
+
+        $ch = self::createFile( $path );
+        self::assertFileExists( $path );
+        $ch->deleteLocal();
+        self::assertFileExists( $path );
+    }
 }
 ?>

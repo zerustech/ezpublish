@@ -716,39 +716,6 @@ class eZDFSFileHandlerTest extends eZDBBasedClusterFileHandlerAbstractTest
         $this->removeFile( $testFile );
     }
 
-    public function testFileDeleteLocal()
-    {
-        $testFile = 'var/testFileDeleteLocal.txt';
-
-        $clusterHandler = eZClusterFileHandler::instance();
-        $clusterHandler->fileStoreContents( $testFile, 'contents', 'text/test', 'test' );
-        $clusterHandler->fileFetch( $testFile );
-
-        // test if the local file was correctly fetched
-        $this->assertTrue( $this->localFileExists( $testFile ), "Local file should exist" );
-
-        // delete the locally fetched file
-        $clusterHandler->fileDeleteLocal( $testFile );
-
-        $this->assertFalse( $this->localFileExists( $testFile ), "Local file should no longer exist" );
-    }
-
-    public function testDeleteLocal()
-    {
-        $testFile = 'var/testDeleteLocal.txt';
-
-        $clusterHandler = eZClusterFileHandler::instance( $testFile );
-        $clusterHandler->storeContents( 'contents', 'text/test', 'test', $storeLocally = true );
-
-        // test if the local file was correctly fetched
-        $this->assertTrue( $this->localFileExists( $testFile ), "Local file should exist" );
-
-        // delete the locally fetched file
-        $clusterHandler->deleteLocal( $testFile );
-
-        $this->assertFalse( $this->localFileExists( $testFile ), "Local file should no longer exist" );
-    }
-
     /**
     * Expects the file we copy to to exists
     **/
@@ -766,45 +733,6 @@ class eZDFSFileHandlerTest extends eZDBBasedClusterFileHandlerAbstractTest
 
         $this->removeFile( $testFile );
         $this->removeFile( $testFileCopy );
-    }
-
-    /**
-     * Expects the old name to no longer exist and the new one to exist
-     **/
-    public function testFileMove()
-    {
-        $testFile = 'var/testFileMove.txt';
-        $testFileMoved = 'var/testFileMoveMoved.txt';
-        $this->createFile( $testFile );
-
-        $clusterHandler = eZClusterFileHandler::instance();
-        $clusterHandler->fileMove( $testFile, $testFileMoved );
-
-        $this->assertFalse( $this->DBFileExists( $testFile ), "old DB file should no longer exist" );
-        $this->assertTrue( $this->DBFileExists( $testFileMoved ), "new DB file should exist" );
-        $this->assertFalse( $this->DFSFileExists( $testFile ), "old DFS file should exist" );
-        $this->assertTrue( $this->DFSFileExists( $testFileMoved ), "new DFS file should exist" );
-
-        $this->removeFile( $testFile );
-        $this->removeFile( $testFileMoved );
-    }
-
-    public function testMove()
-    {
-        $testFile = 'var/testMove.txt';
-        $testFileMoved = 'var/testMoveMoved.txt';
-        $this->createFile( $testFile );
-
-        $clusterHandler = eZClusterFileHandler::instance( $testFile );
-        $clusterHandler->move( $testFileMoved );
-
-        $this->assertFalse( $this->DBFileExists( $testFile ), "old DB file should no longer exist" );
-        $this->assertTrue( $this->DBFileExists( $testFileMoved ), "new DB file should exist" );
-        $this->assertFalse( $this->DFSFileExists( $testFile ), "old DFS file should exist" );
-        $this->assertTrue( $this->DFSFileExists( $testFileMoved ), "new DFS file should exist" );
-
-        $this->removeFile( $testFile );
-        $this->removeFile( $testFileMoved );
     }
 }
 ?>
