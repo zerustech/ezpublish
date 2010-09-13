@@ -943,9 +943,6 @@ class eZDBFileHandler
      * Deletes specified file/directory.
      *
      * If a directory specified it is deleted recursively.
-     *
-     * \public
-     * \static
      */
     function fileDelete( $path, $fnamePart = false )
     {

@@ -654,7 +654,7 @@ abstract class eZClusterFileHandlerAbstractTest extends ezpDatabaseTestCase
     /**
      * Test for the delete() method
      */
-    public function testFileDeleteMultiplePath()
+    public function testFileDeleteDirectory()
     {
         // Create a set of files in a directory
         $directory = 'var/tests/' . __FUNCTION__;
@@ -667,8 +667,7 @@ abstract class eZClusterFileHandlerAbstractTest extends ezpDatabaseTestCase
             $files[] = $path;
         }
 
-        $ch = eZClusterFileHandler::instance( $directory );
-        $ch->fileDelete( $directory );
+        eZClusterFileHandler::instance()->fileDelete( $directory, '' );
 
         foreach( $files as $file )
         {
