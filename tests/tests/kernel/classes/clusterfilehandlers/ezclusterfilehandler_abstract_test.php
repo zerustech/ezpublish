@@ -324,7 +324,7 @@ abstract class eZClusterFileHandlerAbstractTest extends ezpDatabaseTestCase
     }
 
     /**
-     * processCache() test: no cache doesn't exist and no generate callback
+     * processCache() test: cache doesn't exist and no generate callback
      */
     public function testProcessCacheTwo()
     {

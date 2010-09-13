@@ -149,7 +149,7 @@ class eZFS2FileHandler extends eZFSFileHandler
             elseif ( $this->useStaleCache )
             {
                 // a stalecache file exists
-                if ( $this->exists() )
+                if ( $this->exists( true ) )
                 {
                     $args = array( $this->filePath, $curtime );
                     if ( $extraData !== null )
@@ -724,13 +724,25 @@ class eZFS2FileHandler extends eZFSFileHandler
      * Check if given file/dir exists.
      *
      * NOTE: this function does not interact with filesystem.
-     * Instead, it just returns existance status determined in the constructor.
+     * Instead, it just returns existance status based on metadata loaded by loadMetaData
+     *
+     * @param bool $acceptStaleFiles Wether or not to consider stale files as existing
+     *
+     * @return bool
      */
-    function exists()
+    function exists( $acceptStaleFiles = false )
     {
         $path = $this->filePath;
-        $rc = ( isset( $this->metaData['mtime'] ) && ( $this->metaData['mtime'] != self::EXPIRY_TIMESTAMP ) );
+
+        $rc = parent::exists( $path );
+
+        if ( $acceptStaleFiles === false && $rc === true )
+            $rc = ( $this->metaData['mtime'] != self::EXPIRY_TIMESTAMP );
+        elseif ( $acceptStaleFiles === true && $rc === false )
+            $rc = ( isset( $this->metaData['mtime'] ) && ( $this->metaData['mtime'] == self::EXPIRY_TIMESTAMP ) );
+
         eZDebugSetting::writeDebug( 'kernel-clustering', "fs2::exists( '$path' ): " . ( $rc ? 'true' :'false' ), __METHOD__ );
+
         return $rc;
     }
 
