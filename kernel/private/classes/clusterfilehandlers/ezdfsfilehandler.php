@@ -1372,11 +1372,13 @@ class eZDFSFileHandler implements eZClusterFileHandlerInterface
      **/
     function __get( $propertyName )
     {
+        $return = null;
+
         switch ( $propertyName )
         {
             case 'cacheType':
             {
-                return $this->_cacheType();
+                $return = $this->_cacheType();
             } break;
 
             // we only fetch metadata when the status of _metadata is unknown.
@@ -1389,9 +1391,14 @@ class eZDFSFileHandler implements eZClusterFileHandlerInterface
                 {
                     $this->loadMetaData();
                 }
-                return $this->_metaData;
-            }
+                $return = $this->_metaData;
+            } break;
+
+            default:
+                $return = null;
         }
+
+        return $return;
     }
 
     /**

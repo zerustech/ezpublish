@@ -1295,11 +1295,13 @@ class eZDBFileHandler
      **/
     function __get( $propertyName )
     {
+        $return = null;
+
         switch ( $propertyName )
         {
             case 'cacheType':
             {
-                return $this->_cacheType();
+                $return = $this->_cacheType();
             } break;
 
             case 'metaData':
@@ -1308,9 +1310,11 @@ class eZDBFileHandler
                 {
                     $this->loadMetaData();
                 }
-                return $this->_metaData;
-            }
+                $return = $this->_metaData;
+            } break;
         }
+
+        return $return;
     }
 
     /**

@@ -899,5 +899,58 @@ abstract class eZClusterFileHandlerAbstractTest extends ezpDatabaseTestCase
     {
         self::assertFalse( eZClusterFileHandler::instance()->requiresBinaryPurge() );
     }
+
+    public function testPurgeSingleFile()
+    {
+        $path = 'var/tests/' . __FUNCTION__ . '/file.txt';
+        $ch = self::createFile( $path, false );
+
+        $ch->purge();
+
+        $chValidate = eZClusterFileHandler::instance( $path );
+
+        self::assertFileNotExists( $path );
+        self::assertFalse( $chValidate->metaData );
+
+        self::deleteLocalFiles( $path );
+    }
+
+    public function testPurgeMultipleFiles()
+    {
+        $basePath = 'var/tests/' . __FUNCTION__;
+
+        // create multiple files in a folder for deletion
+        for( $i = 0; $i < 10; $i++ )
+        {
+            $files[$i] = "$basePath/set1/{$i}.txt";
+            self::createFile( $files[$i] )->delete();
+        }
+        // and a few other files to check if we don't delete anything that shouldn't be
+        for( $i = 0; $i < 5; $i++ )
+        {
+            $otherFiles[$i] = "$basePath/set2/{$i}.txt";
+            self::createFile( $otherFiles[$i] );
+        }
+
+        $clusterHandler = eZClusterFileHandler::instance( "$basePath/set1/" );
+        $clusterHandler->purge();
+
+        // check if files supposed to be deleted were
+        foreach( $files as $file )
+        {
+            $ch = eZClusterFileHandler::instance( $file );
+            self::assertFileNotExists( $file );
+            $this->assertFalse( $ch->metaData, "File $file still exists" );
+        }
+
+        // and if files not supposed to be deleted weren't
+        foreach( $otherFiles as $file )
+        {
+            $ch = eZClusterFileHandler::instance( $file );
+            $this->assertType( 'array', $ch->metaData, "File $file no longer exists" );
+        }
+
+        self::deleteLocalFiles( $files, $otherFiles);
+    }
 }
 ?>
