@@ -956,7 +956,7 @@ class eZDBFileHandler
         }
         else
         {
-            $pattern = $path . '/' . $fnamePart . '%';
+            $pattern = "{$path}/{$fnamePart}%";
             $this->backend->_deleteByLike( $pattern );
         }
     }
@@ -975,6 +975,7 @@ class eZDBFileHandler
         eZDebugSetting::writeDebug( 'kernel-clustering', "db::delete( '$path' )" );
 
         $this->backend->_delete( $path );
+        $this->backend->_deleteByLike( "{$path}/%" );
 
         $this->_metaData = null;
     }
