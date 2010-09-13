@@ -716,50 +716,6 @@ class eZDFSFileHandlerTest extends eZDBBasedClusterFileHandlerAbstractTest
         $this->removeFile( $testFile );
     }
 
-    public function _testFileDelete()
-    {
-        $testFile = 'var/testFileDelete.txt';
-
-        $this->createFile( $testFile );
-
-        // the file should exist on DFS
-        $this->assertTrue( $this->DFSFileExists( $testFile ), "File no longer exists on DFS" );
-
-        // the file should be valid in DB
-        $this->assertTrue( $this->DBFileExistsAndIsValid( $testFile ), "File is still valid in DB" );
-
-        $clusterHandler = eZClusterFileHandler::instance();
-        $clusterHandler->fileDelete( $testFile );
-
-        // the file should still be on DFS
-        $this->assertTrue( $this->DFSFileExists( $testFile ), "File no longer exists on DFS" );
-
-        // the file should not longer be valid on DB (expired)
-        $this->assertFalse( $this->DBFileExistsAndIsValid( $testFile ), "File is still valid in DB" );
-    }
-
-    public function _testDelete()
-    {
-        $testFile = 'var/testDelete.txt';
-
-        $this->createFile( $testFile );
-
-        // the file should exist on DFS
-        $this->assertTrue( $this->DFSFileExists( $testFile ), "File no longer exists on DFS" );
-
-        // the file should be valid in DB
-        $this->assertTrue( $this->DBFileExistsAndIsValid( $testFile ), "File is still valid in DB" );
-
-        $clusterHandler = eZClusterFileHandler::instance( $testFile );
-        $clusterHandler->delete();
-
-        // the file should still be on DFS
-        $this->assertTrue( $this->DFSFileExists( $testFile ), "File no longer exists on DFS" );
-
-        // the file should not longer be valid on DB (expired)
-        $this->assertFalse( $this->DBFileExistsAndIsValid( $testFile ), "File is still valid in DB" );
-    }
-
     public function testFileDeleteLocal()
     {
         $testFile = 'var/testFileDeleteLocal.txt';
