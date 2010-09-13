@@ -1376,10 +1376,7 @@ class eZDFSFileHandler implements eZClusterFileHandlerInterface
         {
             case 'cacheType':
             {
-                static $cacheType = null;
-                if ( $cacheType == null )
-                    $cacheType = $this->_cacheType();
-                return $cacheType;
+                return $this->_cacheType();
             } break;
 
             // we only fetch metadata when the status of _metadata is unknown.

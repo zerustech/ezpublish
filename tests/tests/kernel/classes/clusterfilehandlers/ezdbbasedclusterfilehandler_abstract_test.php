@@ -201,10 +201,11 @@ abstract class eZDBBasedClusterFileHandlerAbstractTest extends eZClusterFileHand
      * Tests the name trunk automatic creation (at backend level)
      * @dataProvider providerForTestNameTrunk
      */
-    public function testNameTrunk( $path, $scope, $expectedNameTrunk )
+    public function testNameTrunk( $path, $scope, $expectedNameTrunk, $expectedCacheType )
     {
         $ch = self::createFile( $path, false, array( 'scope' => $scope ) );
         self::assertEquals( $expectedNameTrunk, $ch->metaData['name_trunk'] );
+        self::assertEquals( $expectedCacheType, $ch->cacheType );
     }
 
     public static function providerForTestNameTrunk()
@@ -215,6 +216,7 @@ abstract class eZDBBasedClusterFileHandlerAbstractTest extends eZClusterFileHand
                 'var/plain_site/cache/content/plain_site/2-a54e7f5dba0d9df9de22904d309754b8.cache',
                 'viewcache',
                 'var/plain_site/cache/content/plain_site/2-',
+                'viewcache'
             ),
 
             // template block with subtree expiry
@@ -222,6 +224,7 @@ abstract class eZDBBasedClusterFileHandlerAbstractTest extends eZClusterFileHand
                 'var/plain_site/cache/template-block/subtree/1/cache/1/1/0/110322645.cache',
                 'template-block',
                 'var/plain_site/cache/template-block/subtree/1/cache/',
+                'cacheblock'
             ),
 
             // misc cache
@@ -229,6 +232,7 @@ abstract class eZDBBasedClusterFileHandlerAbstractTest extends eZClusterFileHand
                 'var/plain_site/cache/classidentifiers_fc45544cdb917d072c104b67248009e1.php',
                 'classidentifiers',
                 'var/plain_site/cache/classidentifiers_fc45544cdb917d072c104b67248009e1.php',
+                'misc'
             ),
         );
     }

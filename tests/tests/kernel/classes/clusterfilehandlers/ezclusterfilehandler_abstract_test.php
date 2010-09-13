@@ -39,6 +39,9 @@ abstract class eZClusterFileHandlerAbstractTest extends ezpDatabaseTestCase
 
     /**
      * Helper function that creates a cluster file
+     * @param string $path
+     * @param mixed $contents
+     * @param array $params Extra parameters. Possible keys: scope, datatype.
      */
     protected function createFile( $path, $contents = false, $params = array() )
     {
