@@ -262,7 +262,7 @@ class eZTSTranslator extends eZTranslatorHandler
                 array( $localeCodeToProcess, $filename ),
             );
 
-            if ( array_key_exists( $localeCodeToProcess,  $fallbacks ) and $fallbacks[$localeCodeToProcess] )
+            if ( isset( $fallbacks[$localeCodeToProcess] ) && $fallbacks[$localeCodeToProcess] )
             {
                 $alternatives[] = array( $fallbacks[$localeCodeToProcess], $charset, $filename );
                 $alternatives[] = array( $fallbacks[$localeCodeToProcess], $filename );

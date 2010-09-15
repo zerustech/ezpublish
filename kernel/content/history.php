@@ -271,7 +271,7 @@ if ( $Module->isCurrentAction( 'CopyVersion' )  )
     }
 
     $languages = $Module->actionParameter( 'LanguageArray' );
-    if ( $languages && array_key_exists( $versionID, $languages ) )
+    if ( isset( $languages[$versionID] ) )
     {
         $language = $languages[$versionID];
     }

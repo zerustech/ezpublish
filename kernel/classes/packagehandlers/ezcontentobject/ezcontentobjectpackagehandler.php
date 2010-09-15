@@ -1603,7 +1603,7 @@ class eZContentObjectPackageHandler extends eZPackageHandler
                 {
                     $nodeID = (int)$argument;
                     $node = eZContentObjectTreeNode::fetch( $nodeID );
-                    if ( !is_object( $node ) )
+                    if ( !$node instanceof eZContentObjectTreeNode )
                     {
                         $error = true;
                         $nodeID = false;
@@ -1619,7 +1619,7 @@ class eZContentObjectPackageHandler extends eZPackageHandler
                         $subtree = true;
                     }
                     $node = eZContentObjectTreeNode::fetchByURLPath( $path );
-                    if ( is_object( $node ) )
+                    if ( $node instanceof eZContentObjectTreeNode )
                     {
                         $nodeID = $node->attribute( 'node_id' );
                     }

@@ -109,7 +109,7 @@ class eZModuleOperationInfo
     function makeOperationKeyArray( $operationDefinition, $operationParameters )
     {
         $keyDefinition = null;
-        if ( array_key_exists( 'keys', $operationDefinition ) and
+        if ( isset( $operationDefinition['keys'] ) &&
              is_array( $operationDefinition['keys'] ) )
         {
             $keyDefinition = $operationDefinition['keys'];
@@ -563,7 +563,7 @@ class eZModuleOperationInfo
                             ++$bodyCallCount['loop_run'][$bodyName];
                             $result = $this->executeClassMethod( $includeFile, $className, $method,
                                                                  $tmpOperationParameterDefinitions, $operationParameters );
-                            if ( $result && array_key_exists( 'status', $result ) )
+                            if ( isset( $result['status'] ) )
                             {
                                 switch( $result['status'] )
                                 {

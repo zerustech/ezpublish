@@ -105,7 +105,7 @@ class eZContentUpload
     */
     function hasAttribute( $attributeName )
     {
-        return array_key_exists( $attributeName, $this->Parameters );
+        return isset( $this->Parameters[$attributeName] );
     }
 
     /*!

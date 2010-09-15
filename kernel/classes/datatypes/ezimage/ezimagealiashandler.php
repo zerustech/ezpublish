@@ -420,7 +420,7 @@ class eZImageAliasHandler
         }
 
         $aliasList = $this->aliasList();
-        if ( array_key_exists( $aliasName, $aliasList ) )
+        if ( isset( $aliasList[$aliasName] ) )
         {
             return $aliasList[$aliasName];
         }
@@ -1143,13 +1143,13 @@ class eZImageAliasHandler
             $contentObjectAttribute = eZContentObjectAttribute::fetch( $contentObjectAttributeID, $version );
             $contentObjectAttributeName = '';
             $contentObjectName = '';
-            
+
             if ( $contentObject instanceof eZContentObject )
                 $contentObjectName = $contentObject->attribute('name');
-            
+
             if ( $contentObjectAttribute instanceof eZContentObjectAttribute )
                 $contentObjectAttributeName = $contentObjectAttribute->attribute( 'contentclass_attribute_name' );
-            
+
             eZDebug::writeError( "The image '$filename' does not exist, cannot initialize image attribute: '$contentObjectAttributeName' (id: $contentObjectAttributeID) for content object: '$contentObjectName' (id: $contentObjectID)", __METHOD__ );
             return false;
         }

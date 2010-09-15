@@ -142,7 +142,7 @@ if ( $http->hasPostVariable( 'NewButton' ) || $module->isCurrentAction( 'NewObje
             $node = eZContentObjectTreeNode::fetch( $http->postVariable( 'NodeID' ) );
         }
 
-        if ( is_object( $node ) )
+        if ( $node instanceof eZContentObjectTreeNode )
         {
             $contentObject = eZContentObject::createWithNodeAssignment( $node,
                                                                         $contentClassID,

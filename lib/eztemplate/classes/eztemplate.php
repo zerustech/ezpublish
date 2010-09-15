@@ -460,7 +460,7 @@ class eZTemplate
      */
     function hasLocalVariable( $varName, $rootNamespace )
     {
-        return ( array_key_exists( $rootNamespace, $this->CurrentLocalVariablesNames ) &&
+        return ( isset( $this->CurrentLocalVariablesNames[$rootNamespace] ) &&
                  array_key_exists( $varName, $this->CurrentLocalVariablesNames[$rootNamespace] ) );
     }
 
@@ -769,7 +769,7 @@ class eZTemplate
         $template = "";
         $resobj = $this->resourceFor( $uri, $res, $template );
 
-        if ( !is_object( $resobj ) )
+        if ( !$resobj instanceof eZTemplateFileResource )
         {
             if ( $displayErrors )
                 $this->warning( "", "No resource handler for \"$res\" and no default resource handler, aborting." );
@@ -1034,7 +1034,7 @@ class eZTemplate
         {
             eZDebug::writeNotice( "eZTemplate: Loading template \"$template\" with resource \"$res\"" );
         }
-        if ( isset( $this->Resources[$res] ) and is_object( $this->Resources[$res] ) )
+        if ( isset( $this->Resources[$res] ) && $this->Resources[$res] instanceof eZTemplateFileResource )
         {
             return $this->Resources[$res];
         }
@@ -1048,7 +1048,7 @@ class eZTemplate
     function resourceHandler( $resourceName )
     {
         if ( isset( $this->Resources[$resourceName] ) &&
-             is_object( $this->Resources[$resourceName] ) )
+             $this->Resources[$resourceName] instanceof eZTemplateFileResource )
         {
             return $this->Resources[$resourceName];
         }
@@ -1260,8 +1260,7 @@ class eZTemplate
                     $operatorParameters = $dataElement[1];
                     $operatorName = $operatorParameters[0];
                     $operatorParameters = array_splice( $operatorParameters, 1 );
-                    if ( is_object( $value ) and
-                         method_exists( $value, 'templateValue' ) )
+                    if ( $value instanceof eZTemplateSectionIterator )
                     {
                         if ( $checkForProxy )
                             $dataElements['proxy-object-found'] = true;
@@ -1281,8 +1280,7 @@ class eZTemplate
                 }
             }
         }
-        if ( is_object( $value ) and
-             method_exists( $value, 'templateValue' ) )
+        if ( $value instanceof eZTemplateSectionIterator )
         {
             if ( $checkForProxy )
                 $dataElements['proxy-object-found'] = true;
@@ -1698,13 +1696,12 @@ class eZTemplate
     {
         if ( !is_array( $textElements ) )
             $textElements = array();
-        if ( is_object( $item ) and
-             method_exists( $item, 'templateValue' ) )
+        if ( $item instanceof eZTemplateSectionIterator )
         {
             $item = $item->templateValue();
             $textElements[] = "$item";
         }
-        else if ( is_object( $item ) )
+        else if ( $item instanceof eZImageInterface )
         {
             $hasTemplateData = false;
             if ( method_exists( $item, 'templateData' ) )
@@ -2016,7 +2013,7 @@ class eZTemplate
     */
     function registerResource( $res )
     {
-        if ( is_object( $res ) )
+        if ( $res instanceof eZTemplateFileResource )
             $this->Resources[$res->resourceName()] =& $res;
         else
             $this->warning( "registerResource()", "Supplied argument is not a resource object" );

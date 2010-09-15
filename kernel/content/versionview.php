@@ -202,7 +202,7 @@ if ( isset( $parentNodeObject ) && is_object( $parentNodeObject ) )
     $requestedURIString = $parentNodeObject->attribute( 'url_alias' );
 }
 
-if ( isset( $node ) && is_object( $node ) )
+if ( isset( $node ) && $node instanceof eZContentObjectTreeNode )
 {
     $requestedURIString = $node->attribute( 'url_alias' );
 }

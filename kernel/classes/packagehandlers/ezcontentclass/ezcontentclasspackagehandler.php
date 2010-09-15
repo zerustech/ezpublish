@@ -722,7 +722,7 @@ class eZContentClassPackageHandler extends eZPackageHandler
             $attributeNode->appendChild( $attributeParametersNode );
 
             $dataType = $attribute->dataType();
-            if ( is_object( $dataType ) )
+            if ( $dataType instanceof eZDataType )
             {
                 $dataType->serializeContentClassAttribute( $attribute, $attributeNode, $attributeParametersNode );
             }

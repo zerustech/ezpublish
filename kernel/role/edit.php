@@ -429,10 +429,10 @@ if ( $http->hasPostVariable( 'SelectButton' ) or
     $currentFunctionLimitations = array();
     foreach( $functions[ $currentFunction ] as $key => $limitation )
     {
-        if( count( $limitation[ 'values' ] == 0 ) && array_key_exists( 'class', $limitation ) )
+        if ( isset( $limitation['class'] ) && count( $limitation['values'] ) == 0 )
         {
             $basePath = 'kernel/'; //set default basepath for limitationValueClasses
-            if( array_key_exists( 'extension', $limitation ) && $limitation['extension'] )
+            if( isset( $limitation['extension'] ) && $limitation['extension'] )
             {
                 $basePath = 'extension/' . $limitation['extension'] . '/';
             }

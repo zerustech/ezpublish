@@ -466,7 +466,7 @@ class eZNodeviewfunctions
         extract( $args );
         $node = eZContentObjectTreeNode::fetch( $NodeID );
 
-        if ( !is_object( $node ) )
+        if ( !$node instanceof eZContentObjectTreeNode )
         {
             if ( !eZDB::instance()->isConnected())
             {

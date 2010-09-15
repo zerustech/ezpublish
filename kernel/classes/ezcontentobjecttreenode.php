@@ -638,7 +638,7 @@ class eZContentObjectTreeNode extends eZPersistentObject
                             $datatypeWhereSQL .= eZContentLanguage::sqlFilter( $contentAttributeTableAlias, 'ezcontentobject' );
 
                             $dataType = eZDataType::create( eZContentObjectTreeNode::dataTypeByClassAttributeID( $classAttributeID ) );
-                            if( is_object( $dataType ) && $dataType->customSorting() )
+                            if( $dataType instanceof eZDataType && $dataType->customSorting() )
                             {
                                 $params = array();
                                 $params['contentobject_attr_id'] = "$contentAttributeTableAlias.id";
@@ -3634,7 +3634,7 @@ class eZContentObjectTreeNode extends eZPersistentObject
     static function removeNode( $nodeID = 0 )
     {
         $node = eZContentObjectTreeNode::fetch( $nodeID );
-        if ( !is_object( $node ) )
+        if ( !$node instanceof eZContentObjectTreeNode )
         {
             return;
         }
@@ -3712,7 +3712,7 @@ class eZContentObjectTreeNode extends eZPersistentObject
         }
 
         $parentNode = $this->attribute( 'parent' );
-        if ( is_object( $parentNode ) )
+        if ( $parentNode instanceof eZContentObjectTreeNode )
         {
             eZContentCacheManager::clearContentCacheIfNeeded( $parentNode->attribute( 'contentobject_id' ) );
             $parentNode->updateAndStoreModified();
@@ -5098,7 +5098,7 @@ class eZContentObjectTreeNode extends eZPersistentObject
 
             if( $node['node_id'] == 1 )
             {
-                if( !array_key_exists( 'name', $node ) || !$node['name'] )
+                if( !isset( $node['name'] ) || !$node['name'] )
                     $node['name'] = ezpI18n::tr( 'kernel/content', 'Top Level Nodes' );
             }
 
@@ -5369,7 +5369,7 @@ class eZContentObjectTreeNode extends eZPersistentObject
         $remoteID = $contentNodeDOMNode->getAttribute( 'remote-id' );
         $parentNodeRemoteID = $contentNodeDOMNode->getAttribute( 'parent-node-remote-id' );
         $node = eZContentObjectTreeNode::fetchByRemoteID( $remoteID );
-        if ( is_object( $node ) )
+        if ( $node instanceof eZContentObjectTreeNode )
         {
             $description = "Node with remote ID $remoteID already exists.";
 
@@ -6012,7 +6012,7 @@ class eZContentObjectTreeNode extends eZPersistentObject
             return $falseValue;
 
         $node = isset( $parameters['node'] ) ? $parameters['node'] : false;
-        if ( is_object( $node ) )
+        if ( $node instanceof eZContentObjectTreeNode )
         {
             if ( $createHereMenu == 'full' and !$node->canCreate() )
                 return $falseValue;
@@ -6036,7 +6036,7 @@ class eZContentObjectTreeNode extends eZPersistentObject
             if ( $createHereMenu == 'full' and isset( $parameters['node_id'] ) )
             {
                 $node = eZContentObjectTreeNode::fetch( $parameters['node_id'] );
-                if ( is_object( $node ) and !$node->canCreate() )
+                if ( $node instanceof eZContentObjectTreeNode && !$node->canCreate() )
                     return $falseValue;
             }
             $pathString = isset( $parameters['path_string'] ) ? $parameters['path_string'] : false;
@@ -6082,9 +6082,9 @@ class eZContentObjectTreeNode extends eZPersistentObject
         if ( $classes === false )
         {
             // If $node is object we should fetch available classes from node, from ezcontentclass otherwise
-            $classes = ( is_object( $node ) and strtolower( get_class( $node ) ) == 'ezcontentobjecttreenode' )
-                        ? $node->canCreateClassList( false, $includeFilter, $groupList, $fetchID )
-                        : eZContentClass::canInstantiateClassList( false, $includeFilter, $groupList, $fetchID );
+            $classes = $node instanceof eZContentObjectTreeNode
+                       ? $node->canCreateClassList( false, $includeFilter, $groupList, $fetchID )
+                       : eZContentClass::canInstantiateClassList( false, $includeFilter, $groupList, $fetchID );
         }
         if ( !is_array( $classes ) )
             return $falseValue;
@@ -6094,12 +6094,12 @@ class eZContentObjectTreeNode extends eZPersistentObject
         $db = eZDB::instance();
         foreach ( $classes as $class )
         {
-            if ( is_object( $class ) )
+            if ( $class instanceof eZContentClass )
             {
                 $classID = $class->attribute( 'id' );
                 $className = $class->attribute( 'name' );
             }
-            elseif ( is_array( $class ) )
+            elseif ( isset( $class['id'] ) && isset( $class['name'] ) )
             {
                 $classID = $class['id'];
                 $className = $class['name'];

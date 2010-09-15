@@ -261,7 +261,7 @@ class eZWorkflowType
 
     function setAttribute( $attr, $value )
     {
-        if ( array_key_exists( $attr, $this->Attributes ) )
+        if ( isset( $this->Attributes[$attr] ) )
             $this->Attributes[$attr] = $value;
     }
 

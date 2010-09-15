@@ -252,7 +252,7 @@ class eZAutoloadGenerator
                  {
                     chmod( $filePath, 0777 );
                  }
-                 
+
              }
              else
              {
@@ -363,13 +363,13 @@ class eZAutoloadGenerator
 
     /**
      * Uses the walker in ezcBaseFile to find files.
-     * 
+     *
      * This also uses the callback to get progress information about the file search.
      *
-     * @param string $sourceDir 
-     * @param array $includeFilters 
+     * @param string $sourceDir
+     * @param array $includeFilters
      * @param array $excludeFilters
-     * @param eZAutoloadGenerator $gen 
+     * @param eZAutoloadGenerator $gen
      * @return array
      */
     public static function findRecursive( $sourceDir, array $includeFilters = array(), array $excludeFilters = array(), eZAutoloadGenerator $gen )
@@ -394,15 +394,15 @@ class eZAutoloadGenerator
     }
 
     /**
-     * Callback used ezcBaseFile 
+     * Callback used ezcBaseFile
      *
-     * @param string $ezpAutoloadFileFindContext 
-     * @param string $sourceDir 
-     * @param string $fileName 
-     * @param string $fileInfo 
+     * @param string $ezpAutoloadFileFindContext
+     * @param string $sourceDir
+     * @param string $fileName
+     * @param string $fileInfo
      * @return void
      */
-    
+
     public static function findRecursiveCallback( ezpAutoloadFileFindContext $context, $sourceDir, $fileName, $fileInfo )
     {
         if ( $fileInfo['mode'] & 0x4000 )
@@ -837,13 +837,13 @@ END;
      */
     protected function classExistsInArray( $class, $checkMode, $file, $inProgressAutoloadArray = null, $generatingMode = null )
     {
-        if ( ( $checkMode === $generatingMode ) and $inProgressAutoloadArray !== null )
+        if ( ( $checkMode === $generatingMode ) && $inProgressAutoloadArray !== null )
         {
-            $classCollision = array_key_exists( $class, $inProgressAutoloadArray );
+            $classCollision = isset( $inProgressAutoloadArray[$class] );
         }
         else
         {
-            $classCollision = array_key_exists( $class, $this->existingAutoloadArrays[$checkMode] );
+            $classCollision = isset( $this->existingAutoloadArrays[$checkMode][$class] );
         }
 
         if ( $classCollision )
@@ -870,7 +870,7 @@ END;
 
         if ( $generatingMode === self::MODE_KERNEL_OVERRIDE and $checkMode === self::MODE_KERNEL )
         {
-            if ( $inProgressAutoloadArray !== null and array_key_exists( $class, $inProgressAutoloadArray ) )
+            if ( $inProgressAutoloadArray !== null && isset( $inProgressAutoloadArray[$class] ) )
             {
                 return;
             }
@@ -1014,12 +1014,12 @@ END;
 
     /**
      * Calls updateProgress on the output object.
-     * 
+     *
      * If progress output is not enabled or the output object is not set, this
      * method will not do anything.
      *
-     * @param int $phase 
-     * @param string $array 
+     * @param int $phase
+     * @param string $array
      * @return void
      */
     protected function updateProgressOutput( $phase )
@@ -1033,11 +1033,11 @@ END;
 
     /**
      * Increment counters used for statistics in the progress output.
-     * 
+     *
      * If the output object is not set, the method will not do anything.
      *
-     * @param int $phase 
-     * @param array $stat 
+     * @param int $phase
+     * @param array $stat
      * @return void
      */
     protected function incrementProgressStat( $phase, $stat )
@@ -1054,7 +1054,7 @@ END;
     /**
      * Initializes progress output for <var>$phase</var>
      *
-     * @param int $phase 
+     * @param int $phase
      * @return void
      */
     protected function startProgressOutput( $phase )
@@ -1070,7 +1070,7 @@ END;
     /**
      * Stops progress output for <var>$phase</var>
      *
-     * @param int $phase 
+     * @param int $phase
      * @return void
      */
     protected function stopProgressOutput( $phase )
@@ -1086,7 +1086,7 @@ END;
     /**
      * Fetches statistics array for $phase form the output object.
      *
-     * @param int $phase 
+     * @param int $phase
      * @return void
      */
     protected function getStatArray( $phase )
@@ -1101,8 +1101,8 @@ END;
     /**
      * Updates internal statistics data for <var>$phase</var>, with new array <var>$data</var>.
      *
-     * @param int $phase 
-     * @param array $data 
+     * @param int $phase
+     * @param array $data
      * @return void
      */
     protected function setStatArray( $phase, $data )
@@ -1116,11 +1116,11 @@ END;
 
     /**
      * Sets the object to handle out from the autoload generation.
-     * 
+     *
      * Currently this is only handled for the CLI.
      *
      * @see ezpAutoloadCliOutput
-     * @param object $outputObject 
+     * @param object $outputObject
      * @return void
      */
     public function setOutputObject( $outputObject )

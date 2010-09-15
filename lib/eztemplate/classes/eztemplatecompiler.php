@@ -1932,9 +1932,7 @@ class eZTemplateCompiler
 $lbracket
     function compiledFetchVariable( \$vars, \$namespace, \$name )
     $lbracket
-        \$exists = ( array_key_exists( \$namespace, \$vars ) and
-                    array_key_exists( \$name, \$vars[\$namespace] ) );
-        if ( \$exists )
+        if ( isset( \$vars[\$namespace][\$name] ) )
         $lbracket
             return \$vars[\$namespace][\$name];
         $rbracket
@@ -2519,10 +2517,10 @@ $rbracket
                 else if ( $nodeType == eZTemplate::NODE_OPTIMIZED_INIT )
                 {
                     $code = <<<END
-\$node = ( array_key_exists( \$rootNamespace, \$vars ) and array_key_exists( "node", \$vars[\$rootNamespace] ) ) ? \$vars[\$rootNamespace]["node"] : null;
-if ( is_object( \$node ) )
+\$node = isset( \$vars[\$rootNamespace]['node'] ) ? \$vars[\$rootNamespace]['node'] : null;
+if ( \$node instanceof eZContentObjectTreeNode )
 \$object = \$node->attribute( 'object' );
-if ( isset( \$object ) && is_object( \$object ) )
+if ( isset( \$object ) && \$object instanceof eZContentObject )
 \$nod_{$resourceData['uniqid']} = \$object->attribute( 'data_map' );
 else
 \$nod_{$resourceData['uniqid']} = false;
@@ -2677,7 +2675,7 @@ END;
                     {
                         if ( !$isStaticElement )
                             $unsetVariableText = "\n    unset( $variableText );";
-                        $php->addCodePiece( "if " . ( $resourceData['use-comments'] ? ( "/*TC:" . __LINE__ . "*/" ) : "" ) . "( array_key_exists( $namespaceText, \$vars ) && array_key_exists( $variableNameText, \$vars[$namespaceText] ) )\n".
+                        $php->addCodePiece( "if " . ( $resourceData['use-comments'] ? ( "/*TC:" . __LINE__ . "*/" ) : "" ) . "( isset( \$vars[$namespaceText] ) && array_key_exists( $variableNameText, \$vars[$namespaceText] ) )\n".
                                             "{\n".
                                             "    \$vars[$namespaceText][$variableNameText] = $variableText;$unsetVariableText\n".
                                             "}",
@@ -3122,7 +3120,7 @@ END;
                     $namespaceText = "\$namespace";
                 $variableNameText = $php->thisVariableText( $variableName, 0, 0, false );
                 $code = "unset( \$$variableAssignmentName );\n";
-                $code .= "\$$variableAssignmentName = ( array_key_exists( $namespaceText, \$vars ) and array_key_exists( $variableNameText, \$vars[$namespaceText] ) ) ? \$vars[$namespaceText][$variableNameText] : null;\n";
+                $code .= "\$$variableAssignmentName = ( isset( \$vars[$namespaceText][$variableNameText] ) ) ? \$vars[$namespaceText][$variableNameText] : null;\n";
                 $php->addCodePiece( $code,
                                     array( 'spacing' => $spacing ) );
             }
@@ -3190,7 +3188,7 @@ END;
                 }
 
                 $php->addCodePiece( "if (! isset( \$$variableAssignmentName ) ) \$$variableAssignmentName = NULL;\n", array ( 'spacing' => $spacing ) );
-                $php->addCodePiece( "while " . ( $resourceData['use-comments'] ? ( "/*TC:" . __LINE__ . "*/" ) : "" ) . "( is_object( \$$variableAssignmentName ) and method_exists( \$$variableAssignmentName, 'templateValue' ) )\n" .
+                $php->addCodePiece( "while " . ( $resourceData['use-comments'] ? ( "/*TC:" . __LINE__ . "*/" ) : "" ) . "( \$$variableAssignmentName instanceof eZTemplateSectionIterator )\n" .
                                                   "    \$$variableAssignmentName = \$$variableAssignmentName" . "->templateValue();\n" );
                 $php->addCodePiece( "\$" . $variableAssignmentName . "Data = array( 'value' => \$$variableAssignmentName );
 \$tpl->processOperator( $operatorNameText,
@@ -3294,7 +3292,7 @@ unset( \$" . $variableAssignmentName . "Data );\n",
                                 $newCode = $tmpPHP->fetch( false );
                                 if ( count( $tmpKnownTypes ) == 0 or in_array( 'objectproxy', $tmpKnownTypes ) )
                                 {
-                                    $newCode .= ( "while " . ( $resourceData['use-comments'] ? ( "/*TC:" . __LINE__ . "*/" ) : "" ) . "( is_object( \$$newVariableAssignmentName ) and method_exists( \$$newVariableAssignmentName, 'templateValue' ) )\n" .
+                                    $newCode .= ( "while " . ( $resourceData['use-comments'] ? ( "/*TC:" . __LINE__ . "*/" ) : "" ) . "( \$$newVariableAssignmentName instanceof eZTemplateSectionIterator )\n" .
                                                   "    \$$newVariableAssignmentName = \$$newVariableAssignmentName" . "->templateValue();\n" );
                                 }
                                 $matchMap[] = '%code' . $counter . '%';
@@ -3307,7 +3305,7 @@ unset( \$" . $variableAssignmentName . "Data );\n",
                                                                               $persistence, $newParameters, $resourceData );
                                 if ( !$parameters['treat-value-as-non-object'] and ( count( $tmpKnownTypes ) == 0 or in_array( 'objectproxy', $tmpKnownTypes ) ) )
                                 {
-                                    $php->addCodePiece( "while " . ( $resourceData['use-comments'] ? ( "/*TC:" . __LINE__ . "*/" ) : "" ) . "( is_object( \$$newVariableAssignmentName ) and method_exists( \$$newVariableAssignmentName, 'templateValue' ) )\n" .
+                                    $php->addCodePiece( "while " . ( $resourceData['use-comments'] ? ( "/*TC:" . __LINE__ . "*/" ) : "" ) . "( \$$newVariableAssignmentName instanceof eZTemplateSectionIterator )\n" .
                                                         "    \$$newVariableAssignmentName = \$$newVariableAssignmentName" . "->templateValue();\n",
                                                         array( 'spacing' => $spacing ) );
                                 }
@@ -3349,7 +3347,7 @@ unset( \$" . $variableAssignmentName . "Data );\n",
         }
         // After the entire expression line is done we try to extract the actual value if proxies are used
         $php->addCodePiece( "if (! isset( \$$variableAssignmentName ) ) \$$variableAssignmentName = NULL;\n" );
-        $php->addCodePiece( "while " . ( $resourceData['use-comments'] ? ( "/*TC:" . __LINE__ . "*/" ) : "" ) . "( is_object( \$$variableAssignmentName ) and method_exists( \$$variableAssignmentName, 'templateValue' ) )\n" .
+        $php->addCodePiece( "while " . ( $resourceData['use-comments'] ? ( "/*TC:" . __LINE__ . "*/" ) : "" ) . "( \$$variableAssignmentName instanceof eZTemplateSectionIterator )\n" .
                             "    \$$variableAssignmentName = \$$variableAssignmentName" . "->templateValue();\n" );
     }
 }

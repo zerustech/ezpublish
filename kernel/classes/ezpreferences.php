@@ -232,7 +232,7 @@ class eZPreferences
         if ( !$http->hasSessionVariable( eZPreferences::SESSION_NAME, false ) )
             return false;
         $preferencesInSession = $http->sessionVariable( eZPreferences::SESSION_NAME );
-        return array_key_exists( $name, $preferencesInSession );
+        return isset( $preferencesInSession[$name] );
     }
 
     /*!
@@ -245,7 +245,7 @@ class eZPreferences
         if ( !$http->hasSessionVariable( eZPreferences::SESSION_NAME ) )
             return null;
         $preferencesInSession = $http->sessionVariable( eZPreferences::SESSION_NAME );
-        if ( !array_key_exists( $name, $preferencesInSession ) )
+        if ( !isset( $preferencesInSession[$name] ) )
             return null;
         return $preferencesInSession[$name];
     }

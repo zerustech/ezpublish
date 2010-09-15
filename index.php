@@ -370,7 +370,7 @@ if ( !$useCronjob )
     function eZSessionBasketDestroy( $db, $key, $escapedKey )
     {
         $basket = eZBasket::fetch( $key );
-        if ( is_object( $basket ) )
+        if ( $basket instanceof eZBasket )
             $basket->remove();
     }
 
@@ -426,21 +426,17 @@ if ( $ini->variable( 'SiteAccessSettings', 'CheckValidity' ) === 'true' )
 
 if ( $sessionRequired )
 {
-    $dbRequired = true;
+    if ( $ini->variable( 'Session', 'ForceStart' ) === 'enabled' )
+        eZSession::start();
+    else
+        eZSession::lazyStart();
 }
 
 $db = false;
 if ( $dbRequired )
 {
     $db = eZDB::instance();
-    if ( $sessionRequired )
-    {
-        if ( $ini->variable( 'Session', 'ForceStart' ) === 'enabled' )
-            eZSession::start();
-        else
-            eZSession::lazyStart();
-    }
-    else if ( !$db->isConnected() )
+    if ( !$db->isConnected() )
         $warningList[] = array( 'error' => array( 'type' => 'kernel',
                                                   'number' => eZError::KERNEL_NO_DB_CONNECTION ),
                                 'text' => 'No database connection could be made, the system might not behave properly.' );
@@ -911,7 +907,7 @@ if ( $module->exitStatus() == eZModule::STATUS_REDIRECT )
 // Store the last URI for access history for login redirection
 // Only if database is connected, user has session and only if there was no error or no redirects happen
 if ( eZSession::hasStarted() &&
-    is_object( $db ) && $db->isConnected() &&
+    $db instanceof eZDBInterface  && $db->isConnected() &&
     $module->exitStatus() == eZModule::STATUS_OK )
 {
     $currentURI = $completeRequestedURI;

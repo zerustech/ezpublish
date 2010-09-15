@@ -251,7 +251,7 @@ class eZPolicyLimitation extends eZPersistentObject
              count( $limitation[ 'values' ] == 0 ) )
         {
             $basePath = 'kernel/'; //set default basepath for limitationValueClasses
-            if( array_key_exists( 'extension', $limitation ) && $limitation['extension'] )
+            if( isset( $limitation['extension'] ) && $limitation['extension'] )
             {
                 $basePath = 'extension/' . $limitation['extension'] . '/';
             }
