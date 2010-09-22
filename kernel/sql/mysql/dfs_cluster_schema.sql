@@ -14,4 +14,3 @@ CREATE TABLE ezdfsfile (
   KEY ezdfsfile_mtime (mtime),
   KEY ezdfsfile_expired_name (expired,`name`(250))
 ) ENGINE=InnoDB;
-
