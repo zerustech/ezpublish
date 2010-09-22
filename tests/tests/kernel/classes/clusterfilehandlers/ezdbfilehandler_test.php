@@ -12,16 +12,9 @@ class eZDBFileHandlerTest extends eZDBBasedClusterFileHandlerAbstractTest
     /**
      * @var array
      **/
-    protected $sqlFiles = array( 'kernel/sql/mysql/cluster_schema.sql' );
+    protected $sqlFiles = array( array( 'kernel/sql/', 'cluster_db_schema.sql' ) );
 
     protected $clusterClass = 'eZDBFileHandler';
-
-    /* // Commented since __construct breaks data providers
-    public function __construct()
-    {
-        parent::__construct();
-        $this->setName( "eZDBFileHandler Unit Tests" );
-    }*/
 
     /**
      * Test setup
@@ -33,9 +26,23 @@ class eZDBFileHandlerTest extends eZDBBasedClusterFileHandlerAbstractTest
     {
         parent::setUp();
 
-        if ( !( $this->sharedFixture instanceof eZMySQLDB ) and !( $this->sharedFixture instanceof eZMySQLiDB ) )
+        $dsn = ezpTestRunner::dsn()->parts;
+        switch ( $dsn['phptype'] )
         {
-            self::markTestSkipped( "Not using mysql interface, skipping" );
+            case 'mysql':
+                $backend = 'eZDBFileHandlerMysqlBackend';
+                break;
+
+            case 'mysqli':
+                $backend = 'eZDBFileHandlerMysqliBackend';
+                break;
+
+            case 'postgresql':
+                $backend = 'eZDBFileHandlerPostgresqlBackend';
+                break;
+
+            default:
+                $this->markTestSkipped( "Unsupported database type '{$dsn['phptype']}'" );
         }
 
         // We need to clear the existing handler if it was loaded before the INI
@@ -51,21 +58,6 @@ class eZDBFileHandlerTest extends eZDBBasedClusterFileHandlerAbstractTest
         $fileINI = eZINI::instance( 'file.ini' );
         $this->previousFileHandler = $fileINI->variable( 'ClusteringSettings', 'FileHandler' );
         $fileINI->setVariable( 'ClusteringSettings', 'FileHandler', 'eZDBFileHandler' );
-
-        $dsn = ezpTestRunner::dsn()->parts;
-        switch ( $dsn['phptype'] )
-        {
-            case 'mysql':
-                $backend = 'eZDBFileHandlerMysqlBackend';
-                break;
-
-            case 'mysqli':
-                $backend = 'eZDBFileHandlerMysqliBackend';
-                break;
-
-            default:
-                $this->markTestSkipped( "Unsupported database type '{$dsn['phptype']}'" );
-        }
         $fileINI->setVariable( 'ClusteringSettings', 'DBBackend',  $backend );
         $fileINI->setVariable( 'ClusteringSettings', 'DBHost',     $dsn['host'] );
         $fileINI->setVariable( 'ClusteringSettings', 'DBPort',     $dsn['port'] );
@@ -73,8 +65,6 @@ class eZDBFileHandlerTest extends eZDBBasedClusterFileHandlerAbstractTest
         $fileINI->setVariable( 'ClusteringSettings', 'DBName',     $dsn['database'] );
         $fileINI->setVariable( 'ClusteringSettings', 'DBUser',     $dsn['user'] );
         $fileINI->setVariable( 'ClusteringSettings', 'DBPassword', $dsn['password'] );
-
-        // ezpTestDatabaseHelper::insertSqlData( $this->sharedFixture, $this->sqlFiles );
 
         $this->db = $this->sharedFixture;
     }

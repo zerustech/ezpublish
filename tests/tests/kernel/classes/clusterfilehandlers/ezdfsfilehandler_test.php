@@ -44,9 +44,23 @@ class eZDFSFileHandlerTest extends eZDBBasedClusterFileHandlerAbstractTest
     {
         parent::setUp();
 
-        if ( !( $this->sharedFixture instanceof eZMySQLDB ) and !( $this->sharedFixture instanceof eZMySQLiDB ) )
+        $dsn = ezpTestRunner::dsn()->parts;
+        switch ( $dsn['phptype'] )
         {
-            self::markTestSkipped( "Not using mysql interface, skipping" );
+            case 'mysql':
+                $backend = 'eZDFSFileHandlerMySQLBackend';
+                break;
+
+            case 'mysqli':
+                $backend = 'eZDFSFileHandlerMySQLiBackend';
+                break;
+
+            case 'postgresql':
+                $backend = 'eZDFSFileHandlerPostgresqlBackend';
+                break;
+
+            default:
+                $this->markTestSkipped( "Unsupported database type '{$dsn['phptype']}'" );
         }
 
         // We need to clear the existing handler if it was loaded before the INI
@@ -63,27 +77,14 @@ class eZDFSFileHandlerTest extends eZDBBasedClusterFileHandlerAbstractTest
         $this->previousFileHandler = $fileINI->variable( 'ClusteringSettings', 'FileHandler' );
         $fileINI->setVariable( 'ClusteringSettings', 'FileHandler', 'eZDFSFileHandler' );
 
-        $dsn = ezpTestRunner::dsn()->parts;
-        switch ( $dsn['phptype'] )
-        {
-            case 'mysql':
-                $backend = 'eZDFSFileHandlerMySQLBackend';
-                break;
-
-            case 'mysqli':
-                $backend = 'eZDFSFileHandlerMySQLiBackend';
-                break;
-
-            default:
-                $this->markTestSkipped( "Unsupported database type '{$dsn['phptype']}'" );
-        }
-        $fileINI->setVariable( 'eZDFSClusteringSettings', 'DBHost',    $dsn['host'] );
-        $fileINI->setVariable( 'eZDFSClusteringSettings', 'DBPort',    $dsn['port'] );
-        $fileINI->setVariable( 'eZDFSClusteringSettings', 'DBSocket',  $dsn['socket'] );
-        $fileINI->setVariable( 'eZDFSClusteringSettings', 'DBName',    $dsn['database'] );
-        $fileINI->setVariable( 'eZDFSClusteringSettings', 'DBUser',    $dsn['user'] );
-        $fileINI->setVariable( 'eZDFSClusteringSettings', 'DBPassword', $dsn['password'] );
+        $fileINI->setVariable( 'eZDFSClusteringSettings', 'DBHost',         $dsn['host'] );
+        $fileINI->setVariable( 'eZDFSClusteringSettings', 'DBPort',         $dsn['port'] );
+        $fileINI->setVariable( 'eZDFSClusteringSettings', 'DBSocket',       $dsn['socket'] );
+        $fileINI->setVariable( 'eZDFSClusteringSettings', 'DBName',         $dsn['database'] );
+        $fileINI->setVariable( 'eZDFSClusteringSettings', 'DBUser',         $dsn['user'] );
+        $fileINI->setVariable( 'eZDFSClusteringSettings', 'DBPassword',     $dsn['password'] );
         $fileINI->setVariable( 'eZDFSClusteringSettings', 'MountPointPath', $this->DFSPath );
+        $fileINI->setVariable( 'eZDFSClusteringSettings', 'DBBackend',      $backend );
 
         if ( !file_exists( $this->DFSPath ) )
         {
