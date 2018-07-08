@@ -14,6 +14,10 @@
     {include uri="design:content/edit_placement.tpl"}
     <br/>
 
+    {foreach ezini( 'EditSettings', 'AdditionalTemplates', 'content.ini' ) as $additional_tpl}
+        {include uri=concat( 'design:', $additional_tpl )}
+    {/foreach}
+
     {include uri="design:content/edit_attribute.tpl"}
 
     <div class="buttonblock">
@@ -29,6 +33,7 @@
     {include uri="design:content/edit_right_menu.tpl"}
     <!-- Right part end -->
 
+    {include uri='design:content/edit_redirection.tpl'}
     </td>
 </tr>
 </table>

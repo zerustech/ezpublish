@@ -1,32 +1,12 @@
 <?php
-//
-// Definition of eZMediaType class
-//
-// Created on: <30-Apr-2002 13:06:21 bf>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * File containing the eZMediaType class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 /*!
   \class eZMediaType ezmediatype.php
@@ -43,9 +23,9 @@ class eZMediaType extends eZDataType
     const TYPE_FIELD = "data_text1";
     const TYPE_VARIABLE = "_ezmedia_type_";
 
-    function eZMediaType()
+    public function __construct()
     {
-        $this->eZDataType( self::DATA_TYPE_STRING, ezpI18n::tr( 'kernel/classes/datatypes', "Media", 'Datatype name' ),
+        parent::__construct( self::DATA_TYPE_STRING, ezpI18n::tr( 'kernel/classes/datatypes', "Media", 'Datatype name' ),
                            array( 'serialize_supported' => true ) );
     }
 
@@ -366,6 +346,11 @@ class eZMediaType extends eZDataType
             $filePath = $mediaFile->attribute( 'filename' );
             $fileHandler = eZClusterFileHandler::instance();
             $fileHandler->fileStore( $filePath, 'media', true, $mime );
+        }
+        else if ( $media->attribute( 'filename' ) == '' )
+        {
+            $media->remove();
+            return false;
         }
 
         $media->store();
@@ -788,8 +773,7 @@ class eZMediaType extends eZDataType
         }
 
         eZFileHandler::copy( $sourcePath, $destinationPath . $basename );
-        eZDebug::writeNotice( 'Copied: ' . $sourcePath . ' to: ' . $destinationPath . $basename,
-                              'eZMediaType::unserializeContentObjectAttribute()' );
+        eZDebug::writeNotice( 'Copied: ' . $sourcePath . ' to: ' . $destinationPath . $basename, __METHOD__ );
 
         $mediaFile->setAttribute( 'contentobject_attribute_id', $objectAttribute->attribute( 'id' ) );
         $mediaFile->setAttribute( 'filename', $basename );

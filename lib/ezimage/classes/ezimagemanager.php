@@ -1,32 +1,12 @@
 <?php
-//
-// Definition of eZImageManager class
-//
-// Created on: <01-Mar-2002 14:23:49 amos>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * File containing the eZImageManager class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package lib
+ */
 
 /*! \defgroup eZImage Image conversion and scaling */
 
@@ -103,11 +83,10 @@ $img1 = $img->convert( "image1.png", "cache/", // Scale PNG image and place in c
 
 class eZImageManager
 {
-    /*!
-     Initializes the manager by registering a application/octet-stream mimetype
-     which is applied for all unknown files.
-    */
-    function eZImageManager()
+    /**
+     * Initializes the manager by registering a application/octet-stream mimetype which is applied for all unknown files.
+     */
+    public function __construct()
     {
         $this->SupportedFormats = array();
         $this->SupportedMIMEMap = array();
@@ -119,6 +98,7 @@ class eZImageManager
         $this->MIMETypeSettingsMap = array();
         $this->QualityValues = array();
         $this->QualityValueMap = array();
+        $this->QualityValueMapOverride = array();
 
         $ini = eZINI::instance( 'image.ini' );
         $this->TemporaryImageDirPath = eZSys::cacheDirectory() . '/' . $ini->variable( 'FileSettings', 'TemporaryDir' );
@@ -198,6 +178,7 @@ class eZImageManager
             $alias = array( 'name' => 'original',
                             'reference' => false,
                             'mime_type' => false,
+                            'quality' => false,
                             'filters' => array() );
             $alias['alias_key'] = $this->createImageAliasKey( $alias );
             $aliasList['original'] = $alias;
@@ -295,7 +276,6 @@ class eZImageManager
     */
     function isImageTimestampValid( $timestamp )
     {
-        eZExpiryHandler::registerShutdownFunction();
         $expiryHandler = eZExpiryHandler::instance();
         if ( $expiryHandler->hasTimestamp( 'image-manager-alias' ) )
         {
@@ -326,8 +306,7 @@ class eZImageManager
                 $this->appendImageAlias( $alias );
             }
             else
-                eZDebug::writeWarning( "Failed reading Image Alias $aliasName from $iniFile",
-                                       'eZImageManager::readImageAliasFromINI' );
+                eZDebug::writeWarning( "Failed reading Image Alias $aliasName from $iniFile", __METHOD__ );
         }
         $aliasName = 'original';
         if ( !in_array( $aliasName, $aliasNames ) )
@@ -343,8 +322,7 @@ class eZImageManager
                 }
                 else
                 {
-                    eZDebug::writeWarning( "Failed reading Image Alias $aliasName from $iniFile",
-                                           'eZImageManager::readImageAliasFromINI' );
+                    eZDebug::writeWarning( "Failed reading Image Alias $aliasName from $iniFile", __METHOD__ );
                 }
             }
         }
@@ -509,9 +487,29 @@ class eZImageManager
     */
     function qualityValue( $mimeType )
     {
-        if ( isset( $this->QualityValueMap[$mimeType] ) )
+        if ( isset( $this->QualityValueMapOverride[$mimeType] ) )
+            return $this->QualityValueMapOverride[$mimeType]['value'];
+        else if ( isset( $this->QualityValueMap[$mimeType] ) )
             return $this->QualityValueMap[$mimeType]['value'];
         return false;
+    }
+
+    /*!
+     Sets a quality value override \a $qualityValue to the MIME-Type \a $mimeType in the context of an alias.
+    */
+    function setQualityValueOverride( $mimeType, $qualityValue )
+    {
+        $element = array( 'name' => $mimeType,
+                          'value' => $qualityValue );
+        $this->QualityValueMapOverride[$mimeType] = $element;
+    }
+
+    /*!
+     Reset the quality value override map if there is no alias or alias quality override
+    */
+    function resetQualityValueOverride()
+    {
+        $this->QualityValueMapOverride = array();
     }
 
     /*!
@@ -765,18 +763,20 @@ class eZImageManager
         $ini = eZINI::instance( 'image.ini' );
         if ( !$ini->hasGroup( $iniGroup ) )
         {
-            eZDebug::writeError( "No such group $iniGroup in ini file image.ini",
-                                 'eZImageManager::createAliasFromINI' );
+            eZDebug::writeError( "No such group $iniGroup in ini file image.ini", __METHOD__ );
             return false;
         }
         $alias = array( 'name' => $iniGroup,
                         'reference' => false,
                         'mime_type' => false,
+                        'quality' => false,
                         'filters' => array() );
         if ( $ini->hasVariable( $iniGroup, 'Name' ) )
             $alias['name'] = $ini->variable( $iniGroup, 'Name' );
         if ( $ini->hasVariable( $iniGroup, 'MIMEType' ) )
             $alias['mime_type'] = $ini->variable( $iniGroup, 'MIMEType' );
+        if ( $ini->hasVariable( $iniGroup, 'Quality' ) )
+            $alias['quality'] = $ini->variable( $iniGroup, 'Quality' );
         if ( $ini->hasVariable( $iniGroup, 'Filters' ) )
         {
             $filters = array();
@@ -788,7 +788,10 @@ class eZImageManager
             $alias['filters'] = $filters;
         }
         if ( $ini->hasVariable( $iniGroup, 'Reference' ) )
-            $alias['reference'] = $ini->variable( $iniGroup, 'Reference' );
+        {
+            $alias['reference'] = trim( $ini->variable( $iniGroup, 'Reference' ) );
+            $alias['reference'] = ( $alias['reference'] !== '' ) ? $alias['reference'] : false;
+        }
         return $alias;
     }
 
@@ -803,11 +806,9 @@ class eZImageManager
      * @param array $parameters
      *        Optional array that can be used to specify the image's basename
      * @return bool true if the alias was created, false if it wasn't
-     **/
+     */
     function createImageAlias( $aliasName, &$existingAliasList, $parameters = array() )
     {
-        $fname = "createImageAlias( $aliasName )";
-
         // check for $aliasName validity
         $aliasList = $this->aliasList();
         if ( !isset( $aliasList[$aliasName] ) )
@@ -823,7 +824,7 @@ class eZImageManager
         {
             eZDebug::writeError( "The referenced alias '$referenceAlias' for image alias '$aliasName' does not exist, cannot use it for reference.\n" .
                                  "Will use 'original' alias instead.",
-                                 'eZImageManager::createImageAlias' );
+                                 __METHOD__ );
             $referenceAlias = false;
         }
         if ( !$referenceAlias )
@@ -840,8 +841,7 @@ class eZImageManager
             }
             else
             {
-                eZDebug::writeError( "The reference alias $referenceAlias file {$existingAliasList[$referenceAlias]['url']} does not exist",
-                                     'eZImageManager::createImageAlias' );
+                eZDebug::writeError( "The reference alias $referenceAlias file {$existingAliasList[$referenceAlias]['url']} does not exist", __METHOD__ );
             }
         }
         if ( !$hasReference )
@@ -853,8 +853,7 @@ class eZImageManager
             }
             if ( !$this->createImageAlias( $referenceAlias, $existingAliasList, $parameters ) )
             {
-                eZDebug::writeError( "Failed creating the referenced alias $referenceAlias, cannot create alias $aliasName",
-                                     'eZImageManager::createImageAlias' );
+                eZDebug::writeError( "Failed creating the referenced alias $referenceAlias, cannot create alias $aliasName", __METHOD__ );
                 return false;
             }
         }
@@ -871,7 +870,7 @@ class eZImageManager
          * at first, destinationMimeData (mimedata for the alias we're
          * generating) is the same as sourceMimeData. It will evolve as
          * alias generation goes on
-         **/
+         */
         $destinationMimeData = $sourceMimeData;
         if ( isset( $parameters['basename'] ) )
         {
@@ -885,7 +884,7 @@ class eZImageManager
          * already being generated by another process. If it is, it will
          * return the maximum time before the generating process enters
          * generation timeout
-         **/
+         */
         while ( true )
         {
             $convertHandler = eZClusterFileHandler::instance( $sourceMimeData['url'] );
@@ -904,7 +903,7 @@ class eZImageManager
                      * if it was the same alias... sounds like a HUGE mess.
                      *
                      * Can we reload the alias list somehow ?
-                     **/
+                     */
                     $currentAliasData = array( 'url' => $destinationMimeData['url'],
                                                'dirpath' => $destinationMimeData['dirpath'],
                                                'filename' => $destinationMimeData['filename'],
@@ -934,7 +933,7 @@ class eZImageManager
                         /**
                          * we may want to fetch a unique name here, since we won't use
                          * the data for anything else
-                         **/
+                         */
                         $fileHandler = eZClusterFileHandler::instance( $destinationMimeData['url'] );
                         if ( $tempPath = $fileHandler->fetchUnique() )
                         {
@@ -945,23 +944,27 @@ class eZImageManager
                             }
                             else
                             {
-                                eZDebug::writeError("The size of the generated image {$destinationMimeData['url']} could not be read by getimagesize()", 'eZImageManager::createImageAlias' );
+                                eZDebug::writeError("The size of the generated image {$destinationMimeData['url']} could not be read by getimagesize()", __METHOD__ );
                             }
                             $fileHandler->fileDeleteLocal( $tempPath );
                         }
                         else
                         {
-                            eZDebug::writeError( "The destination image {$destinationMimeData['url']} does not exist, cannot figure out image size",
-                                'eZImageManager::createImageAlias' );
+                            eZDebug::writeError( "The destination image {$destinationMimeData['url']} does not exist, cannot figure out image size", __METHOD__ );
                         }
                     }
                     else
                     {
-                        eZDebug::writeError( "Unknown function 'getimagesize', cannot get image size", 'eZImageManager::createImageAlias' );
+                        eZDebug::writeError( "Unknown function 'getimagesize', cannot get image size", __METHOD__ );
                     }
                     $existingAliasList[$aliasName] = $currentAliasData;
 
                     $convertHandler->endCacheGeneration( false );
+
+                    // Notify about image alias generation. Parameters are alias
+                    // url and alias name.
+                    ezpEvent::getInstance()->notify( 'image/alias', array( $currentAliasData['url'],
+                                                                           $currentAliasData['name'] ) );
 
                     return true;
                 }
@@ -970,8 +973,7 @@ class eZImageManager
                 {
                     $sourceFile = $sourceMimeData['url'];
                     $destinationDir = $destinationMimeData['dirpath'];
-                    eZDebug::writeError( "Failed converting $sourceFile to alias '$aliasName' in directory '$destinationDir'",
-                                         'eZImageManager::createImageAlias' );
+                    eZDebug::writeError( "Failed converting $sourceFile to alias '$aliasName' in directory '$destinationDir'", __METHOD__ );
                     $convertHandler->abortCacheGeneration();
                     return false;
                 }
@@ -1046,11 +1048,11 @@ class eZImageManager
      * @param array $parameters
      *        Optional parameters. Known ones so far: (basename)
      * @return bool
-     **/
+     */
     function convert( $sourceMimeData, &$destinationMimeData, $aliasName = false, $parameters = array() )
     {
         // if the local file doesn't exist, we need to fetch it locally
-        if ( !file_exists( $sourceMimeData['url'] ) )
+        if ( is_array( $sourceMimeData ) && isset( $sourceMimeData['url'] ) && !file_exists( $sourceMimeData['url'] ) )
         {
             $sourceFileHandler = eZClusterFileHandler::instance( $sourceMimeData['url'] );
             $sourceFileHandler->fetch();
@@ -1071,6 +1073,7 @@ class eZImageManager
 
         $filters = array();
         $alias = false;
+        $this->resetQualityValueOverride();
         if ( $aliasName )
         {
             $aliasList = $this->aliasList();
@@ -1081,6 +1084,17 @@ class eZImageManager
                 if ( $alias['mime_type'] )
                 {
                     eZMimeType::changeMIMEType( $destinationMimeData, $alias['mime_type'] );
+                }
+                $qualityOverride = $alias['quality'];
+                if ( $qualityOverride )
+                {
+                    foreach ( $qualityOverride as $qualityOverrideValue )
+                    {
+                        $elements = explode( ';', $qualityOverrideValue );
+                        $mimeType = $elements[0];
+                        $qualityValue = $elements[1];
+                        $this->setQualityValueOverride( $mimeType, $qualityValue );
+                    }
                 }
             }
         }
@@ -1103,8 +1117,7 @@ class eZImageManager
             $wantedFilter = $wantedFilters[$wantedFilterKey];
             if ( !$this->isFilterSupported( $wantedFilter['name'] ) )
             {
-                eZDebug::writeWarning( "The filter '" . $wantedFilter['name'] . "' is not supported by any of the image handlers, will ignore this filter",
-                                       'eZImageManager::convert' );
+                eZDebug::writeWarning( "The filter '" . $wantedFilter['name'] . "' is not supported by any of the image handlers, will ignore this filter", __METHOD__ );
                 continue;
             }
             $filters[] = $wantedFilter;
@@ -1204,8 +1217,7 @@ class eZImageManager
                 }
                 if ( !$nextMimeData )
                 {
-                    eZDebug::writeError( "None of the handlers can convert MIME-Type " . $currentMimeData['name'],
-                                         'eZImageManager::convert' );
+                    eZDebug::writeError( "None of the handlers can convert MIME-Type " . $currentMimeData['name'], __METHOD__ );
                     if ( isset( $sourceFile ) )
                         $sourceFile->deleteLocal();
                     return false;
@@ -1257,6 +1269,10 @@ class eZImageManager
                         $result = false;
                         break;
                     }
+                    // store the converted file to cluster if the conversion is between mime name
+                    $fileHandler = eZClusterFileHandler::instance();
+                    $fileHandler->fileStore( $nextMimeData['url'], 'image', false, $nextMimeData['name']  );
+
                     $currentMimeData = $nextMimeData;
                 }
                 $filters = $leftoverFilters;
@@ -1291,8 +1307,7 @@ class eZImageManager
         {
             if ( !@unlink( $tempFile ) )
             {
-                eZDebug::writeError( "Failed to unlink temporary image file $tempFile",
-                                     'eZImageManager::convert' );
+                eZDebug::writeError( "Failed to unlink temporary image file $tempFile", __METHOD__ );
             }
         }
         $destinationMimeData = $currentMimeData;
@@ -1345,7 +1360,7 @@ class eZImageManager
             $mimeData['filename'] = $mimeData['basename'] . '_' . $aliasName . '.' . $mimeData['suffix'];
             $mimeData['url'] = $mimeData['dirpath'] . '/' . $mimeData['filename'];
         }
-        // eZDebug::writeDebug( $mimeData, 'return from eZImageManager::imageAliasInfo' );
+        // eZDebug::writeDebug( $mimeData, __METHOD__ );
         return $mimeData;
     }
 
@@ -1360,7 +1375,7 @@ class eZImageManager
 
     /**
      * Returns a shared instance of the eZImageManager class.
-     * Note: In most cases you'd want to use {@see self:factory()} instead.
+     * Note: In most cases you'd want to use {@link self:factory()} instead.
      *
      * @return eZImageManager
      */
@@ -1372,10 +1387,10 @@ class eZImageManager
         }
         return self::$instance;
     }
-    
+
     /**
      * Returns a shared instance of the eZImageManager class and makes it ready for use.
-     * As in calls {@see self::readINISettings()} and {@see eZImageAnalyzer::readAnalyzerSettingsFromINI()}
+     * As in calls {@link self::readINISettings()} and {@link eZImageAnalyzer::readAnalyzerSettingsFromINI()}
      *
      * @since 4.3
      * @return eZImageManager
@@ -1393,7 +1408,7 @@ class eZImageManager
 
     /**
      * Reset a shared instance of the eZImageManager class and factory variable.
-     * As used by {@see eZImageManager::instance()} and {@see eZImageManager::factory()}
+     * As used by {@link eZImageManager::instance()} and {@link eZImageManager::factory()}
      *
      * @since 4.3
      */
@@ -1401,7 +1416,7 @@ class eZImageManager
     {
         self::$instance = null;
         self::$factory = false;
-        
+
     }
 
     /// \privatesection
@@ -1415,17 +1430,17 @@ class eZImageManager
     public $Types = array();
 
     /**
-     * Singleton instance of eZImageManager used by {@see eZImageManager::instance()}
-     * Reset with {@see eZImageManager::resetInstance()} 
-     * 
+     * Singleton instance of eZImageManager used by {@link eZImageManager::instance()}
+     * Reset with {@link eZImageManager::resetInstance()}
+     *
      * @var null|eZImageManager
      */
     protected static $instance;
 
     /**
-     * Factory flag as used by {@see eZImageManager::factory()}
-     * Reset with {@see eZImageManager::resetInstance()} 
-     * 
+     * Factory flag as used by {@link eZImageManager::factory()}
+     * Reset with {@link eZImageManager::resetInstance()}
+     *
      * @var bool
      */
     protected static $factory = false;

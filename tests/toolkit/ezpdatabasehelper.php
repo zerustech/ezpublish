@@ -2,8 +2,9 @@
 /**
  * File containing the ezpDatabaseHelper class
  *
- * @copyright Copyright (C) 1999-2010 eZ Systems AS. All rights reserved.
- * @license http://ez.no/licenses/gnu_gpl GNU GPLv2
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
  * @package tests
  */
 
@@ -34,7 +35,7 @@ class ezpDatabaseHelper
      *
      * @param ezpDatabaseHelper $instance
      */
-    static function setInstance( $instance )
+    static function setInstance( ezpDatabaseHelper $instance )
     {
         $GLOBALS['ezpDatabaseHelper'] = $instance;
     }
@@ -88,7 +89,6 @@ class ezpDatabaseHelper
     static function dbAsRootInstance( ezpDsn $dsn )
     {
         $dbParams = $dsn->parts;
-        $dbParams['database'] = "";
         $dbParams['use_defaults'] = false;
 
         $db = eZDB::instance( $dsn->phptype, $dbParams, true );

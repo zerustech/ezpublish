@@ -2,19 +2,14 @@
 /**
  * File containing the eZSysTest class
  *
- * @copyright Copyright (C) 1999-2010 eZ Systems AS. All rights reserved.
- * @license http://ez.no/licenses/gnu_gpl GNU GPLv2
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
  * @package tests
  */
 
 class eZSysTest extends ezpTestCase
 {
-    public function __construct()
-    {
-        parent::__construct();
-        $this->setName( "eZSysTest" );
-    }
-
     /**
      * Test eZSys $AccessPath as it worked prior to 4.4 without propertied to
      * define scope of path with RemoveSiteAccessIfDefaultAccess=enabled
@@ -173,6 +168,65 @@ class eZSysTest extends ezpTestCase
         $ini->setVariable( 'SiteAccessSettings', 'RemoveSiteAccessIfDefaultAccess', $orgRemoveSiteaccess );
         eZSys::clearAccessPath( false );
         // -------------------------------------------------------------------
+    }
+
+    public function testIsSSLNow()
+    {
+        $ini = eZINI::instance();
+
+        self::assertFalse( eZSys::isSSLNow() );
+
+        $_SERVER['HTTP_X_FORWARDED_PROTO'] = 'https';
+        self::assertTrue( eZSys::isSSLNow() );
+        unset( $_SERVER['HTTP_X_FORWARDED_PROTO'] );
+
+        $_SERVER['HTTP_X_FORWARDED_PORT'] = $ini->variable( 'SiteSettings', 'SSLPort' );
+        self::assertTrue( eZSys::isSSLNow() );
+        unset( $_SERVER['HTTP_X_FORWARDED_PORT'] );
+
+        $_SERVER['HTTP_X_FORWARDED_SERVER'] = $ini->variable( 'SiteSettings', 'SSLProxyServerName' );
+        self::assertTrue( eZSys::isSSLNow() );
+        unset( $_SERVER['HTTP_X_FORWARDED_SERVER'] );
+    }
+
+    public function testServerProtocol()
+    {
+        self::assertEquals( 'http', eZSys::serverProtocol() );
+
+        $_SERVER['HTTP_X_FORWARDED_PROTO'] = 'https';
+        self::assertEquals( 'https', eZSys::serverProtocol() );
+        unset( $_SERVER['HTTP_X_FORWARDED_PROTO'] );
+    }
+    
+    /**
+     * Tests the protected static method getValidwwwDir of the eZSys class
+     *
+     * @dataProvider providerForTestGetValidWwwDir
+     */
+    public function testGetValidWwwDir( $expected, $phpSelf, $scriptFileName, $index )
+    {
+        $method = new ReflectionMethod( 'eZSys', 'getValidwwwDir' );
+        $method->setAccessible( true );
+
+        self::assertEquals( $expected, $method->invoke( null, $phpSelf, $scriptFileName, $index ) );
+    }
+
+    /**
+     * @return array
+     */
+    public function providerForTestGetValidWwwDir()
+    {
+        return array(
+            // expected value, script called, path of the script, name of the index
+            array( false, '', '/some/test/path/index.php', 'index.php' ),
+            array( false, '/index.php', '/some/test/path/index.php', 'indexfail.php' ),
+            array( null, '/index.php', '/some/test/path/indexfail.php', 'index.php' ),
+            array( '', '/index.php', '/some/test/path/index.php', 'index.php' ),
+            array( '~user', '/~user/index.php', '/some/test/path/user/public_html/index.php', 'index.php' ),
+            array( 'path', '/path/index.php', '/some/test/path/index.php', 'index.php' ),
+            array( 'path', '/path/index.php', '\some\test\path\index.php', 'index.php' ),
+            array( null, "/~a\"><body onload=\"alert('Xss')\">/index.php", '/some/test/path/user/public_html/index.php', 'index.php' )
+        );
     }
 
     /* -----------------------------------------------------------------------

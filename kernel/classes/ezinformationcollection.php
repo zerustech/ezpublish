@@ -1,30 +1,12 @@
 <?php
-//
-// Created on: <02-Dec-2002 13:15:49 bf>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * File containing the eZInformationCollection class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 /*!
   \class eZInformationCollection ezinformationcollection.php
@@ -38,11 +20,6 @@
 
 class eZInformationCollection extends eZPersistentObject
 {
-    function eZInformationCollection( $row )
-    {
-        $this->eZPersistentObject( $row );
-    }
-
     /*!
      \return the persistent object definition for the eZInformationCollection class.
     */
@@ -488,7 +465,7 @@ class eZInformationCollection extends eZPersistentObject
             return $sorts;
         }
 
-        eZDebug::writeWarning( 'Unknown sort field: ' . $sortField, 'eZInformationCollection ::fetchCollectionsList::getSortArrayFromParam' );
+        eZDebug::writeWarning( 'Unknown sort field: ' . $sortField, __METHOD__ );
         return null;
     }
 
@@ -547,7 +524,7 @@ class eZInformationCollection extends eZPersistentObject
             }
             else
             {
-                eZDebug::writeWarning( 'Too few parameters for setting sorting in fetch, ignoring', 'eZInformationCollection ::fetchCollectionsList' );
+                eZDebug::writeWarning( 'Too few parameters for setting sorting in fetch, ignoring', __METHOD__ );
             }
         }
 
@@ -653,7 +630,7 @@ class eZInformationCollection extends eZPersistentObject
     */
     function dataMap()
     {
-        // Retreive the indexed information collection attributes
+        // Retrieve the indexed information collection attributes
         $informationCollectionAttributes = $this->informationCollectionAttributes();
 
         $retArray = array();
@@ -707,7 +684,7 @@ class eZInformationCollection extends eZPersistentObject
         else
         {
             $userIdentifier = session_id();
-            //$userIdentifierBase = 'ezuser-anonymous-' . eZSys::serverVariable( 'REMOTE_ADDR' );
+            //$userIdentifierBase = 'ezuser-anonymous-' . eZSys::clientIP();
         }
         return $userIdentifier;
     }
@@ -745,6 +722,28 @@ class eZInformationCollection extends eZPersistentObject
         eZInformationCollectionAttribute::cleanup();
         $db->query( "DELETE FROM ezinfocollection" );
         $db->commit();
+    }
+
+    /*!
+     \static
+     \return \c true if the information collection contains sensitive data.
+    */
+    static function isCollectingSensitiveData( $contentObject )
+    {
+        $ini = eZINI::instance( 'collect.ini' );
+
+        $collectSensitiveData = $ini->variable( 'CollectionSettings', 'CollectSensitiveData' );
+
+        if ( $contentObject instanceof eZContentObject )
+        {
+            $type = eZInformationCollection::typeForObject( $contentObject );
+            $collectSensitiveDataList = $ini->variable( 'CollectionSettings', 'CollectSensitiveDataList' );
+
+            if ( isset( $collectSensitiveDataList[$type] ) )
+                $collectSensitiveData = $collectSensitiveDataList[$type];
+        }
+
+        return $collectSensitiveData === 'true';
     }
 }
 

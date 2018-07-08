@@ -2,8 +2,8 @@
 /**
  * File containing the eZContentObjectState class.
  *
- * @copyright Copyright (C) 1999-2010 eZ Systems AS. All rights reserved.
- * @license http://ez.no/licenses/gnu_gpl GNU GPL v2
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
  * @version //autogentag//
  * @package kernel
  */
@@ -18,11 +18,6 @@ class eZContentObjectState extends eZPersistentObject
 {
     const MAX_IDENTIFIER_LENGTH = 45;
 
-    function __construct( $row = array() )
-    {
-        $this->eZPersistentObject( $row );
-    }
-
     static function definition()
     {
         static $definition = array( "fields" => array( "id" => array( "name" => "ID",
@@ -30,7 +25,10 @@ class eZContentObjectState extends eZPersistentObject
                                                         "required" => true ),
                                          "group_id" => array( "name" => "GroupID",
                                                               "datatype" => "integer",
-                                                              "required" => true ),
+                                                              "required" => true,
+                                                              "foreign_class" => "eZContentObjectStateGroup",
+                                                              "foreign_attribute" => "id",
+                                                              "multiplicity" => "1..*" ),
                                          "identifier" => array( "name" => "Identifier",
                                                                 "datatype" => "string",
                                                                 "required" => true,
@@ -388,7 +386,7 @@ class eZContentObjectState extends eZPersistentObject
         }
         else
         {
-            eZPersistentObject::store( $fieldFilters );
+            parent::store( $fieldFilters );
         }
     }
 

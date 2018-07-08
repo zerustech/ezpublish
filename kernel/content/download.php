@@ -1,35 +1,15 @@
 <?php
-//
-// Created on: <15-Aug-2002 16:40:11 sp>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 $contentObjectID = $Params['ContentObjectID'];
 $contentObjectAttributeID = $Params['ContentObjectAttributeID'];
 $contentObject = eZContentObject::fetch( $contentObjectID );
-if ( !is_object( $contentObject ) )
+if ( !is_object( $contentObject ) || $contentObject->attribute( 'status' ) == eZContentObject::STATUS_ARCHIVED)
 {
     return $Module->handleError( eZError::KERNEL_NOT_AVAILABLE, 'kernel' );
 }
@@ -69,6 +49,7 @@ if ( count( $nodeAssignments ) === 0 )
 
 // If exists location that current user has access to and location is visible.
 $canAccess = false;
+$isContentDraft = $contentObject->attribute( 'status' ) == eZContentObject::STATUS_DRAFT;
 foreach ( $nodeAssignments as $nodeAssignment )
 {
     if ( ( eZContentObjectTreeNode::showInvisibleNodes() || !$nodeAssignment->attribute( 'is_invisible' ) ) and $nodeAssignment->canRead() )
@@ -77,17 +58,22 @@ foreach ( $nodeAssignments as $nodeAssignment )
         break;
     }
 }
-if ( !$canAccess )
+if ( !$canAccess && !$isContentDraft )
     return $Module->handleError( eZError::KERNEL_NOT_AVAILABLE, 'kernel' );
 
 // If $version is not current version (published)
 // we should check permission versionRead for the $version.
-if ( $version != $currentVersion )
+if ( $version != $currentVersion || $isContentDraft )
 {
     $versionObj = eZContentObjectVersion::fetchVersion( $version, $contentObjectID );
     if ( is_object( $versionObj ) and !$versionObj->canVersionRead() )
         return $Module->handleError( eZError::KERNEL_NOT_AVAILABLE, 'kernel' );
 }
+
+ezpEvent::getInstance()->notify(
+    'content/download',
+    array( 'contentObjectID' => $contentObjectID,
+           'contentObjectAttributeID' => $contentObjectAttributeID ) );
 
 $fileHandler = eZBinaryFileHandler::instance();
 $result = $fileHandler->handleDownload( $contentObject, $contentObjectAttribute, eZBinaryFileHandler::TYPE_FILE );

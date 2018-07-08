@@ -1,32 +1,12 @@
 <?php
-//
-// Definition of eZHTTPTool class
-//
-// Created on: <18-Apr-2002 14:05:21 amos>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * File containing the eZHTTPTool class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package lib
+ */
 
 /*! \defgroup eZHTTP HTTP utilities
     \ingroup eZUtils */
@@ -45,15 +25,9 @@ class eZHTTPTool
     /*!
      Initializes the class. Use eZHTTPTool::instance to get a single instance.
     */
-    function eZHTTPTool()
+    public function __construct()
     {
         $this->UseFullUrl = false;
-        $magicQuote = get_magic_quotes_gpc();
-
-        if ( $magicQuote == 1 )
-        {
-            eZHTTPTool::removeMagicQuotes();
-        }
     }
 
     /*!
@@ -245,7 +219,7 @@ class eZHTTPTool
         if ( $uriPort && !$port )
             $port = $uriPort;
         else if ( !$port )
-            $port = 80;
+            $port = ( $protocol === 'https://' ? 443 : 80 );
 
         if ( !$path )
         {
@@ -569,25 +543,16 @@ class eZHTTPTool
             $host = eZSys::hostname();
         if ( !is_string( $protocol ) )
         {
-            $protocol = 'http';
+            $protocol = eZSys::serverProtocol();
+
             // Default to https if SSL is enabled
-
-            // Check if SSL port is defined in site.ini
-            $ini = eZINI::instance();
-            $sslPort = 443;
-            if ( $ini->hasVariable( 'SiteSettings', 'SSLPort' ) )
+            if ( eZSys::isSSLNow() )
             {
-                $sslPort = $ini->variable( 'SiteSettings', 'SSLPort' );
-            }
-
-            if ( eZSys::serverPort() == $sslPort )
-            {
-                $protocol = 'https';
                 $port = false;
             }
         }
         if ( $parameters['override_protocol'] )
-            $host = $parameters['override_protocol'];
+            $protocol = $parameters['override_protocol'];
 
         $uri = $protocol . '://';
         if ( $parameters['override_username'] )
@@ -609,17 +574,19 @@ class eZHTTPTool
     }
 
     /**
-     * \static
      * Performs an HTTP redirect.
      *
-     * \param  $path  The path to redirect
-     * \param  $parameters  \see createRedirectUrl()
-     * \param  $status  The HTTP status code as a string
-     * \param  $encodeURL  Encode the URL. This should normally be true, but
-     * may be set to false to avoid double encoding when redirect() is called
-     * twice.
+     * @param string $path The path to redirect to
+     * @param array $parameters See createRedirectUrl(). Defaults to empty array.
+     * @param bool $status The HTTP status code as a string (code + text, e.g. "302 Found"). Defaults to false.
+     * @param bool $encodeURL Encodes the URL.
+     *                        This should normally be true, but may be set to false to avoid double encoding when redirect() is called twice.
+     *                        Defaults to true
+     * @param bool $returnRedirectObject If true, will return an ezpKernelRedirect object.
+     *
+     * @return null|ezpKernelRedirect
      */
-    static function redirect( $path, $parameters = array(), $status = false, $encodeURL = true )
+    static function redirect( $path, $parameters = array(), $status = false, $encodeURL = true, $returnRedirectObject = false )
     {
         $url = eZHTTPTool::createRedirectUrl( $path, $parameters );
         if ( strlen( $status ) > 0 )
@@ -634,12 +601,21 @@ class eZHTTPTool
         }
 
         eZHTTPTool::headerVariable( 'Location', $url );
-
         /* Fix for redirecting using workflows and apache 2 */
-        echo '<HTML><HEAD>';
-        echo '<META HTTP-EQUIV="Refresh" Content="0;URL='. htmlspecialchars( $url ) .'">';
-        echo '<META HTTP-EQUIV="Location" Content="'. htmlspecialchars( $url ) .'">';
-        echo '</HEAD><BODY></BODY></HTML>';
+        $escapedUrl = htmlspecialchars( $url );
+        $content = <<<EOT
+<HTML><HEAD>
+<META HTTP-EQUIV="Refresh" Content="0;URL=$escapedUrl">
+<META HTTP-EQUIV="Location" Content="$escapedUrl">
+</HEAD><BODY></BODY></HTML>
+EOT;
+
+        if ( $returnRedirectObject )
+        {
+            return new ezpKernelRedirect( $url, $status ?: null, $content );
+        }
+
+        echo $content;
     }
 
     /*!
@@ -650,46 +626,6 @@ class eZHTTPTool
     static function headerVariable( $headerName, $headerData )
     {
         header( $headerName .': '. $headerData );
-    }
-
-    static function removeMagicQuotes()
-    {
-        foreach ( array_keys( $_POST ) as $key )
-        {
-            if ( !is_array( $_POST[$key] ) )
-            {
-                $_POST[$key] = str_replace( "\'", "'", $_POST[$key] );
-                $_POST[$key] = str_replace( '\"', '"', $_POST[$key] );
-                $_POST[$key] = str_replace( '\\\\', '\\', $_POST[$key] );
-            }
-            else
-            {
-                foreach ( array_keys( $_POST[$key] ) as $arrayKey )
-                {
-                    $_POST[$key][$arrayKey] = str_replace( "\'", "'", $_POST[$key][$arrayKey] );
-                    $_POST[$key][$arrayKey] = str_replace( '\"', '"', $_POST[$key][$arrayKey] );
-                    $_POST[$key][$arrayKey] = str_replace( '\\\\', '\\', $_POST[$key][$arrayKey] );
-                }
-            }
-        }
-        foreach ( array_keys( $_GET ) as $key )
-        {
-            if ( !is_array( $_GET[$key] ) )
-            {
-                $_GET[$key] = str_replace( "\'", "'", $_GET[$key] );
-                $_GET[$key] = str_replace( '\"', '"', $_GET[$key] );
-                $_GET[$key] = str_replace( '\\\\', '\\', $_GET[$key] );
-            }
-            else
-            {
-                foreach ( array_keys( $_GET[$key] ) as $arrayKey )
-                {
-                    $_GET[$key][$arrayKey] = str_replace( "\'", "'", $_GET[$key][$arrayKey] );
-                    $_GET[$key][$arrayKey] = str_replace( '\"', '"', $_GET[$key][$arrayKey] );
-                    $_GET[$key][$arrayKey] = str_replace( '\\\\', '\\', $_GET[$key][$arrayKey] );
-                }
-            }
-        }
     }
 
     function createPostVarsFromImageButtons()
@@ -718,29 +654,6 @@ class eZHTTPTool
                 }
             }
         }
-    }
-
-    /**
-     * Return the session id
-     *
-     * @deprecated Since 4.4, use ->sessionID instead!
-     * @return string
-     */
-    function getSessionKey()
-    {
-        return session_id();
-    }
-
-    /**
-     * Sets a new session id
-     *
-     * @deprecated Since 4.4, use ->setSessionID instead!
-     * @param string $sessionKey Allowed characters in the range a-z A-Z 0-9 , (comma) and - (minus)
-     * @return string Current(old) session id
-    */
-    function setSessionKey( $sessionKey )
-    {
-        return session_id( $sessionKey );
     }
 
     /**
@@ -811,24 +724,41 @@ class eZHTTPTool
         return session_id( $sessionKey );
     }
 
-    /*!
-     \static
-     \param $url
-     \param $justCheckURL if true, we should check url only not downloading data.
-     \return data from \p $url, false if invalid URL
-    */
-    static function getDataByURL( $url, $justCheckURL = false, $userAgent = false )
+
+    /**
+     * @param string $url           url to get data from
+     * @param bool $justCheckURL    if true, we should check url only not downloading data.
+     * @param string $userAgent     override userAgent request header
+     * @param bool $forceGetRequest if true, force curl to perform a 'GET' request even if just checking url.
+     * @return string|bool          data from $url, false if invalid URL.
+     */
+    static function getDataByURL( $url, $justCheckURL = false, $userAgent = false, $forceGetRequest = false )
     {
         // First try CURL
         if ( extension_loaded( 'curl' ) )
         {
             $ch = curl_init( $url );
+            // Options used to perform in a similar way than PHP's fopen()
+            curl_setopt_array(
+                $ch,
+                array(
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_FOLLOWLOCATION => true,
+                )
+            );
+            $ini = eZINI::instance();
             if ( $justCheckURL )
             {
-                curl_setopt( $ch, CURLOPT_CONNECTTIMEOUT, 2 );
+                $connTimeout = $ini->hasVariable( 'LinkCheck', 'ConnectTimeout' ) ? (int)$ini->variable( 'LinkCheck', 'ConnectTimeout' ) : 3;
+                curl_setopt( $ch, CURLOPT_CONNECTTIMEOUT, $connTimeout );
                 curl_setopt( $ch, CURLOPT_TIMEOUT, 15 );
-                curl_setopt( $ch, CURLOPT_FAILONERROR, 1 );
-                curl_setopt( $ch, CURLOPT_NOBODY, 1 );
+                curl_setopt( $ch, CURLOPT_FAILONERROR, true );
+                curl_setopt( $ch, CURLOPT_NOBODY, true );
+                // force curl to use the 'GET' http method instead of 'HEAD' when just checking url
+                if ( $forceGetRequest )
+                {
+                    curl_setopt( $ch, CURLOPT_CUSTOMREQUEST, 'GET' );
+                }
             }
 
             if ( $userAgent )
@@ -836,7 +766,6 @@ class eZHTTPTool
                 curl_setopt( $ch, CURLOPT_USERAGENT, $userAgent );
             }
 
-            $ini = eZINI::instance();
             $proxy = $ini->hasVariable( 'ProxySettings', 'ProxyServer' ) ? $ini->variable( 'ProxySettings', 'ProxyServer' ) : false;
             // If we should use proxy
             if ( $proxy )
@@ -849,32 +778,30 @@ class eZHTTPTool
                     curl_setopt ( $ch, CURLOPT_PROXYUSERPWD, "$userName:$password" );
                 }
             }
+
+            $result = curl_exec( $ch );
+            curl_close( $ch );
+
             // If we should check url without downloading data from it.
             if ( $justCheckURL )
             {
-                if ( !curl_exec( $ch ) )
+                if ( $result !== false )
                 {
-                    curl_close( $ch );
-                    return false;
+                    return true;
                 }
-
-                curl_close( $ch );
-                return true;
-            }
-            // Getting data
-            ob_start();
-            if ( !curl_exec( $ch ) )
-            {
-                curl_close( $ch );
-                ob_end_clean();
+                if ( !$forceGetRequest )
+                {
+                    // if HEAD request failed with anything other than a 404, repeating using a GET request
+                    $httpCode = curl_getinfo( $ch, CURLINFO_HTTP_CODE );
+                    if ( $httpCode != 404 )
+                    {
+                        return self::getDataByURL( $url, $justCheckURL, $userAgent, true );
+                    }
+                }
                 return false;
             }
 
-            curl_close ( $ch );
-            $data = ob_get_contents();
-            ob_end_clean();
-
-            return $data;
+            return $result;
         }
 
         if ( $userAgent )

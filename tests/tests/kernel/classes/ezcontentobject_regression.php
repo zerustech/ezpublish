@@ -2,8 +2,9 @@
 /**
  * File containing the eZContentObjectRegression class
  *
- * @copyright Copyright (C) 1999-2010 eZ Systems AS. All rights reserved.
- * @license http://ez.no/licenses/gnu_gpl GNU GPLv2
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
  * @package tests
  */
 
@@ -218,7 +219,7 @@ class eZContentObjectRegression extends ezpDatabaseTestCase
                 'object_id' => $folder->id,
                 'sort_by' => array( array( 'name', true ), array( 'foo', false ) ) ) );
 
-        self::assertType( 'array', $result );
+        self::assertInternalType( 'array', $result );
         self::assertEquals( 4, count( $result ), "Expecting 4 objects fetched" );
 
         // Sort by name:
@@ -235,7 +236,7 @@ class eZContentObjectRegression extends ezpDatabaseTestCase
             array(
                 'object_id' => $folder->id,
                 'sort_by' => array( 'foo', false ) ) );
-        self::assertType( 'array', $result );
+        self::assertInternalType( 'array', $result );
         self::assertEquals( 4, count( $result ), "Expecting 4 objects fetched" );
 
         // Call the fetch reverse_related_objects fetch function
@@ -246,8 +247,26 @@ class eZContentObjectRegression extends ezpDatabaseTestCase
         array(
             'object_id' => $folder->id,
             'sort_by' => array( 'class_identifier', true ) ) );
-        self::assertType( 'array', $result );
+        self::assertInternalType( 'array', $result );
         self::assertEquals( 4, count( $result ), "Expecting 4 objects fetched" );
+    }
+
+    /**
+     * Test scenario for issue #15985 : Debug notices when translating an 
+     * object to a new language
+     *
+     * @group issue_15985
+     */
+    public function testIssue15985()
+    {
+        $folder = new ezpObject( "folder", 2, 14, 1, 'eng-GB' );
+        $folder->name = __FUNCTION__;
+        $folder->object->setAttribute( 'always_available', 1 );
+        $folder->publish();
+
+        $nameNorNO = $folder->object->versionLanguageName( 1, 'nor-NO' );
+        self::assertInternalType( 'string', $nameNorNO, 'Expecting to get a string (not false)' );
+        self::assertEquals( __FUNCTION__, $nameNorNO );
     }
 }
 

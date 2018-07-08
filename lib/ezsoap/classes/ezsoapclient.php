@@ -1,35 +1,12 @@
 <?php
-//
-// $Id$
-//
-// Definition of eZSOAPClient class
-//
-// B�rd Farstad <bf@ez.no>
-// Created on: <19-Feb-2002 15:42:03 bf>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * File containing the eZSOAPClient class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package lib
+ */
 
 /*!
   \class eZSOAPClient ezsoapclient.php
@@ -39,10 +16,6 @@
   eZSOAPClient handles communication with a SOAP server.
 
   \code
-
-// include client classes
-//include_once( "lib/ezsoap/classes/ezsoapclient.php" );
-//include_once( "lib/ezsoap/classes/ezsoaprequest.php" );
 
 // create a new client
 $client = new eZSOAPClient( "nextgen.bf.dvh1.ez.no", "/sdk/ezsoap/view/server" );
@@ -74,17 +47,17 @@ else
 
 class eZSOAPClient
 {
-    /*!
-      Creates a new SOAP client.
-
-      \param $server The remote server to connect to
-      \param $path The path to the SOAP service on the remote server
-      \param $port The port to connect to, 80 by default. You can use 'ssl' as well to specify that you want to use port 443 over SSL,
-                   but omit the last parameter $useSSL of this method then or set it to true. When $port equals 443, SSL will also be
-                   used if $useSSL is omitted or set to true.
-      \param $useSSL If we need to connect to the remote server with (https://) or without (http://) SSL
-    */
-    function eZSOAPClient( $server, $path = '/', $port = 80, $useSSL = null )
+    /**
+     * Creates a new SOAP client.
+     *
+     * @param string $server The remote server to connect to
+     * @param string $path The path to the SOAP service on the remote server
+     * @param int $port The port to connect to, 80 by default. You can use 'ssl' as well to specify that you want
+     *                  to use port 443 over SSL, but omit the last parameter $useSSL of this method then or set it
+     *                  to true. When $port equals 443, SSL will also be used if $useSSL is omitted or set to true.
+     * @param bool $useSSL If we need to connect to the remote server with (https://) or without (http://) SSL
+     */
+    public function __construct( $server, $path = '/', $port = 80, $useSSL = null )
     {
         $this->Login = "";
         $this->Password = "";
@@ -191,7 +164,7 @@ class eZSOAPClient
                 $ch = curl_init ( $URL );
                 if ( $this->Timeout != 0 )
                 {
-                    curl_setopt( $ch, CURLOPT_TIMEOUT, $this->TimeOut );
+                    curl_setopt( $ch, CURLOPT_TIMEOUT, $this->Timeout );
                 }
                 $payload = $request->payload();
 
@@ -210,8 +183,6 @@ class eZSOAPClient
                     $HTTPCall .= "\r\n" . $payload;
 
                     curl_setopt( $ch, CURLOPT_URL, $URL );
-                    curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, false );
-                    curl_setopt( $ch, CURLOPT_SSL_VERIFYHOST, 1 );
                     curl_setopt( $ch, CURLOPT_HEADER, 1 );
                     curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
                     curl_setopt( $ch, CURLOPT_CUSTOMREQUEST, $HTTPCall );  // Don't use CURLOPT_CUSTOMREQUEST without making sure your server supports the custom request method first.

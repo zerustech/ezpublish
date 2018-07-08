@@ -1,32 +1,12 @@
 <?php
-//
-// Definition of eZLog class
-//
-// Created on: <17-Mar-2003 11:00:54 wy>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * File containing the eZLog class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package lib
+ */
 
 /*! \defgroup eZUtils Utility classes */
 
@@ -42,13 +22,6 @@ class eZLog
     const MAX_LOGFILE_SIZE = 204800; // 200*1024
 
     /*!
-      Creates a new log object.
-    */
-    function eZLog( )
-    {
-    }
-
-    /*!
      \static
      \public
      Writes a message $message to a given file name $name and directory $dir for logging
@@ -58,7 +31,7 @@ class eZLog
         $fileName = $dir . '/' . $logName;
         $oldumask = @umask( 0 );
 
-        $fileExisted = @file_exists( $fileName );
+        $fileExisted = file_exists( $fileName );
         if ( $fileExisted and
              filesize( $fileName ) > eZLog::maxLogSize() )
         {
@@ -87,7 +60,7 @@ class eZLog
         }
         else
         {
-            eZDebug::writeError( 'Couldn\'t create the log file "' . $fileName . '"', 'eZLog::write()' );
+            eZDebug::writeError( 'Couldn\'t create the log file "' . $fileName . '"', __METHOD__ );
         }
     }
 
@@ -104,7 +77,8 @@ class eZLog
         $fileName = $varDir . '/' . $logDir . '/' . $logName;
         $oldumask = @umask( 0 );
 
-        $fileExisted = @file_exists( $fileName );
+        clearstatcache( true, $fileName );
+        $fileExisted = file_exists( $fileName );
         if ( $fileExisted and
              filesize( $fileName ) > eZLog::maxLogSize() )
         {
@@ -142,25 +116,32 @@ class eZLog
         }
         else
         {
-            eZDebug::writeError( 'Couldn\'t create the log file "' . $fileName . '"', 'eZLog::writeStorageLog()' );
+            eZDebug::writeError( 'Couldn\'t create the log file "' . $fileName . '"', __METHOD__ );
         }
     }
 
     /*!
      \static
-     \return the maxium size for a log file in bytes.
+     \return the maximum size for a log file in bytes.
     */
     static function maxLogSize()
     {
         $maxLogSize =& $GLOBALS['eZMaxLogSize'];
         if ( isset( $maxLogSize ) )
+        {
             return $maxLogSize;
+        }
+        else if ( defined( 'CUSTOM_LOG_MAX_FILE_SIZE' ) )
+        {
+            self::setMaxLogSize( (int)CUSTOM_LOG_MAX_FILE_SIZE );
+            return (int)CUSTOM_LOG_MAX_FILE_SIZE;
+        }
         return self::MAX_LOGFILE_SIZE;
     }
 
     /*!
      \static
-     Sets the maxium size for a log file to \a $size.
+     Sets the maximum size for a log file to \a $size.
     */
     static function setMaxLogSize( $size )
     {
@@ -169,13 +150,20 @@ class eZLog
 
     /*!
      \static
-     \return the maxium number of logrotate files to keep.
+     \return the maximum number of logrotate files to keep.
     */
     static function maxLogrotateFiles()
     {
         $maxLogrotateFiles =& $GLOBALS['eZMaxLogrotateFiles'];
         if ( isset( $maxLogrotateFiles ) )
+        {
             return $maxLogrotateFiles;
+        }
+        else if ( defined( 'CUSTOM_LOG_ROTATE_FILES' ) )
+        {
+            self::setLogrotateFiles( (int)CUSTOM_LOG_ROTATE_FILES );
+            return (int)CUSTOM_LOG_ROTATE_FILES;
+        }
         return self::MAX_LOGROTATE_FILES;
     }
 
@@ -189,10 +177,14 @@ class eZLog
     static function rotateLog( $fileName )
     {
         $maxLogrotateFiles = eZLog::maxLogrotateFiles();
+        if ( $maxLogrotateFiles == 0 )
+        {
+            return;
+        }
         for ( $i = $maxLogrotateFiles; $i > 0; --$i )
         {
             $logRotateName = $fileName . '.' . $i;
-            if ( @file_exists( $logRotateName ) )
+            if ( file_exists( $logRotateName ) )
             {
                 if ( $i == $maxLogrotateFiles )
                 {
@@ -205,7 +197,7 @@ class eZLog
                 }
             }
         }
-        if ( @file_exists( $fileName ) )
+        if ( file_exists( $fileName ) )
         {
             $newLogRotateName = $fileName . '.' . 1;
             eZFile::rename( $fileName, $newLogRotateName );
@@ -216,7 +208,7 @@ class eZLog
 
     /*!
      \static
-     Sets the maxium number of logrotate files to keep to \a $files.
+     Sets the maximum number of logrotate files to keep to \a $files.
     */
     static function setLogrotateFiles( $files )
     {

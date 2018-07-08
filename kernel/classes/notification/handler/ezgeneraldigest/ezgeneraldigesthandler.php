@@ -1,35 +1,12 @@
 <?php
-//
-// Definition of eZGeneralDigestHandler class
-//
-// Created on: <16-May-2003 10:55:24 sp>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
-
-/*! \file
-*/
+/**
+ * File containing the eZGeneralDigestHandler class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 /*!
   \class eZGeneralDigestHandler ezgeneraldigesthandler.php
@@ -40,12 +17,9 @@ class eZGeneralDigestHandler extends eZNotificationEventHandler
 {
     const NOTIFICATION_HANDLER_ID = 'ezgeneraldigest';
 
-    /*!
-     Constructor
-    */
-    function eZGeneralDigestHandler()
+    public function __construct()
     {
-        $this->eZNotificationEventHandler( self::NOTIFICATION_HANDLER_ID, "General Digest Handler" );
+        parent::__construct( self::NOTIFICATION_HANDLER_ID, "General Digest Handler" );
 
     }
 
@@ -113,11 +87,10 @@ class eZGeneralDigestHandler extends eZNotificationEventHandler
         {
             $user = eZUser::currentUser();
         }
-        $address = $user->attribute( 'email' );
-        $settings = eZGeneralDigestUserSettings::fetchForUser( $address );
+        $settings = eZGeneralDigestUserSettings::fetchByUserId( $user->attribute( 'contentobject_id' ) );
         if ( $settings == null )
         {
-            $settings = eZGeneralDigestUserSettings::create( $address );
+            $settings = eZGeneralDigestUserSettings::create( $user->attribute( 'contentobject_id' ) );
             $settings->store();
         }
         return $settings;
@@ -134,7 +107,9 @@ class eZGeneralDigestHandler extends eZNotificationEventHandler
             $addressArray = $this->fetchUsersForDigest( $timestamp );
 
             $tpl = eZTemplate::factory();
+            $prevTplUsageStats = $tpl->setIsTemplatesUsageStatisticsEnabled( false );
 
+            $transport = eZNotificationTransport::instance( 'ezmail' );
             foreach ( $addressArray as $address )
             {
                 $tpl->setVariable( 'date', $date );
@@ -146,13 +121,14 @@ class eZGeneralDigestHandler extends eZNotificationEventHandler
                 if ( $tpl->hasVariable( 'content_type' ) )
                     $parameters['content_type'] = $tpl->variable( 'content_type' );
 
-                $transport = eZNotificationTransport::instance( 'ezmail' );
                 $transport->send( $address, $subject, $result, null, $parameters );
                 eZDebugSetting::writeDebug( 'kernel-notification', $result, "digest result" );
             }
 
             $collectionItemIDList = $tpl->variable( 'collection_item_id_list' );
             eZDebugSetting::writeDebug( 'kernel-notification', $collectionItemIDList, "handled items" );
+
+            $tpl->setIsTemplatesUsageStatisticsEnabled( $prevTplUsageStats );
 
             if ( is_array( $collectionItemIDList ) && count( $collectionItemIDList ) > 0 )
             {
@@ -236,8 +212,7 @@ class eZGeneralDigestHandler extends eZNotificationEventHandler
     function storeSettings( $http, $module )
     {
         $user = eZUser::currentUser();
-        $address = $user->attribute( 'email' );
-        $settings = eZGeneralDigestUserSettings::fetchForUser( $address );
+        $settings = eZGeneralDigestUserSettings::fetchByUserId( $user->attribute( 'contentobject_id' ) );
 
         if ( $http->hasPostVariable( 'ReceiveDigest_' . self::NOTIFICATION_HANDLER_ID ) &&
              $http->hasPostVariable( 'ReceiveDigest_' . self::NOTIFICATION_HANDLER_ID ) == '1' )

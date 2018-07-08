@@ -1,4 +1,12 @@
 <?php
+/**
+ * File containing the eZImageShellHandlerTest class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package tests
+ */
 
 class eZImageShellHandlerTest extends ezpTestCase
 {
@@ -6,7 +14,7 @@ class eZImageShellHandlerTest extends ezpTestCase
     {
         parent::setUp();
 
-        exec( eZINI::instance( "image.ini" )->variable( "ImageMagick", "Executable" ) . " -version", $output, $returnValue );
+        exec( eZINI::instance( "image.ini" )->variable( "ImageMagick", "Executable" ) . " -version 2>&1", $output, $returnValue );
         if ( $returnValue !== 0 )
         {
             $this->markTestSkipped( 'ImageMagick is not installed' );
@@ -31,7 +39,8 @@ class eZImageShellHandlerTest extends ezpTestCase
      */
     public function testIssue15406()
     {
-        $this->imageManager->convert( "tests/tests/lib/ezimage/data/andernach.jpg", $dest = "tests/tests/lib/ezimage/data/andernach_result.jpg", "small" );
+        $dest = "tests/tests/lib/ezimage/data/andernach_result.jpg";
+        $this->imageManager->convert( "tests/tests/lib/ezimage/data/andernach.jpg", $dest, "small" );
         $this->assertTrue( file_exists( "tests/tests/lib/ezimage/data/andernach_small.jpg" ) );
     }
 }

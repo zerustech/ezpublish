@@ -1,34 +1,12 @@
 <?php
-//
-// Definition of eZFloatValidator class
-//
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
-
-/*! \file
-*/
+/**
+ * File containing the eZFloatValidator class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package lib
+ */
 
 /*!
   \class eZFloatValidator ezintegervalidator.php
@@ -38,15 +16,18 @@
 
 class eZFloatValidator extends eZRegExpValidator
 {
-    /*!
-     Constructor
-    */
-    function eZFloatValidator( $min = false, $max = false )
+    /**
+     * Constructor
+     *
+     * @param float|bool $min
+     * @param float|bool $max
+     */
+    public function __construct( $min = false, $max = false )
     {
         $rule = array( "accepted" => "/^-?[0-9]+([.][0-9]+)?$/",
                        "intermediate" => "/(-?[0-9]+([.][0-9]+)?)/",
                        "fixup" => "" );
-        $this->eZRegExpValidator( $rule );
+        parent::__construct( $rule );
         $this->MinValue = $min;
         $this->MaxValue = $max;
         if ( $max !== false and $min !== false )

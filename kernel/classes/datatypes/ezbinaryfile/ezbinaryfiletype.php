@@ -1,32 +1,12 @@
 <?php
-//
-// Definition of eZBinaryFileType class
-//
-// Created on: <30-Apr-2002 13:06:21 bf>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * File containing the eZBinaryFileType class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 /*!
   \class eZBinaryFileType ezbinaryfiletype.php
@@ -43,9 +23,9 @@ class eZBinaryFileType extends eZDataType
 
     const DATA_TYPE_STRING = "ezbinaryfile";
 
-    function eZBinaryFileType()
+    public function __construct()
     {
-        $this->eZDataType( self::DATA_TYPE_STRING, ezpI18n::tr( 'kernel/classes/datatypes', "File", 'Datatype name' ),
+        parent::__construct( self::DATA_TYPE_STRING, ezpI18n::tr( 'kernel/classes/datatypes', "File", 'Datatype name' ),
                            array( 'serialize_supported' => true ) );
     }
 
@@ -305,55 +285,71 @@ class eZBinaryFileType extends eZDataType
     function fetchObjectAttributeHTTPInput( $http, $base, $contentObjectAttribute )
     {
         eZBinaryFileType::checkFileUploads();
+        if ( $this->isDeletingFile( $http, $contentObjectAttribute ) )
+        {
+            return false;
+        }
+
         if ( !eZHTTPFile::canFetch( $base . "_data_binaryfilename_" . $contentObjectAttribute->attribute( "id" ) ) )
             return false;
 
-        $binaryFile = eZHTTPFile::fetch( $base . "_data_binaryfilename_" . $contentObjectAttribute->attribute( "id" ) );
+        $httpBinaryFile = eZHTTPFile::fetch( $base . "_data_binaryfilename_" . $contentObjectAttribute->attribute( "id" ) );
 
-        $contentObjectAttribute->setContent( $binaryFile );
+        $contentObjectAttribute->setContent( $httpBinaryFile );
 
-        if ( $binaryFile instanceof eZHTTPFile )
+        if ( $httpBinaryFile instanceof eZHTTPFile )
         {
             $contentObjectAttributeID = $contentObjectAttribute->attribute( "id" );
             $version = $contentObjectAttribute->attribute( "version" );
 
             /*
             $mimeObj = new  eZMimeType();
-            $mimeData = $mimeObj->findByURL( $binaryFile->attribute( "original_filename" ), true );
+            $mimeData = $mimeObj->findByURL( $httpBinaryFile->attribute( "original_filename" ), true );
             $mime = $mimeData['name'];
             */
 
-            $mimeData = eZMimeType::findByFileContents( $binaryFile->attribute( "original_filename" ) );
+            $mimeData = eZMimeType::findByFileContents( $httpBinaryFile->attribute( "original_filename" ) );
             $mime = $mimeData['name'];
 
             if ( $mime == '' )
             {
-                $mime = $binaryFile->attribute( "mime_type" );
+                $mime = $httpBinaryFile->attribute( "mime_type" );
             }
-            $extension = eZFile::suffix( $binaryFile->attribute( "original_filename" ) );
-            $binaryFile->setMimeType( $mime );
-            if ( !$binaryFile->store( "original", $extension ) )
+            $extension = eZFile::suffix( $httpBinaryFile->attribute( "original_filename" ) );
+            $httpBinaryFile->setMimeType( $mime );
+            if ( !$httpBinaryFile->store( "original", $extension ) )
             {
-                eZDebug::writeError( "Failed to store http-file: " . $binaryFile->attribute( "original_filename" ),
+                eZDebug::writeError( "Failed to store http-file: " . $httpBinaryFile->attribute( "original_filename" ),
                                      "eZBinaryFileType" );
                 return false;
             }
 
             $binary = eZBinaryFile::fetch( $contentObjectAttributeID, $version );
             if ( $binary === null )
+            {
                 $binary = eZBinaryFile::create( $contentObjectAttributeID, $version );
+            }
+            else
+            {
+                // if storing a different file for the same version, see if the existing file can be removed.
+                $newFileName = basename( $httpBinaryFile->attribute( "filename" ) );
+                if ( $newFileName != $binary->Filename )
+                {
+                    $this->deleteStoredObjectAttribute( $contentObjectAttribute, $version );
+                }
+            }
 
-            $orig_dir = $binaryFile->storageDir( "original" );
+            $orig_dir = $httpBinaryFile->storageDir( "original" );
 
             $binary->setAttribute( "contentobject_attribute_id", $contentObjectAttributeID );
             $binary->setAttribute( "version", $version );
-            $binary->setAttribute( "filename", basename( $binaryFile->attribute( "filename" ) ) );
-            $binary->setAttribute( "original_filename", $binaryFile->attribute( "original_filename" ) );
+            $binary->setAttribute( "filename", basename( $httpBinaryFile->attribute( "filename" ) ) );
+            $binary->setAttribute( "original_filename", $httpBinaryFile->attribute( "original_filename" ) );
             $binary->setAttribute( "mime_type", $mime );
 
             $binary->store();
 
-            $filePath = $binaryFile->attribute( 'filename' );
+            $filePath = $httpBinaryFile->attribute( 'filename' );
             $fileHandler = eZClusterFileHandler::instance();
             $fileHandler->fileStore( $filePath, 'binaryfile', true, $mime );
 
@@ -413,10 +409,14 @@ class eZBinaryFileType extends eZDataType
 
         $httpFile->setMimeType( $mimeData['name'] );
 
+        $suffix = false;
+        if ( isset( $mimeData['suffix'] ) )
+            $suffix = $mimeData['suffix'];
+
         $db = eZDB::instance();
         $db->begin();
 
-        if ( !$httpFile->store( "original", false, false ) )
+        if ( !$httpFile->store( "original", $suffix, false ) )
         {
             $result['errors'][] = array( 'description' => ezpI18n::tr( 'kernel/classes/datatypes/ezbinaryfile',
                                                         'Failed to store file %filename. Please contact the site administrator.', null,
@@ -700,8 +700,7 @@ class eZBinaryFileType extends eZDataType
 
         if ( !file_exists( $sourcePath ) )
         {
-            eZDebug::writeError( "The file '$sourcePath' does not exist, cannot initialize file attribute with it",
-                                 'eZBinaryFileType::unserializeContentObjectAttribute' );
+            eZDebug::writeError( "The file '$sourcePath' does not exist, cannot initialize file attribute with it", __METHOD__ );
             return false;
         }
 
@@ -727,8 +726,7 @@ class eZBinaryFileType extends eZDataType
         }
 
         eZFileHandler::copy( $sourcePath, $destinationPath . $basename );
-        eZDebug::writeNotice( 'Copied: ' . $sourcePath . ' to: ' . $destinationPath . $basename,
-                              'eZBinaryFileType::unserializeContentObjectAttribute()' );
+        eZDebug::writeNotice( 'Copied: ' . $sourcePath . ' to: ' . $destinationPath . $basename, __METHOD__ );
 
         $binaryFile->setAttribute( 'contentobject_attribute_id', $objectAttribute->attribute( 'id' ) );
         $binaryFile->setAttribute( 'filename', $basename );
@@ -744,6 +742,28 @@ class eZBinaryFileType extends eZDataType
     function supportsBatchInitializeObjectAttribute()
     {
         return true;
+    }
+
+    /**
+     * Checks if current HTTP request is asking for current binary file deletion
+     * @param eZHTTPTool $http
+     * @param eZContentObjectAttribute $contentObjectAttribute
+     * @return bool
+     */
+    private function isDeletingFile( eZHTTPTool $http, eZContentObjectAttribute $contentObjectAttribute )
+    {
+        $isDeletingFile = false;
+        if ( $http->hasPostVariable( 'CustomActionButton' ) )
+        {
+            $customActionArray = $http->postVariable( 'CustomActionButton' );
+            $attributeID = $contentObjectAttribute->attribute( 'id' );
+            if ( isset( $customActionArray[$attributeID . '_delete_binary'] ) )
+            {
+                $isDeletingFile = true;
+            }
+        }
+
+        return $isDeletingFile;
     }
 }
 

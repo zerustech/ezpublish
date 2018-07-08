@@ -1,4 +1,12 @@
 <?php
+/**
+ * File containing the eZMailTest class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package tests
+ */
 
 class eZMailTest extends ezpTestCase
 {
@@ -792,7 +800,7 @@ class eZMailTest extends ezpTestCase
             }
 
             // Open mailbox and delete all existing emails in the account
-            $mbox = imap_open( $mboxString, $recipient['username'], $recipient['password'] );
+            $mbox = @imap_open( $mboxString, $recipient['username'], $recipient['password'] );
             if ( !$mbox )
             {
                 $this->markTestSkipped( 'Cannot open mailbox for ' . $recipient['username'] . ': ' . imap_last_error() );
@@ -852,7 +860,7 @@ class eZMailTest extends ezpTestCase
         // Read emails
         foreach ( $recipients as $recipient )
         {
-            $mbox = imap_open( $mboxString, $recipient['username'], $recipient['password'] );
+            $mbox = @imap_open( $mboxString, $recipient['username'], $recipient['password'] );
             if ( !$mbox )
             {
                 $this->markTestSkipped( 'Cannot open mailbox for ' . $recipient['username'] . ': ' . imap_last_error() );
@@ -959,11 +967,6 @@ class eZMailTest extends ezpTestCase
         $mail->setBody( 'This is a mail testing. TEST SSL in ' . __METHOD__ );
         $result = eZMailTransport::send( $mail );
         $this->assertTrue( $result );
-
-        // test 25 port
-        $siteINI->setVariable( 'MailSettings', 'TransportPort', '25' );
-        $result = eZMailTransport::send( $mail );
-        $this->assertFalse( $result );
 
         $siteINI->setVariables( array( 'MailSettings' => $backupSetting ) );
 

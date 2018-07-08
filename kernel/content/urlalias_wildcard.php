@@ -1,35 +1,12 @@
 <?php
-//
-// Created on: <14-Nov-2007 11:27:10 dl>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
-/*! \file
-*/
-
-
+/** @var eZModule $Module */
 $Module =& $Params['Module'];
 $http = eZHTTPTool::instance();
 
@@ -72,6 +49,7 @@ else if ( $Module->isCurrentAction( 'RemoveWildcard' ) )
 else if ( $Module->isCurrentAction( 'NewWildcard' ) )
 {
     $wildcardSrcText = trim( $Module->actionParameter( 'WildcardSourceText' ) );
+    $wildcardSrcText = ltrim( $wildcardSrcText, '/' );
     $wildcardDstText = trim( $Module->actionParameter( 'WildcardDestinationText' ) );
     $wildcardType = $http->hasPostVariable( 'WildcardType' ) && strlen( trim( $http->postVariable( 'WildcardType' ) ) ) > 0;
 
@@ -127,6 +105,7 @@ $limitList = array( array( 'id'    => 1,
                     array( 'id'    => 4,
                            'value' => 100 ) );
 $limitID = eZPreferences::value( 'admin_urlwildcard_list_limit' );
+$limitValues = array();
 foreach ( $limitList as $limitEntry )
 {
     $limitIDs[]                     = $limitEntry['id'];

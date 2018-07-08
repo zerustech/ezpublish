@@ -1,31 +1,10 @@
 <?php
-//
-// Created on: <02-May-2002 16:24:15 bf>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
-
+/**
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 //$Module->setExitStatus( EZ_MODULE_STATUS_SHOW_LOGIN_PAGE );
 
@@ -49,7 +28,7 @@ if ( isset( $Params['SiteAccessName'] ) )
     $siteAccessName = $Params['SiteAccessName'];
 
 $postData = ''; // Will contain post data from previous page.
-if ( $http->hasSessionVariable( '$_POST_BeforeLogin' ) )
+if ( $http->hasSessionVariable( '$_POST_BeforeLogin', false ) )
 {
     $postData = $http->sessionVariable( '$_POST_BeforeLogin' );
     $http->removeSessionVariable( '$_POST_BeforeLogin' );
@@ -71,10 +50,14 @@ if ( $Module->isCurrentAction( 'Login' ) and
         $requireUserLogin = ( $ini->variable( "SiteAccessSettings", "RequireUserLogin" ) == "true" );
         if ( !$requireUserLogin )
         {
-            $userRedirectURI = $http->postVariable( 'RedirectURI', $http->sessionVariable( 'LastAccessesURI', '/' ) );
+            $userRedirectURI = trim( $http->postVariable( 'RedirectURI', '' ) );
+            if ( empty( $userRedirectURI ) )
+            {
+                $userRedirectURI = $http->sessionVariable( 'LastAccessesURI', '/' );
+            }
         }
 
-        if ( $http->hasSessionVariable( "RedirectAfterLogin" ) )
+        if ( $http->hasSessionVariable( "RedirectAfterLogin", false ) )
         {
             $userRedirectURI = $http->sessionVariable( "RedirectAfterLogin" );
         }
@@ -96,9 +79,11 @@ if ( $Module->isCurrentAction( 'Login' ) and
     $user = false;
     if ( $userLogin != '' )
     {
-        $http->removeSessionVariable( 'RedirectAfterLogin' );
+        if ( $http->hasSessionVariable( "RedirectAfterLogin", false ) )
+        {
+            $http->removeSessionVariable( 'RedirectAfterLogin' );
+        }
 
-        $ini = eZINI::instance();
         if ( $ini->hasVariable( 'UserSettings', 'LoginHandler' ) )
         {
             $loginHandlers = $ini->variable( 'UserSettings', 'LoginHandler' );
@@ -108,6 +93,15 @@ if ( $Module->isCurrentAction( 'Login' ) and
             $loginHandlers = array( 'standard' );
         }
         $hasAccessToSite = true;
+
+        if ( $http->hasPostVariable( 'Cookie' )
+            && $ini->hasVariable( 'Session', 'RememberMeTimeout' )
+            && ( $rememberMeTimeout = $ini->variable( 'Session', 'RememberMeTimeout' ) )
+        )
+        {
+            eZSession::setCookieLifetime( $rememberMeTimeout );
+        }
+
         foreach ( array_keys ( $loginHandlers ) as $key )
         {
             $loginHandler = $loginHandlers[$key];
@@ -165,7 +159,6 @@ if ( $Module->isCurrentAction( 'Login' ) and
         // First, let's determine which attributes we should search redirection URI in.
         $userUriAttrName  = '';
         $groupUriAttrName = '';
-        $ini = eZINI::instance();
         if ( $ini->hasVariable( 'UserSettings', 'LoginRedirectionUriAttribute' ) )
         {
             $uriAttrNames = $ini->variable( 'UserSettings', 'LoginRedirectionUriAttribute' );
@@ -247,19 +240,6 @@ if ( $Module->isCurrentAction( 'Login' ) and
         $userID = $user->id();
     if ( $userID > 0 )
     {
-        if ( $http->hasPostVariable( 'Cookie' ) )
-        {
-            $ini = eZINI::instance();
-            $rememberMeTimeout = $ini->hasVariable( 'Session', 'RememberMeTimeout' )
-                                 ? $ini->variable( 'Session', 'RememberMeTimeout' )
-                                 : false;
-            if ( $rememberMeTimeout )
-            {
-                eZSession::stop();
-                eZSession::start( $rememberMeTimeout );
-            }
-
-        }
         $http->removeSessionVariable( 'eZUserLoggedInID' );
         $http->setSessionVariable( 'eZUserLoggedInID', $userID );
 
@@ -294,7 +274,6 @@ $maxNumOfFailedLogin = !eZUser::isTrusted() ? eZUser::maxNumberOfFailedLogin() :
 // Should we show message about failed login attempt and max number of failed login
 if ( $loginWarning and isset( $GLOBALS['eZFailedLoginAttemptUserID'] ) )
 {
-    $ini = eZINI::instance();
     $showMessageIfExceeded = $ini->hasVariable( 'UserSettings', 'ShowMessageIfExceeded' ) ? $ini->variable( 'UserSettings', 'ShowMessageIfExceeded' ) == 'true' : false;
 
     $failedUserID = $GLOBALS['eZFailedLoginAttemptUserID'];
@@ -310,7 +289,7 @@ $tpl = eZTemplate::factory();
 $tpl->setVariable( 'login', $userLogin, 'User' );
 $tpl->setVariable( 'post_data', $postData, 'User' );
 $tpl->setVariable( 'password', $userPassword, 'User' );
-$tpl->setVariable( 'redirect_uri', $userRedirectURI, 'User' );
+$tpl->setVariable( 'redirect_uri', $userRedirectURI . eZSys::queryString(), 'User' );
 $tpl->setVariable( 'warning', array( 'bad_login' => $loginWarning ), 'User' );
 
 $tpl->setVariable( 'site_access', array( 'allowed' => $siteAccessAllowed,

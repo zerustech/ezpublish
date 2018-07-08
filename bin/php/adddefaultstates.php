@@ -1,7 +1,15 @@
 #!/usr/bin/env php
 <?php
+/**
+ * File containing the adddefaultstates.php script.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
-require 'autoload.php';
+require_once 'autoload.php';
 
 $cli = eZCLI::instance();
 
@@ -9,7 +17,7 @@ $scriptSettings = array();
 $scriptSettings['description'] = 'Adds default states to content objects';
 $scriptSettings['use-session'] = true;
 $scriptSettings['use-modules'] = false;
-$scriptSettings['use-extensions'] = false;
+$scriptSettings['use-extensions'] = true;
 
 $script = eZScript::instance( $scriptSettings );
 $script->startup();

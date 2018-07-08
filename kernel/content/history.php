@@ -1,31 +1,10 @@
 <?php
-//
-// Created on: <22-Apr-2002 15:41:30 bf>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
-
+/**
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 $tpl = eZTemplate::factory();
 $http = eZHTTPTool::instance();
@@ -285,57 +264,15 @@ if ( $Module->isCurrentAction( 'CopyVersion' )  )
         return $Module->handleError( eZError::KERNEL_ACCESS_DENIED, 'kernel' );
     }
 
-    // Check the version limit for the object's class
-    $versionlimit = eZContentClass::versionHistoryLimit( $object->attribute( 'contentclass_id' ) );
-    $versionCount = $object->getVersionCount();
-    if ( $versionCount < $versionlimit )
+    // Copying version (versionHistoryLimit is done in eZContentObject createNewVersion() )
+    $db = eZDB::instance();
+    $db->begin();
+    $newVersionID = $object->copyRevertTo( $versionID, $language );
+    $db->commit();
+
+    if ( !$http->hasPostVariable( 'DoNotEditAfterCopy' ) )
     {
-        $db = eZDB::instance();
-        $db->begin();
-        $newVersionID = $object->copyRevertTo( $versionID, $language );
-        $db->commit();
-
-        if ( !$http->hasPostVariable( 'DoNotEditAfterCopy' ) )
-        {
-            return $Module->redirectToView( 'edit', array( $ObjectID, $newVersionID, $language ) );
-        }
-    }
-    else
-    {
-        $params = array( 'conditions'=> array( 'status' => eZContentObjectVersion::STATUS_ARCHIVED ) );
-        $versions = $object->versions( true, $params );
-        if ( count( $versions ) > 0 )
-        {
-            $modified = $versions[0]->attribute( 'modified' );
-            $removeVersion = $versions[0];
-            foreach ( $versions as $version )
-            {
-                $currentModified = $version->attribute( 'modified' );
-                if ( $currentModified < $modified )
-                {
-                    $modified = $currentModified;
-                    $removeVersion = $version;
-                }
-            }
-
-            $db = eZDB::instance();
-            $db->begin();
-            $removeVersion->removeThis();
-            $newVersionID = $object->copyRevertTo( $versionID, $language );
-            $db->commit();
-
-            if ( !$http->hasPostVariable( 'DoNotEditAfterCopy' ) )
-            {
-                return $Module->redirectToView( 'edit', array( $ObjectID, $newVersionID, $language ) );
-            }
-        }
-        else
-        {
-            $http->setSessionVariable( 'ExcessVersionHistoryLimit', true );
-            $currentVersion = $object->attribute( 'current_version' );
-            $Module->redirectToView( 'history', array( $ObjectID, $currentVersion ) );
-            return eZModule::HOOK_STATUS_CANCEL_RUN;
-        }
+        return $Module->redirectToView( 'edit', array( $ObjectID, $newVersionID, $language ) );
     }
 }
 
@@ -354,7 +291,7 @@ if( $section )
     $res->setKeys( array( array( 'section_identifier', $section->attribute( 'identifier' ) ) ) );
 }
 
-$versionArray =( isset( $versionArray ) and is_array( $versionArray ) ) ? array_unique( $versionArray ) : array();
+$versionArray =( isset( $versionArray ) && is_array( $versionArray ) ) ? array_unique( $versionArray, SORT_REGULAR ) : array();
 $LastAccessesVersionURI = $http->hasSessionVariable( 'LastAccessesVersionURI' ) ? $http->sessionVariable( 'LastAccessesVersionURI' ) : null;
 $explodedURI = $LastAccessesVersionURI ? explode ( '/', $LastAccessesVersionURI ) : null;
 if ( $LastAccessesVersionURI and is_array( $versionArray ) and !in_array( $explodedURI[3], $versionArray ) )

@@ -1,35 +1,12 @@
 <?php
-//
-// Definition of eZContentUpload class
-//
-// Created on: <28-Apr-2003 11:04:47 sp>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
-
-/*! \file
-*/
+/**
+ * File containing the eZContentUpload class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 /*!
   \class eZContentUpload ezcontentupload.php
@@ -73,11 +50,13 @@ class eZContentUpload
 
     const STATUS_PERMISSION_DENIED = 1;
 
-    /*!
-     Initializes the object with the session data if they are found.
-     If \a $params is supplied it used instead.
-    */
-    function eZContentUpload( $params = false )
+    /**
+     * Initializes the object with the session data if they are found.
+     * If $params is supplied it is used instead.
+     *
+     * @param bool $params
+     */
+    public function __construct( $params = false )
     {
         $http = eZHTTPTool::instance();
         if ( !$params && $http->hasSessionVariable( 'ContentUploadParameters' ) )
@@ -118,7 +97,7 @@ class eZContentUpload
             return $this->Parameters[$attributeName];
         }
 
-        eZDebug::writeError( "Attribute '$attributeName' does not exist", 'eZContentUpload::attribute' );
+        eZDebug::writeError( "Attribute '$attributeName' does not exist", __METHOD__ );
         return null;
     }
 
@@ -213,21 +192,31 @@ class eZContentUpload
         }
     }
 
-    /*!
-     Fetches the local file, figures out its MIME-type and creates the proper content object out of it.
-
-     \param $filePath Path to file which should be stored.
-     \param $result Result data, will be filled with information which the client can examine, contains:
-                    - errors - An array with errors, each element is an array with \c 'description' containing the text
-     \param $location The node ID which the new object will be placed or the string \c 'auto' for automatic placement of type.
-     \param $existingNode Pass a contentobjecttreenode object to let the uploading be done to an existing object,
-                          if not it will create one from scratch.
-
-     \return \c false if something failed or \c true if succesful.
-     \note Transaction unsafe. If you call several transaction unsafe methods you must enclose
-     the calls within a db transaction; thus within db->begin and db->commit.
-    */
-    function handleLocalFile( &$result, $filePath, $location, $existingNode, $nameString = '' )
+    /**
+     * Fetches the local file, figures out its MIME-type and creates the
+     * proper content object out of it.
+     *
+     * @param array $result
+     *        Result data, will be filled with information which the client can
+     *        examine, contains: errors An array with errors, each element is
+     *        an array with a 'description' entry containing the text
+     * @param string $filePath
+     *        Path to file which should be stored
+     * @param mixed $location
+     *        The node ID which the new object will be placed or the string
+     *        'auto' for automatic placement of type.
+     * @param eZContentObjectTreeNode|false $existingNode
+     *        Pass a contentobjecttreenode object to let the uploading be done
+     *        to an existing object, if not it will create one from scratch.
+     * @param string $nameString
+     *        The name of the new object/new version
+     * @param string|false $localeCode
+     *        Locale code (eg eng-GB, fre-FR, ...) to use when creating the
+     *        object or the version.
+     *
+     * @return boolean
+     */
+    function handleLocalFile( &$result, $filePath, $location, $existingNode, $nameString = '', $localeCode = false )
     {
         $result = array( 'errors' => array(),
                          'notices' => array(),
@@ -259,7 +248,7 @@ class eZContentUpload
         // The handler will be responsible for the rest of the execution.
         if ( is_object( $handler ) )
         {
-            $originalFilename = $filePath;
+            $originalFilename = $nameString != '' ? $nameString : $filePath;
             return $handler->handleFile( $this, $result,
                                          $filePath, $originalFilename, $mimeData,
                                          $location, $existingNode );
@@ -383,20 +372,24 @@ class eZContentUpload
                                                     'Permission denied' ) );
                 return false;
             }
-            $version = $object->createNewVersion( false, true );
+            $version = $object->createNewVersion( false, true, $localeCode );
             unset( $dataMap );
             $dataMap = $version->dataMap();
             $publishVersion = $version->attribute( 'version' );
         }
         else
         {
-            $object = $class->instantiate();
+            $object = $class->instantiateIn( $localeCode );
             unset( $dataMap );
             $dataMap = $object->dataMap();
             $publishVersion = $object->attribute( 'current_version' );
         }
 
-        $status = $dataMap[$fileAttribute]->insertRegularFile( $object, $publishVersion, eZContentObject::defaultLanguage(),
+        if ( $localeCode === false )
+        {
+            $localeCode = eZContentObject::defaultLanguage();
+        }
+        $status = $dataMap[$fileAttribute]->insertRegularFile( $object, $publishVersion, $localeCode,
                                                                $filePath,
                                                                $storeResult );
         if ( $status === null )
@@ -415,7 +408,7 @@ class eZContentUpload
         if ( $storeResult['require_storage'] )
             $dataMap[$fileAttribute]->store();
 
-        $status = $dataMap[$nameAttribute]->insertSimpleString( $object, $publishVersion, eZContentObject::defaultLanguage(),
+        $status = $dataMap[$nameAttribute]->insertSimpleString( $object, $publishVersion, $localeCode,
                                                                 $nameString,
                                                                 $storeResult );
         if ( $status === null )
@@ -434,25 +427,48 @@ class eZContentUpload
         if ( $storeResult['require_storage'] )
             $dataMap[$nameAttribute]->store();
 
+        if ( is_array( $parentNodes ) )
+        {
+            foreach ( $parentNodes as $parentNode )
+            {
+                $object->createNodeAssignment(
+                    $parentNode,
+                    $parentNode == $parentMainNode
+                );
+            }
+        }
+
         return $this->publishObject( $result, $result['errors'], $result['notices'],
                                      $object, $publishVersion, $class, $parentNodes, $parentMainNode );
     }
 
-    /*!
-     Fetches the uploaded file, figures out its MIME-type and creates the proper content object out of it.
-
-     \param $httpFileIdentifier The HTTP identifier of the uploaded file, this must match the \em name of your \em input tag.
-     \param $result Result data, will be filled with information which the client can examine, contains:
-                    - errors - An array with errors, each element is an array with \c 'description' containing the text
-     \param $location The node ID which the new object will be placed or the string \c 'auto' for automatic placement of type.
-     \param $existingNode Pass a contentobjecttreenode object to let the uploading be done to an existing object,
-                          if not it will create one from scratch.
-
-     \return \c false if something failed or \c true if succesful.
-     \note Transaction unsafe. If you call several transaction unsafe methods you must enclose
-     the calls within a db transaction; thus within db->begin and db->commit.
-    */
-    function handleUpload( &$result, $httpFileIdentifier, $location, $existingNode, $nameString = '' )
+    /**
+     * Fetches the uploaded file, figures out its MIME-type and creates the
+     * proper content object out of it.
+     *
+     * @param array $result
+     *        Result data, will be filled with information which the client can
+     *        examine, contains: errors An array with errors, each element is
+     *        an array with a 'description' entry containing the text
+     * @param string $httpFileIdentifier
+     *        The HTTP identifier of the uploaded file, this must match the
+     *        name of the input tag.
+     * @param mixed $location
+     *        The node ID which the new object will be placed or the string
+     *        'auto' for automatic placement of type.
+     * @param eZContentObjectTreeNode|false $existingNode
+     *        Pass a contentobjecttreenode object to let the uploading be done
+     *        to an existing object, if not it will create one from scratch.
+     * @param string $nameString
+     *        The name of the new object/new version
+     * @param string|false $localeCode
+     *        Locale code (eg eng-GB, fre-FR, ...) to use when creating the
+     *        object or the version.
+     * @param boolean $publish whether to publish the new created content object
+     *
+     * @return boolean
+     */
+    function handleUpload( &$result, $httpFileIdentifier, $location, $existingNode, $nameString = '', $localeCode = false, $publish = true )
     {
         $result = array( 'errors' => array(),
                          'notices' => array(),
@@ -632,14 +648,14 @@ class eZContentUpload
                 $db->commit();
                 return false;
             }
-            $version = $object->createNewVersion( false, true );
+            $version = $object->createNewVersion( false, true, $localeCode );
             unset( $dataMap );
             $dataMap = $version->dataMap();
             $publishVersion = $version->attribute( 'version' );
         }
         else
         {
-            $object = $class->instantiate();
+            $object = $class->instantiateIn( $localeCode );
             unset( $dataMap );
             $dataMap = $object->dataMap();
             $publishVersion = $object->attribute( 'current_version' );
@@ -648,7 +664,11 @@ class eZContentUpload
         unset( $dataMap );
         $dataMap = $object->dataMap();
 
-        $status = $dataMap[$fileAttribute]->insertHTTPFile( $object, $publishVersion, eZContentObject::defaultLanguage(),
+        if ( $localeCode === false )
+        {
+            $localeCode = eZContentObject::defaultLanguage();
+        }
+        $status = $dataMap[$fileAttribute]->insertHTTPFile( $object, $publishVersion, $localeCode,
                                                             $file, $mimeData,
                                                             $storeResult );
         if ( $status === null )
@@ -669,7 +689,7 @@ class eZContentUpload
         if ( $storeResult['require_storage'] )
             $dataMap[$fileAttribute]->store();
 
-        $status = $dataMap[$nameAttribute]->insertSimpleString( $object, $publishVersion, eZContentObject::defaultLanguage(),
+        $status = $dataMap[$nameAttribute]->insertSimpleString( $object, $publishVersion, $localeCode,
                                                                 $nameString,
                                                                 $storeResult );
         if ( $status === null )
@@ -690,8 +710,43 @@ class eZContentUpload
         if ( $storeResult['require_storage'] )
             $dataMap[$nameAttribute]->store();
 
-        $tmpresult = $this->publishObject( $result, $result['errors'], $result['notices'],
-                                           $object, $publishVersion, $class, $parentNodes, $parentMainNode );
+        if ( is_array( $parentNodes ) )
+        {
+            foreach ( $parentNodes as $key => $parentNode )
+            {
+                $object->createNodeAssignment(
+                    $parentNode,
+                    $parentNode == $parentMainNode
+                );
+            }
+        }
+
+        $object->setName( $class->contentObjectName( $object ) );
+        $object->store();
+
+        if ( $publish )
+        {
+            $tmpresult = $this->publishObject(
+                $result, $result['errors'], $result['notices'],
+                $object, $publishVersion, $class, $parentNodes, $parentMainNode
+            );
+        }
+        else
+        {
+            $tmpresult = $result;
+            $tmpresult['contentobject'] = $object;
+            $tmpresult['contentobject_id'] = $object->attribute( 'id' );
+            $tmpresult['contentobject_version'] = $publishVersion;
+            $tmpresult['contentobject_main_node'] = false;
+            $tmpresult['contentobject_main_node_id'] = false;
+            $this->setResult(
+                array(
+                    'node_id' => 0,
+                    'object_id' => $object->attribute( 'id' ),
+                    'object_version' => $publishVersion
+                )
+            );
+        }
 
         $db->commit();
         return $tmpresult;
@@ -706,17 +761,6 @@ class eZContentUpload
     function publishObject( &$result, &$errors, &$notices,
                             $object, $publishVersion, $class, $parentNodes, $parentMainNode )
     {
-        if ( is_array( $parentNodes ) )
-        {
-            foreach ( $parentNodes as $key => $parentNode )
-            {
-                $object->createNodeAssignment( $parentNode, $parentNode == $parentMainNode );
-            }
-        }
-
-        $object->setName( $class->contentObjectName( $object ) );
-        $object->store();
-
         $operationResult = eZOperationHandler::execute( 'content', 'publish', array( 'object_id' => $object->attribute( 'id' ),
                                                                                      'version' => $publishVersion ) );
 
@@ -765,8 +809,12 @@ class eZContentUpload
 
         $mainNode = $object->mainNode();
         $result['contentobject_main_node'] = $mainNode;
-        $result['contentobject_main_node_id'] = $mainNode->attribute( 'node_id' );
-        $this->setResult( array( 'node_id' => $mainNode->attribute( 'node_id' ),
+
+        // The published object may not have a node if publishing was interrupted
+        $mainNodeId = $mainNode ? $mainNode->attribute( 'node_id' ) : 0;
+
+        $result['contentobject_main_node_id'] = $mainNodeId;
+        $this->setResult( array( 'node_id' => $mainNodeId,
                                  'object_id' => $object->attribute( 'id' ),
                                  'object_version' => $publishVersion ) );
 
@@ -808,17 +856,31 @@ class eZContentUpload
         return false;
     }
 
-    /*!
-     \private
-     Fetches the HTTP-File into \a $file and fills in MIME-Type information into \a $mimeData.
-     \return \c false if something went wrong.
-    */
+    /**
+     * Fetches the HTTP-File into $file and fills in MIME-Type information into $mimeData.
+     *
+     * @return bool false if something went wrong.
+     */
     function fetchHTTPFile( $httpFileIdentifier, &$errors, &$file, &$mimeData )
     {
-        if ( !eZHTTPFile::canFetch( $httpFileIdentifier ) )
+        $returnCode = eZHTTPFile::canFetch( $httpFileIdentifier, 0 );
+        if ( $returnCode !== eZHTTPFile::UPLOADEDFILE_OK && $returnCode !== true )
         {
-            $errors[] = array( 'description' => ezpI18n::tr( 'kernel/content/upload',
-                                                        'A file is required for upload, no file were found.' ) );
+            switch ( $returnCode )
+            {
+                case eZHTTPFile::UPLOADEDFILE_DOES_NOT_EXIST:
+                    $errors[] = array( 'description' => ezpI18n::tr( 'kernel/content/upload', 'A file is required for upload, no file were found.' ) );
+                    break;
+                case eZHTTPFile::UPLOADEDFILE_EXCEEDS_PHP_LIMIT:
+                case eZHTTPFile::UPLOADEDFILE_EXCEEDS_MAX_SIZE:
+                    $errors[] = array( 'description' => ezpI18n::tr( 'kernel/content/upload', 'The uploaded file size is above the maximum limit.' ) );
+                    break;
+                case eZHTTPFile::UPLOADEDFILE_MISSING_TMP_DIR:
+                case eZHTTPFile::UPLOADEDFILE_CANT_WRITE:
+                case eZHTTPFile::UPLOADEDFILE_UNKNOWN_ERROR:
+                    $errors[] = array( 'description' => ezpI18n::tr( 'kernel/content/upload', 'A system error occured while writing the uploaded file.' ) );
+                    break;
+            }
             return false;
         }
 
@@ -832,7 +894,7 @@ class eZContentUpload
 
         $mimeData = eZMimeType::findByFileContents( $file->attribute( "original_filename" ) );
 
-        return false;
+        return true;
     }
 
     /*!
@@ -1035,7 +1097,7 @@ class eZContentUpload
 
                             if ( !eZContentUpload::checkAccess( $parentNodeID, $class ) )
                             {
-                                eZDebug::writeNotice( "Upload assignment setting '$classData' skipped - no permissions", 'eZContentUpload::detectLocations' );
+                                eZDebug::writeNotice( "Upload assignment setting '$classData' skipped - no permissions", __METHOD__ );
                                 $parentNodes = false;
                                 break;
                             }
@@ -1043,7 +1105,7 @@ class eZContentUpload
 
                         if ( $parentNodes )
                         {
-                            eZDebug::writeNotice( "Matched assignment for upload :'$classData'", 'eZContentUpload::detectLocations' );
+                            eZDebug::writeNotice( "Matched assignment for upload :'$classData'", __METHOD__ );
                             break;
                         }
                     }
@@ -1060,7 +1122,7 @@ class eZContentUpload
                         }
                         else
                         {
-                            eZDebug::writeNotice( "No create permission for default upload location: node #$defaultNodeID", 'eZContentUpload::detectLocations' );
+                            eZDebug::writeNotice( "No create permission for default upload location: node #$defaultNodeID", __METHOD__ );
                             return null;
                         }
 
@@ -1078,7 +1140,7 @@ class eZContentUpload
                     }
                     else
                     {
-                        eZDebug::writeNotice( "No create permission for upload location: node #$locationID", 'eZContentUpload::detectLocations' );
+                        eZDebug::writeNotice( "No create permission for upload location: node #$locationID", __METHOD__ );
                         return null;
                     }
                 }
@@ -1330,7 +1392,7 @@ class eZContentUpload
                 $handler = new $handlerClass();
                 if ( !$handler instanceof eZContentUploadHandler )
                 {
-                    eZDebug::writeError( "Content upload handler '$handlerName' is not inherited from eZContentUploadHandler. All upload handlers must do this.", 'eZContentUpload::findHandler' );
+                    eZDebug::writeError( "Content upload handler '$handlerName' is not inherited from eZContentUploadHandler. All upload handlers must do this.", __METHOD__ );
                     return false;
                 }
                 return $handler;

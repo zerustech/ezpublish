@@ -1,32 +1,12 @@
 <?php
-//
-// Definition of eZDataType class
-//
-// Created on: <16-Apr-2002 11:08:14 amos>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * File containing the eZDataType class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 /*! \defgroup eZDataType Content datatypes */
 
@@ -64,11 +44,14 @@
 
 class eZDataType
 {
-    /*!
-     Initializes the datatype with the string id \a $dataTypeString and
-     the name \a $name.
-    */
-    function eZDataType( $dataTypeString, $name, $properties = array() )
+    /**
+     * Initializes the datatype with the string id $dataTypeString and the name $name.
+     *
+     * @param string $dataTypeString
+     * @param string $name
+     * @param array $properties
+     */
+    public function __construct( $dataTypeString, $name, $properties = array() )
     {
         $this->DataTypeString = $dataTypeString;
         $this->Name = $name;
@@ -92,6 +75,18 @@ class eZDataType
         $this->Attributes["properties"] = array( "translation_allowed" => $translationAllowed,
                                                  'serialize_supported' => $serializeSupported,
                                                  'object_serialize_map' => $objectSerializeMap );
+    }
+
+    /**
+     * @deprecated Use eZDataType::__construct() instead
+     * @param string $dataTypeString
+     * @param string $name
+     * @param array $properties
+     */
+    public function eZDataType( $dataTypeString, $name, $properties = array() )
+    {
+        self::__construct( $dataTypeString, $name, $properties );
+
     }
 
     /*!
@@ -258,7 +253,7 @@ class eZDataType
             return $this->Attributes[$attr];
         }
 
-        eZDebug::writeError( "Attribute '$attr' does not exist", 'eZDataType::attribute' );
+        eZDebug::writeError( "Attribute '$attr' does not exist", __METHOD__ );
         $attributeData = null;
         return $attributeData;
     }
@@ -293,6 +288,16 @@ class eZDataType
         return false;
     }
 
+    /**
+     * Indicates if the datatype handles relations
+     *
+     * @return bool
+     */
+    public function isRelationType()
+    {
+        return false;
+    }
+
     /*!
      \virtual
      Inserts the HTTP file \a $httpFile to the content object attribute \a $objectAttribute.
@@ -318,8 +323,7 @@ class eZDataType
                              $objectAttribute, $httpFile, $mimeData,
                              &$result )
     {
-        eZDebug::writeWarning( "The datatype " . get_class( $this ) . " for attribute ID " . $objectAttribute->attribute( 'id' ) . " does not support insertion of HTTP files",
-                               'eZDataType::insertHTTPFile' );
+        eZDebug::writeWarning( "The datatype " . get_class( $this ) . " for attribute ID " . $objectAttribute->attribute( 'id' ) . " does not support insertion of HTTP files", __METHOD__ );
         return null;
     }
 
@@ -346,8 +350,7 @@ class eZDataType
                                 $objectAttribute, $filePath,
                                 &$result )
     {
-        eZDebug::writeWarning( "The datatype " . get_class( $this ) . " for attribute ID " . $objectAttribute->attribute( 'id' ) . " does not support insertion of regular files",
-                               'eZDataType::insertRegularFile' );
+        eZDebug::writeWarning( "The datatype " . get_class( $this ) . " for attribute ID " . $objectAttribute->attribute( 'id' ) . " does not support insertion of regular files", __METHOD__ );
         return null;
     }
 
@@ -374,8 +377,7 @@ class eZDataType
                                  $objectAttribute, $string,
                                  &$result )
     {
-        eZDebug::writeWarning( "The datatype " . get_class( $this ) . " for attribute ID " . $objectAttribute->attribute( 'id' ) . " does not support insertion of simple strings",
-                               'eZDataType::insertSimplestring' );
+        eZDebug::writeWarning( "The datatype " . get_class( $this ) . " for attribute ID " . $objectAttribute->attribute( 'id' ) . " does not support insertion of simple strings", __METHOD__ );
         return null;
     }
 
@@ -460,8 +462,7 @@ class eZDataType
     */
     function productOptionInformation( $objectAttribute, $optionID, $productItem )
     {
-        eZDebug::writeWarning( "The datatype " . get_class( $this ) . " for attribute ID " . $objectAttribute->attribute( 'id' ) . " does not support product options",
-                               'eZDataType::productOptionInformation' );
+        eZDebug::writeWarning( "The datatype " . get_class( $this ) . " for attribute ID " . $objectAttribute->attribute( 'id' ) . " does not support product options", __METHOD__ );
         return null;
     }
 
@@ -896,10 +897,12 @@ class eZDataType
     {
     }
 
-    /*!
-     Initializes the object attribute with some data.
-     \note Default implementation does nothing.
-    */
+    /**
+     * Initializes the object attribute with some data.
+     * @param eZContentObjectAttribute $objectAttribute
+     * @param int $currentVersion
+     * @param eZContentObjectAttribute $originalContentObjectAttribute
+     */
     function initializeObjectAttribute( $objectAttribute, $currentVersion, $originalContentObjectAttribute )
     {
     }
@@ -936,10 +939,21 @@ class eZDataType
     {
     }
 
-    /*!
-     Clean up stored object attribute
-     \note Default implementation does nothing.
-    */
+    /**
+     * Restores the content object attribute $objectAttribute from trash
+     * Default implementation does nothing
+     * @param eZContentObjectAttribute $objectAttribute
+     */
+    public function restoreTrashedObjectAttribute( $objectAttribute )
+    {
+    }
+
+    /**
+     * Deletes $objectAttribute datatype data, optionally in version $version.
+     *
+     * @param eZContentObjectAttribute $objectAttribute
+     * @param int $version
+     */
     function deleteStoredObjectAttribute( $objectAttribute, $version = null )
     {
     }
@@ -949,6 +963,16 @@ class eZDataType
      \note Default implementation does nothing.
     */
     function deleteStoredClassAttribute( $classAttribute, $version = null )
+    {
+    }
+
+    /**
+     * Clean up stored class attribute for content class that is not versioned.
+     * Note: Default implementation does nothing
+     *
+     * @param eZContentClassAttribute $classAttribute
+     */
+    function deleteNotVersionedStoredClassAttribute( eZContentClassAttribute $classAttribute )
     {
     }
 
@@ -973,7 +997,7 @@ class eZDataType
         }
         else
         {
-            eZDebug::writeError( '$classAttribute isn\'t an object.', 'eZDataType::contentActionList' );
+            eZDebug::writeError( '$classAttribute isn\'t an object.', __METHOD__ );
         }
         return $actionList;
     }
@@ -1181,8 +1205,7 @@ class eZDataType
                 }
                 else
                 {
-                    eZDebug::writeError( "The attribute '$attributeName' does not exist for contentobject attribute " . $objectAttribute->attribute( 'id' ),
-                                         'eZDataType::serializeContentObjectAttribute' );
+                    eZDebug::writeError( "The attribute '$attributeName' does not exist for contentobject attribute " . $objectAttribute->attribute( 'id' ), __METHOD__ );
                 }
             }
         }
@@ -1225,14 +1248,12 @@ class eZDataType
                     }
                     else
                     {
-                        eZDebug::writeError( "The xml element '$xmlName' does not exist for contentobject attribute " . $objectAttribute->attribute( 'id' ),
-                                             'eZDataType::unserializeContentObjectAttribute' );
+                        eZDebug::writeError( "The xml element '$xmlName' does not exist for contentobject attribute " . $objectAttribute->attribute( 'id' ), __METHOD__ );
                     }
                 }
                 else
                 {
-                    eZDebug::writeError( "The attribute '$attributeName' does not exist for contentobject attribute " . $objectAttribute->attribute( 'id' ),
-                                         'eZDataType::unserializeContentObjectAttribute' );
+                    eZDebug::writeError( "The attribute '$attributeName' does not exist for contentobject attribute " . $objectAttribute->attribute( 'id' ), __METHOD__ );
                 }
             }
         }
@@ -1318,7 +1339,7 @@ class eZDataType
         }
         if ( !$foundEventType )
         {
-            eZDebug::writeError( "Datatype not found: '$type', searched in these directories: " . implode( ', ', $triedDirectories ), "eZDataType::loadAndRegisterType" );
+            eZDebug::writeError( "Datatype not found: '$type', searched in these directories: " . implode( ', ', $triedDirectories ), __METHOD__ );
             return false;
         }
         include_once( $includeFile );

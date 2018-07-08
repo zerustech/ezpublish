@@ -2,21 +2,23 @@
 /**
  * File containing the ezpLanguageSwitcher class
  *
- * @copyright Copyright (C) 1999-2010 eZ Systems AS. All rights reserved.
- * @license http://ez.no/licenses/gnu_gpl GNU GPLv2
- *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
  */
 
 /**
-* Utility class for transforming URLs between siteaccesses.
-* 
-* This class will generate URLs for various siteaccess, and translate
-* URL-aliases into other languages as necessary.
-*/
+ * Utility class for transforming URLs between siteaccesses.
+ *
+ * This class will generate URLs for various siteaccess, and translate
+ * URL-aliases into other languages as necessary.
+ */
 class ezpLanguageSwitcher implements ezpLanguageSwitcherCapable
 {
     protected $origUrl;
     protected $userParamString;
+    protected $queryString;
 
     protected $destinationSiteAccess;
     protected $destinationLocale;
@@ -42,12 +44,13 @@ class ezpLanguageSwitcher implements ezpLanguageSwitcherCapable
         {
             $this->userParamString .= "/($key)/$value";
         }
+
+        $this->queryString = isset( $params['QueryString'] ) ? $params['QueryString'] : '';
     }
 
     /**
      * Get instance siteaccess specific site.ini
      *
-     * @param string $sa
      * @return void
      */
     protected function getSiteAccessIni()
@@ -65,7 +68,7 @@ class ezpLanguageSwitcher implements ezpLanguageSwitcherCapable
      * We use this method to check whether we should pass on the original URL
      * to the destination translation siteaccess.
      *
-     * @param string $url 
+     * @param string $url
      * @return bool
      */
     protected function isUrlPointingToModule( $url )
@@ -101,21 +104,83 @@ class ezpLanguageSwitcher implements ezpLanguageSwitcherCapable
         return in_array( $currentContentObjectLocale, $siteLanguageList, true );
     }
 
+
+    /**
+     * Prepend PathPrefix from the current SA to url, if applicable
+     *
+     * @param  string $url
+     *
+     * @return string The url with pathprefix prepended
+     */
+    protected static function addPathPrefixIfNeeded( $url )
+    {
+        $siteINI = eZINI::instance( 'site.ini' );
+        if ( $siteINI->hasVariable( 'SiteAccessSettings', 'PathPrefix' ) )
+        {
+            $pathPrefix = $siteINI->variable( 'SiteAccessSettings', 'PathPrefix' );
+            if ( !empty( $pathPrefix ) )
+            {
+                $url = $pathPrefix . '/' . $url;
+            }
+        }
+        return $url;
+    }
+
+    /**
+     * Remove PathPrefix from url, if applicable (present in siteaccess and matched in url)
+     *
+     * @param  eZINI  $saIni eZINI instance of site.ini for the siteaccess to check
+     * @param  string $url
+     *
+     * @return bool   true if no PathPrefix exists, or removed from url. false if not removed.
+     */
+    protected static function removePathPrefixIfNeeded( eZINI $saIni, &$url )
+    {
+        if ( $saIni->hasVariable( 'SiteAccessSettings', 'PathPrefix' ) )
+        {
+            $pathPrefix = $saIni->variable( 'SiteAccessSettings', 'PathPrefix' );
+            if ( !empty( $pathPrefix ) )
+            {
+                if ( ( strpos( $url, $pathPrefix . '/' ) === 0 ) || ( $pathPrefix === $url ) )
+                {
+                    $url = substr( $url, strlen( $pathPrefix ) + 1 );
+                }
+                else
+                {
+                    // PathPrefix exists, but not matched in url.
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
     /**
      * Returns URL alias for the specified <var>$locale</var>
      *
-     * @param string $url 
-     * @param string $locale 
      * @return void
      */
     public function destinationUrl()
     {
         $nodeId = $this->origUrl;
+        $urlAlias = '';
+
         if ( !is_numeric( $this->origUrl ) )
         {
+            if ( !$this->isUrlPointingToModule( $this->origUrl ) )
+            {
+                $this->origUrl = self::addPathPrefixIfNeeded( $this->origUrl );
+            }
+
             $nodeId = eZURLAliasML::fetchNodeIDByPath( $this->origUrl );
         }
-        $destinationElement = eZURLAliasML::fetchByAction( 'eznode', $nodeId, $this->destinationLocale, false );
+
+        $siteLanguageList = $this->getSiteAccessIni()->variable( 'RegionalSettings', 'SiteLanguageList' );
+        // set prioritized languages of destination SA, and fetch corresponding (prioritized) URL alias
+        eZContentLanguage::setPrioritizedLanguages( $siteLanguageList );
+        $destinationElement = eZURLAliasML::fetchByAction( 'eznode', $nodeId, false, true );
+
+        eZContentLanguage::clearPrioritizedLanguages();
 
         if ( empty( $destinationElement ) || ( !isset( $destinationElement[0] ) && !( $destinationElement[0] instanceof eZURLAliasML ) ) )
         {
@@ -123,39 +188,49 @@ class ezpLanguageSwitcher implements ezpLanguageSwitcherCapable
             // of different things:
             // Either we are looking at a module, and we should pass the
             // original URL on
-            // 
+            //
             // Or we are looking at URL which does not exist in the
             // destination siteaccess, for instance an untranslated object. In
             // which case we will point to the root of the site, unless it is
             // available as a fallback.
-
-            if ( $this->isUrlPointingToModule( $this->origUrl ) ||
-                 $this->isLocaleAvailableAsFallback() )
+            if ( $nodeId )
             {
-                // We have a module, we're keeping the orignal url.
                 $urlAlias = $this->origUrl;
+
+                // if applicable, remove destination PathPrefix from url
+                if ( !self::removePathPrefixIfNeeded( $this->getSiteAccessIni(), $urlAlias ) )
+                {
+                    // If destination siteaccess has a PathPrefix but url is not matched,
+                    // also check current SA's prefix, and remove if it matches.
+                    self::removePathPrefixIfNeeded( eZINI::instance( 'site.ini' ), $urlAlias );
+                }
             }
             else
             {
-                // We probably have an untranslated object, which is not
-                // available with SiteLanguageList setting, we direct to root.
-                $urlAlias = '';
+                if ( $this->isUrlPointingToModule( $this->origUrl ) )
+                {
+                    $urlAlias = $this->origUrl;
+                }
             }
         }
         else
         {
             // Translated object found, forwarding to new URL.
-
-            $saIni = $this->getSiteAccessIni();
-            $siteLanguageList = $saIni->variable( 'RegionalSettings', 'SiteLanguageList' );
-
             $urlAlias = $destinationElement[0]->getPath( $this->destinationLocale, $siteLanguageList );
+
+            // if applicable, remove destination PathPrefix from url
+            self::removePathPrefixIfNeeded( $this->getSiteAccessIni(), $urlAlias );
+
             $urlAlias .= $this->userParamString;
         }
 
         $this->baseDestinationUrl = rtrim( $this->baseDestinationUrl, '/' );
 
-        if ( $GLOBALS['eZCurrentAccess']['type'] === eZSiteAccess::TYPE_URI )
+        $ini = eZINI::instance();
+
+        if ( $GLOBALS['eZCurrentAccess']['type'] === eZSiteAccess::TYPE_URI &&
+             !( $ini->variable( 'SiteAccessSettings', 'RemoveSiteAccessIfDefaultAccess' ) === "enabled" &&
+                $ini->variable( 'SiteSettings', 'DefaultAccess' ) == $this->destinationSiteAccess ) )
         {
             $finalUrl = $this->baseDestinationUrl . '/' . $this->destinationSiteAccess . '/' . $urlAlias;
         }
@@ -163,13 +238,17 @@ class ezpLanguageSwitcher implements ezpLanguageSwitcherCapable
         {
             $finalUrl = $this->baseDestinationUrl . '/' . $urlAlias;
         }
+        if ( $this->queryString != '' )
+        {
+            $finalUrl .= '?' . $this->queryString;
+        }
         return $finalUrl;
     }
 
     /**
      * Sets the siteaccess name, $saName, we want to redirect to.
      *
-     * @param string $saName 
+     * @param string $saName
      * @return void
      */
     public function setDestinationSiteAccess( $saName )
@@ -201,7 +280,7 @@ class ezpLanguageSwitcher implements ezpLanguageSwitcherCapable
 
             default:
                 $host = $saIni->variable( 'SiteSettings', 'SiteURL' );
-                $host = "http://{$host}/";
+                $host = eZSys::serverProtocol()."://".$host;
                 break;
         }
         $this->baseDestinationUrl = "{$host}{$indexFile}";
@@ -213,10 +292,10 @@ class ezpLanguageSwitcher implements ezpLanguageSwitcherCapable
      * This mapping is set up in site.ini.[RegionalSettings].TranslationSA.
      * The purpose of this method is to assist creation of language switcher
      * links into the available translation siteaccesses on the system.
-     * 
+     *
      * This is used by the language_switcher template operator.
      *
-     * @param string $url 
+     * @param string $url
      * @return void
      */
     public static function setupTranslationSAList( $url = null )
@@ -236,9 +315,11 @@ class ezpLanguageSwitcher implements ezpLanguageSwitcherCapable
             {
                 $switchLanguageLink .= $url;
             }
-            $ret[$siteAccessName] = array( 'url' => $switchLanguageLink,
-                                           'text' => $translationName
-                                         );
+            $ret[$siteAccessName] = array(
+                'url' => $switchLanguageLink,
+                'text' => $translationName,
+                'locale' => eZSiteAccess::getIni( $siteAccessName )->variable( 'RegionalSettings', 'ContentObjectLocale' )
+             );
         }
         return $ret;
     }

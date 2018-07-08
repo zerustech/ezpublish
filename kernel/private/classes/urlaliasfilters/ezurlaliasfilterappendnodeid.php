@@ -1,32 +1,12 @@
 <?php
-//
-// Definition of eZURLAliasFilter class
-//
-// Created on: <05-Oct-2007 09:03:31 jr>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.2.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * File containing the eZURLAliasFilter class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 /**
  * This class is an URL alias filter to be run with the eZURLAliasFilter system
@@ -48,7 +28,7 @@ class eZURLAliasFilterAppendNodeID extends eZURLAliasFilter
      *
      * @param string The text of the URL alias
      * @param object The eZContentObject object being published
-     * @params object The eZContentObjectTreeNode in which the eZContentObject is published
+     * @param object The eZContentObjectTreeNode in which the eZContentObject is published
      * @return string The transformed URL alias with the nodeID
      */
     public function process( $text, &$languageObject, &$caller )

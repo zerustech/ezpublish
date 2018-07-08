@@ -1,35 +1,12 @@
 <?php
-//
-// Definition of eZSendmailTransport class
-//
-// Created on: <10-Dec-2002 14:41:22 amos>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
-
-/*! \file
-*/
+/**
+ * File containing the eZSendmailTransport class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package lib
+ */
 
 /*!
   \class eZSendmailTransport ezsendmailtransport.php
@@ -41,13 +18,6 @@
 
 class eZSendmailTransport extends eZMailTransport
 {
-    /*!
-     Constructor
-    */
-    function eZSendmailTransport()
-    {
-    }
-
     function sendMail( eZMail $mail )
     {
         $ini = eZINI::instance();
@@ -88,7 +58,9 @@ class eZSendmailTransport extends eZMailTransport
             if ( $sys->osType() != 'win32' )
             {
                 $excludeHeaders[] = 'To';
-                $receiverEmailText = count( $mail->ReceiverElements ) > 0 ? $mail->receiverEmailText() : 'undisclosed-recipients:;';
+                $insertUndisclosedRecipient = $ini->variable( 'MailSettings', 'SendmailInsertUndisclosedRecipient' );
+                $recipientText = $insertUndisclosedRecipient == 'disabled' ? '' : 'undisclosed-recipients:;';
+                $receiverEmailText = count( $mail->ReceiverElements ) > 0 ? $mail->receiverEmailText() : $recipientText;
             }
             // If Windows PHP mail() implementation, we can specify a To: header in the $additional_headers parameter,
             // it will be used as the only To: header.
@@ -109,11 +81,18 @@ class eZSendmailTransport extends eZMailTransport
 
             $extraHeaders = $mail->headerText( array( 'exclude-headers' => $excludeHeaders ) );
 
-            return mail( $receiverEmailText, $mail->subject(), $message, $extraHeaders, $sendmailOptions );
+            $returnedValue = mail( $receiverEmailText, $mail->subject(), $message, $extraHeaders, $sendmailOptions );
+            if ( $returnedValue === false )
+            {
+                eZDebug::writeError( 'An error occurred while sending e-mail. Check the Sendmail error message for further information (usually in /var/log/messages)',
+                                     __METHOD__ );
+            }
+
+            return $returnedValue;
         }
         else
         {
-            eZDebug::writeWarning( "Unable to send mail: 'mail' function is not compiled into PHP.", 'eZSendmailTransport::sendMail' );
+            eZDebug::writeWarning( "Unable to send mail: 'mail' function is not compiled into PHP.", __METHOD__ );
         }
 
         return false;

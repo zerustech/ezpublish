@@ -1,35 +1,12 @@
 <?php
-//
-// Definition of eZImageShellHandler class
-//
-// Created on: <16-Oct-2003 14:22:43 amos>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
-
-/*! \file
-*/
+/**
+ * File containing the eZImageShellHandler class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package lib
+ */
 
 /*!
   \class eZImageShellHandler ezimageshellhandler.php
@@ -40,14 +17,11 @@
 
 class eZImageShellHandler extends eZImageHandler
 {
-    /*!
-     Constructor
-    */
-    function eZImageShellHandler( $handlerName, $isEnabled = true, $outputRewriteType = self::REPLACE_SUFFIX,
+    public function __construct( $handlerName, $isEnabled = true, $outputRewriteType = self::REPLACE_SUFFIX,
                                   $supportedInputMIMETypes = false, $supportedOutputMIMETypes = false,
                                   $conversionRules = false, $filters = false, $mimeTagMap = false)
     {
-        $this->eZImageHandler( $handlerName, $isEnabled, $outputRewriteType,
+        parent::__construct( $handlerName, $isEnabled, $outputRewriteType,
                                $supportedInputMIMETypes, $supportedOutputMIMETypes,
                                $conversionRules, $filters, $mimeTagMap );
         $this->Path = false;
@@ -88,7 +62,18 @@ class eZImageShellHandler extends eZImageHandler
             $sourceMimeData['url'] .= $frameRangeParameters[$sourceMimeData['name']];
         }
 
-        $argumentList[] = eZSys::escapeShellArgument( $sourceMimeData['url'] );
+        // Issue EZP-21357:
+        // ImageMagick has it's own meta-characters support, hence:
+        //     $ convert 'File*.jpg'' ...
+        // Still expand File*.jpg as the shell would do, however, this is only true for the file's basename part and not
+        // for the whole path.
+        $argumentList[] = eZSys::escapeShellArgument(
+            $sourceMimeData['dirpath'] . DIRECTORY_SEPARATOR . addcslashes(
+                $sourceMimeData['filename'],
+                // ImageMagick meta-characters
+                '~*?[]{}<>'
+            )
+        );
 
         $qualityParameters = $this->QualityParameters;
         if ( $qualityParameters and
@@ -135,7 +120,7 @@ class eZImageShellHandler extends eZImageHandler
         }
         else
         {
-            eZDebug::writeWarning( "Failed executing: $systemString, Error code: $returnCode", 'eZImageShellHandler::convert' );
+            eZDebug::writeWarning( "Failed executing: $systemString, Error code: $returnCode", __METHOD__ );
             return false;
         }
 
@@ -155,8 +140,7 @@ class eZImageShellHandler extends eZImageHandler
         $ini = eZINI::instance( $iniFilename );
         if ( !$ini )
         {
-            eZDebug::writeError( "Failed loading ini file $iniFilename",
-                                 'eZImageShellHandler::createFromINI' );
+            eZDebug::writeError( "Failed loading ini file $iniFilename", __METHOD__ );
             return $handler;
         }
 
@@ -216,8 +200,7 @@ class eZImageShellHandler extends eZImageHandler
                 $path = $ini->variable( $iniGroup, 'ExecutablePath' );
             if ( !$ini->hasVariable( $iniGroup, 'Executable' ) )
             {
-                eZDebug::writeError( "No Executable setting for group $iniGroup in ini file $iniFilename",
-                                     'eZImageShellHandler::createFromINI' );
+                eZDebug::writeError( "No Executable setting for group $iniGroup in ini file $iniFilename", __METHOD__ );
                 return $handler;
             }
             $executable = $ini->variable( $iniGroup, 'Executable' );

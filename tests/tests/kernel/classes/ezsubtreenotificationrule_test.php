@@ -2,8 +2,9 @@
 /**
  * File containing the eZSubtreeNotificationRuleTest class
  *
- * @copyright Copyright (C) 1999-2010 eZ Systems AS. All rights reserved.
- * @license http://ez.no/licenses/gnu_gpl GNU GPLv2
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
  * @package tests
  */
 
@@ -19,7 +20,7 @@ class eZSubtreeNotificationRuleTest extends ezpDatabaseTestCase
 
     /**
      * Unit test for eZSubtreeNotificationRule::fetchUserList()
-     **/
+     */
     public function testFetchUserList()
     {
         // Add a notification rule for admin on root
@@ -37,11 +38,11 @@ class eZSubtreeNotificationRuleTest extends ezpDatabaseTestCase
         $articleContentObject = $article->object;
 
         $list = eZSubtreeNotificationRule::fetchUserList( array( 2, 43 ), $articleContentObject );
-        $this->assertType( 'array', $list,
+        $this->assertInternalType( 'array', $list,
             "Return value should have been an array" );
         $this->assertEquals( 1, count( $list ),
             "Return value should have one item" );
-        $this->assertType( 'array', $list[0] );
+        $this->assertInternalType( 'array', $list[0] );
         $this->assertArrayHasKey( 'user_id', $list[0] );
         $this->assertArrayHasKey( 'use_digest', $list[0] );
         $this->assertArrayHasKey( 'address', $list[0] );

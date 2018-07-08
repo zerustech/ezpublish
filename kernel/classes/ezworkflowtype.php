@@ -1,32 +1,12 @@
 <?php
-//
-// Definition of eZWorkflowType class
-//
-// Created on: <16-Apr-2002 11:08:14 amos>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * File containing the eZWorkflowType class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 //!! eZKernel
 //! The class eZWorkflowType does
@@ -50,8 +30,15 @@ class eZWorkflowType
     const STATUS_REDIRECT_REPEAT = 11;
     const STATUS_WORKFLOW_RESET = 12;
 
-    function eZWorkflowType( $group, $type,
-                             $groupName, $name )
+    /**
+     * Constructor
+     *
+     * @param string $group
+     * @param string $type
+     * @param string $groupName
+     * @param string $name
+     */
+    public function __construct( $group, $type, $groupName, $name )
     {
         $this->Group = $group;
         $this->Type = $type;
@@ -68,6 +55,18 @@ class eZWorkflowType
         $this->Attributes["name"] =& $this->Name;
         $this->Attributes["information"] =& $this->Information;
         $this->Attributes["activation_date"] =& $this->ActivationDate;
+    }
+
+    /**
+     * @deprecated Use eZWorkflowType::__construct() instead
+     * @param string $group
+     * @param string $type
+     * @param string $groupName
+     * @param string $name
+     */
+    public function eZWorkflowType( $group, $type, $groupName, $name )
+    {
+        self::__construct( $group, $type, $groupName, $name );
     }
 
     static function statusName( $status )
@@ -100,14 +99,14 @@ class eZWorkflowType
                 }
                 else
                 {
-                    eZDebug::writeError( "Undefined event type class: $class_name", "eZWorkflowType::createType" );
+                    eZDebug::writeError( "Undefined event type class: $class_name", __METHOD__ );
                 }
             }
             return $GLOBALS["eZWorkflowTypeObjects"][$typeString];
         }
         else
         {
-            eZDebug::writeError( "Undefined type: $typeString", "eZWorkflowType::createType" );
+            eZDebug::writeError( "Undefined type: $typeString", __METHOD__ );
         }
         return null;
     }
@@ -130,7 +129,7 @@ class eZWorkflowType
                     }
                     else
                     {
-                        eZDebug::writeError( "Undefined event type class: $class_name", "eZWorkflowType::fetchRegisteredTypes" );
+                        eZDebug::writeError( "Undefined event type class: $class_name", __METHOD__ );
                     }
                 }
             }
@@ -168,7 +167,7 @@ class eZWorkflowType
         }
         if ( isset( $GLOBALS["eZWorkflowTypes"][$typeString] ) )
         {
-            eZDebug::writeError( "Type already registered: $typeString", "eZWorkflowType::registerType" );
+            eZDebug::writeError( "Type already registered: $typeString", __METHOD__ );
         }
         else
         {
@@ -181,7 +180,7 @@ class eZWorkflowType
         $typeElements = explode( "_", $typeString );
         if ( count( $typeElements ) < 2 )
         {
-            eZDebug::writeError( "Workflow type not found: $typeString", "eZWorkflowType::loadAndRegisterType" );
+            eZDebug::writeError( "Workflow type not found: $typeString", __METHOD__ );
             return false;
         }
 
@@ -217,7 +216,7 @@ class eZWorkflowType
             }
         }
 
-        eZDebug::writeError( "Workflow type not found: $typeString, searched in these directories: " . implode( ', ', $repositoryDirectories ), "eZWorkflowType::loadAndRegisterType" );
+        eZDebug::writeError( "Workflow type not found: $typeString, searched in these directories: " . implode( ', ', $repositoryDirectories ), __METHOD__ );
         return false;
     }
 
@@ -255,7 +254,7 @@ class eZWorkflowType
             } break;
         }
 
-        eZDebug::writeError( "Attribute '$attr' does not exist", 'eZWorkflowType::attribute' );
+        eZDebug::writeError( "Attribute '$attr' does not exist", __METHOD__ );
         return null;
     }
 

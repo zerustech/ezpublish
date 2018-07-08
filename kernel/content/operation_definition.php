@@ -1,33 +1,10 @@
 <?php
-//
-// Created on: <01-Nov-2002 13:39:10 amos>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
-
-/*! \file
-*/
+/**
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 $OperationList = array();
 $OperationList['read'] = array( 'name' => 'read',
@@ -44,7 +21,7 @@ $OperationList['read'] = array( 'name' => 'read',
                                                               'type' => 'string',
                                                               'default' => '',
                                                               'required' => false ) ),
-                                'keys' => array( 'node_id' ),
+                                'keys' => array( 'node_id', 'user_id' ),
                                 'body' => array( array( 'type' => 'trigger',
                                                         'name' => 'pre_read',
                                                         'keys' => array( 'node_id',
@@ -67,7 +44,15 @@ $OperationList['publish'] = array( 'name' => 'publish',
                                                           array( 'name' => 'version',
                                                                  'type' => 'integer',
                                                                  'required' => true ) ),
+                                   'on-interrupt' => array( 'type' => 'method',
+                                                            'name' => 'commit-transaction',
+                                                            'frequency' => 'once',
+                                                            'method' => 'commitTransaction' ),
                                    'body' => array( array( 'type' => 'method',
+                                                           'name' => 'begin-transaction',
+                                                           'frequency' => 'once',
+                                                           'method' => 'beginTransaction' ),
+                                                    array( 'type' => 'method',
                                                            'name' => 'set-version-pending',
                                                            'frequency' => 'once',
                                                            'method' => 'setVersionStatus',
@@ -81,6 +66,16 @@ $OperationList['publish'] = array( 'name' => 'publish',
                                                                                          'type' => 'integer',
                                                                                          'constant' => eZContentObjectVersion::STATUS_PENDING ) ) ),
                                                     array( 'type' => 'method',
+                                                           'name' => 'send-to-publishing-queue',
+                                                           'frequency' => 'once',
+                                                           'method' => 'sendToPublishingQueue',
+                                                           'parameters' => array( array( 'name' => 'object_id',
+                                                                                         'type' => 'integer',
+                                                                                         'required' => true ),
+                                                                                  array( 'name' => 'version',
+                                                                                         'type' => 'integer',
+                                                                                         'required' => true ) ) ),
+                                                    array( 'type' => 'method',
                                                            'name' => 'update-section-id',
                                                            'frequency' => 'once',
                                                            'method' => 'updateSectionID'
@@ -88,8 +83,8 @@ $OperationList['publish'] = array( 'name' => 'publish',
                                                     array( 'type' => 'trigger',
                                                            'name' => 'pre_publish',
                                                            'keys' => array( 'object_id',
-                                                                            'version' )
-                                                           ),
+                                                                            'version' ),
+                                                    ),
                                                     array( 'type' => 'method',
                                                            'name' => 'copy-translations',
                                                            'frequency' => 'once',
@@ -187,7 +182,10 @@ $OperationList['publish'] = array( 'name' => 'publish',
                                                            'frequency' => 'once',
                                                            'method' => 'resetNodeassignmentOpcodes',
                                                            ),
-
+                                                    array( 'type' => 'method',
+                                                           'name' => 'commit-transaction',
+                                                           'frequency' => 'once',
+                                                           'method' => 'commitTransaction' ),
                                                     array( 'type' => 'method',
                                                            'name' => 'clear-object-view-cache',
                                                            'frequency' => 'once',
@@ -531,7 +529,7 @@ $OperationList['updatepriority'] = array( 'name' => 'updatepriority',
                                                  )
                               );
 
-$OperationList['updatemainassignment'] = array( 'name' => 'UpdateMainAssignment',
+$OperationList['updatemainassignment'] = array( 'name' => 'updatemainassignment',
                                 'default_call_method' => array( 'include_file' => 'kernel/content/ezcontentoperationcollection.php',
                                                                 'class' => 'eZContentOperationCollection' ),
                                 'parameter_type' => 'standard',
@@ -547,16 +545,16 @@ $OperationList['updatemainassignment'] = array( 'name' => 'UpdateMainAssignment'
                                                       ),
                                 'keys' => array( 'main_assignment_id', 'object_id', 'main_assignment_parent_id' ),
                                 'body' => array( array( 'type' => 'trigger',
-                                                        'name' => 'pre_UpdateMainAssignment',
+                                                        'name' => 'pre_updatemainassignment',
                                                         'keys' => array( 'main_assignment_id' ),
                                                        ),
                                                  array( 'type' => 'method',
                                                         'name' => 'updatemainassignment',
                                                         'frequency' => 'once',
-                                                        'method' => 'UpdateMainAssignment',
+                                                        'method' => 'updateMainAssignment',
                                                         ),
                                                  array( 'type' => 'trigger',
-                                                        'name' => 'post_UpdateMainAssignment',
+                                                        'name' => 'post_updatemainassignment',
                                                         'keys' => array( 'main_assignment_id' )
                                                        )
                                                  )

@@ -1,32 +1,10 @@
 <?php
-//
-// Created on: <30-Aug-2002 17:06:01 bf>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
-
-
+/**
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 $tpl = eZTemplate::factory();
 
@@ -34,6 +12,8 @@ $module = $Params['Module'];
 $errorType = $Params['Type'];
 $errorNumber = $Params['Number'];
 $extraErrorParameters = $Params['ExtraParameters'];
+$httpErrorCode = null;
+$httpErrorName = null;
 
 $tpl->setVariable( 'parameters', $extraErrorParameters );
 
@@ -59,7 +39,6 @@ else
 $embedContent = false;
 
 $GLOBALS["eZRequestError"] = true;
-eZDebug::writeError( "Error ocurred using URI: " . $_SERVER['REQUEST_URI'] , "error/view.php" );
 
 // if ( $errorType == 'kernel' )
 {
@@ -88,20 +67,29 @@ eZDebug::writeError( "Error ocurred using URI: " . $_SERVER['REQUEST_URI'] , "er
                 {
                     $httpErrorName = $errorINI->variable( 'HTTPError-' . $httpErrorCode, 'HTTPName' );
                     $httpErrorString = "$httpErrorCode $httpErrorName";
-                    header( eZSys::serverVariable( 'SERVER_PROTOCOL' ) . " $httpErrorString" );
-                    header( "Status: $httpErrorString" );
                     if ( $errorNumber == eZError::KERNEL_MOVED )
                     {
-                        // Set moved permanently headers.
-                        header( $_SERVER['SERVER_PROTOCOL'] .  " 301 Moved Permanently" );
-                        header( "Status: 301 Moved Permanently" );
-                        $location = eZSys::indexDir() . "/" . eZURI::encodeIRI( $extraErrorParameters['new_location'] ); // Make sure it is encoded to IRI format
-                        header( "Location: " . $location );
+                        $module->redirectTo( $extraErrorParameters['new_location'] );
+                        $module->setRedirectStatus( $httpErrorString );
+                        return array(); // $Result of this view
+                    }
+                    else
+                    {
+                        // we need to store the header so that they are listed in view cache data ()
+                        $responseHeaders = array(
+                            eZSys::serverVariable( 'SERVER_PROTOCOL' ) . " $httpErrorString",
+                            "Status: $httpErrorString"
+                        );
+                        header( $responseHeaders[0] );
+                        header( $responseHeaders[1] );
                     }
                 }
             }
         }
     }
+
+    eZDebug::writeError( "Error ocurred using URI: " . $_SERVER['REQUEST_URI'] , "error/view.php" );
+
     if ( $errorHandlerType == 'redirect' )
     {
         $errorRedirectURL = $errorINI->variable( 'ErrorSettings', 'DefaultRedirectURL' );
@@ -197,5 +185,10 @@ $Result['path'] = array( array( 'text' => ezpI18n::tr( 'kernel/error', 'Error' )
                                 'url' => false ),
                          array( 'text' => "$errorType ($errorNumber)",
                                 'url' => false ) );
+$Result['errorCode'] = $httpErrorCode;
+$Result['errorMessage'] = $httpErrorName;
+$Result['errorType'] = $errorType;
+$Result['errorNumber'] = $errorNumber;
 
-?>
+if ( isset( $responseHeaders ) )
+    $Result['responseHeaders'] = $responseHeaders;

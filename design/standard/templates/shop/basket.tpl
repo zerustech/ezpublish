@@ -39,10 +39,10 @@
        <h2>{"You have chosen invalid combination of options"|i18n("design/standard/shop",,)}</h2>
         <ul>
           {section var=UnvalidatedOptions loop=$error_data}
-            <li>{$UnvalidatedOptions.item.name}</li>
+            <li>{$UnvalidatedOptions.item.name|wash}</li>
                   <ul>
                       {section var=Errors loop=$UnvalidatedOptions.item.description}
-                          <li>{$Errors.item}</li>
+                          <li>{$Errors.item|wash}</li>
                       {/section}
                   </ul>
           {/section}
@@ -98,7 +98,7 @@
 	<td class="{$Basket:ProductItem:sequence}">
 	<input type="hidden" name="ProductItemIDList[]" value="{$Basket:ProductItem:item.id}" />
 	{*{$Basket:ProductItem:item.id}-*}
-	<a href={concat("/content/view/full/",$Basket:ProductItem:item.node_id,"/")|ezurl}>{$Basket:ProductItem:item.object_name}</a>
+	<a href={concat("/content/view/full/",$Basket:ProductItem:item.node_id,"/")|ezurl}>{$Basket:ProductItem:item.object_name|wash}</a>
 	</td>
 	<td class="{$Basket:ProductItem:sequence}">
 	<input type="text" name="ProductItemCountList[]" value="{$Basket:ProductItem:item.item_count}" size="5" />
@@ -132,36 +132,36 @@
 </tr>
 {section show=$Basket:ProductItem:item.item_object.option_list}
 <tr>
-  <td class="{$Basket:ProductItem:sequence}" colspan='4'>
+  <td class="{$Basket:ProductItem:sequence}" colspan="4">
      <table class="shop-option_list">
 <tr>
-<td colspan='3'>
+<td colspan="3">
 {"Selected options"|i18n("design/standard/shop")}
 </td>
 </tr>
      {section name=Options loop=$Basket:ProductItem:item.item_object.option_list}
       <tr>
-        <td width="33%">{$Basket:ProductItem:Options:item.name}</td>
-        <td width="33%">{$Basket:ProductItem:Options:item.value}</td>
+        <td width="33%">{$Basket:ProductItem:Options:item.name|wash}</td>
+        <td width="33%">{$Basket:ProductItem:Options:item.value|wash}</td>
         <td width="33%">{$Basket:ProductItem:Options:item.price|l10n( 'currency', $locale, $symbol )}</td>
       </tr>
     {/section}
      </table>
    </td>
-  <td class="{$Basket:ProductItem:sequence}" colspan='5'>
+  <td class="{$Basket:ProductItem:sequence}" colspan="5">
   </td>
 </tr>
 {/section}
 {/section}
 <tr>
-     <td colspan='8'>
-     <hr size='2' />
+     <td colspan="8">
+     <hr size="2" />
      </td>
      <td>
      </td>
 </tr>
 <tr>
-     <td colspan='6'>
+     <td colspan="6">
      </td>
      <td>
      <b>{"Subtotal ex. VAT"|i18n("design/standard/shop")}</b>:
@@ -173,7 +173,7 @@
      </td>
 </tr>
 <tr>
-<td colspan='6'>
+<td colspan="6">
 </td>
 <td>
 {$basket.total_ex_vat|l10n( 'currency', $locale, $symbol )}
@@ -185,8 +185,8 @@
 {if is_set( $shipping_info )}
 {* Show shipping type/cost. *}
 <tr>
-     <td colspan='6'>
-     <a href={$shipping_info.management_link|ezurl}>{'Shipping'|i18n( 'design/admin/shop/basket' )}{if $shipping_info.description} ({$shipping_info.description}){/if}</a>:
+     <td colspan="6">
+     <a href={$shipping_info.management_link|ezurl}>{'Shipping'|i18n( 'design/admin/shop/basket' )}{if $shipping_info.description} ({$shipping_info.description|wash}){/if}</a>:
      </td>
      <td>
      {$shipping_info.cost|l10n( 'currency', $locale, $symbol )}:
@@ -199,7 +199,7 @@
 </tr>
 {* Show order total *}
 <tr>
-     <td colspan='6'>
+     <td colspan="6">
      <b>{'Order total'|i18n( 'design/admin/shop/basket' )}<b>:
      </td>
      <td>

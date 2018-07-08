@@ -2,7 +2,7 @@
 {*?template charset=latin1?*}
 
 <div align="center">
-  <h1>{"Welcome to eZ Publish %1"|i18n("design/standard/setup/init",,array($#version.alias))}</h1>
+  <h1>{"Welcome to %edition %version"|i18n("design/standard/setup/init",,hash( '%edition', fetch( 'setup', 'edition' ), '%version', $#version.alias ))}</h1>
 </div>
 
 {if eq( $optional_test.result, 2 )}
@@ -22,7 +22,7 @@
    <legend>{"Select installation language"|i18n("design/standard/setup/init")}:</legend>
    <select name="eZSetupWizardLanguage">
     {foreach $language_list as $language}
-        <option value="{$language.locale_code}"  {if eq( $language.locale_code, $primary_language )}selected="selected"{/if}>{$language.intl_language_name}</option>
+        <option value="{$language.locale_code|wash}"  {if eq( $language.locale_code, $primary_language )}selected="selected"{/if}>{$language.intl_language_name|wash}</option>
     {/foreach}
    </select>
   </fieldset>

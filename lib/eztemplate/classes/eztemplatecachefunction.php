@@ -1,32 +1,12 @@
 <?php
-//
-// Definition of eZTemplateCacheFunction class
-//
-// Created on: <28-Feb-2003 15:06:33 bf>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * File containing the eZTemplateCacheFunction class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package lib
+ */
 
 /*!
   \class eZTemplateCacheFunction eztemplatecachefunction.php
@@ -39,10 +19,12 @@ class eZTemplateCacheFunction
 {
     const DEFAULT_TTL = 7200; // 2 hours = 60*60*2
 
-    /*!
-     Initializes the object with names.
-    */
-    function eZTemplateCacheFunction( $blockName = 'cache-block' )
+    /**
+     * Initializes the object with names.
+     *
+     * @param string $blockName
+     */
+    public function __construct( $blockName = 'cache-block' )
     {
         $this->BlockName = $blockName;
     }
@@ -83,9 +65,9 @@ class eZTemplateCacheFunction
 
         if ( isset( $parameters['expiry'] ) )
         {
-            if ( eZTemplateNodeTool::isStaticElement( $parameters['expiry'] ) )
+            if ( eZTemplateNodeTool::isConstantElement( $parameters['expiry'] ) )
             {
-                $expiryValue = eZTemplateNodeTool::elementStaticValue( $parameters['expiry'] );
+                $expiryValue = eZTemplateNodeTool::elementConstantValue( $parameters['expiry'] );
                 $ttlCode = $expiryValue > 0 ? eZPHPCreator::variableText( $expiryValue , 0, 0, false ) : 'null';
             }
             else
@@ -101,7 +83,7 @@ class eZTemplateCacheFunction
 
         if ( isset( $parameters['ignore_content_expiry'] ) )
         {
-            $ignoreContentExpiry = eZTemplateNodeTool::elementStaticValue( $parameters['ignore_content_expiry'] );
+            $ignoreContentExpiry = eZTemplateNodeTool::elementConstantValue( $parameters['ignore_content_expiry'] );
         }
 
         $keysData = false;
@@ -116,10 +98,10 @@ class eZTemplateCacheFunction
         if ( isset( $parameters['subtree_expiry'] ) )
         {
             $subtreeExpiryData = $parameters['subtree_expiry'];
-            if ( !eZTemplateNodeTool::isStaticElement( $subtreeExpiryData ) )
+            if ( !eZTemplateNodeTool::isConstantElement( $subtreeExpiryData ) )
                 $hasKeys = true;
             else
-                $subtreeValue = eZTemplateNodeTool::elementStaticValue( $subtreeExpiryData );
+                $subtreeValue = eZTemplateNodeTool::elementConstantValue( $subtreeExpiryData );
 
             $ignoreContentExpiry = true;
         }
@@ -133,15 +115,14 @@ class eZTemplateCacheFunction
             $newNodes[] = eZTemplateNodeTool::createVariableNode( false, $keysData, false, array(), 'cacheKeys' );
             $newNodes[] = eZTemplateNodeTool::createVariableNode( false, $subtreeExpiryData, false, array(), 'subtreeExpiry' );
 
-            $code = ( "//include_once( 'lib/eztemplate/classes/eztemplatecacheblock.php' );\n" .
-                      "\$cacheKeys = array( \$cacheKeys, $placementKeyStringText, $accessNameText );\n" );
+            $code = "\$cacheKeys = array( \$cacheKeys, $placementKeyStringText, $accessNameText );\n";
             $cachePathText = "\$cachePath";
         }
         else
         {
             $nodeID = $subtreeValue ? eZTemplateCacheBlock::decodeNodeID( $subtreeValue ) : false;
             $cachePath = eZTemplateCacheBlock::cachePath( eZTemplateCacheBlock::keyString( array( $placementKeyString, $accessName ) ), $nodeID );
-            $code = ( "//include_once( 'lib/eztemplate/classes/eztemplatecacheblock.php' );\n" );
+            $code = "";
             $cachePathText = eZPHPCreator::variableText( $cachePath, 0, 0, false );
         }
 
@@ -283,7 +264,6 @@ class eZTemplateCacheFunction
         }
 
         $globalExpiryTime = -1;
-        eZExpiryHandler::registerShutdownFunction();
         if ( $ignoreContentExpiry == false )
         {
             $globalExpiryTime = eZExpiryHandler::getTimestamp( 'template-block-cache', -1 );
@@ -341,59 +321,6 @@ class eZTemplateCacheFunction
     function hasChildren()
     {
         return true;
-    }
-
-    // Deprecated functions follow
-
-    /*!
-     \static
-     \deprecated
-     Returns base directory where 'subtree_expiry' caches are stored.
-    */
-    static function subtreeCacheBaseSubDir()
-    {
-        return eZTemplateCacheBlock::subtreeCacheBaseSubDir();
-    }
-
-    /*!
-     \static
-     \deprecated Does not seem to be used
-     Returns base directory where expired 'subtree_expiry' caches are stored.
-    */
-    static function expiryTemplateBlockCacheDir()
-    {
-        $expiryCacheDir = eZSys::cacheDirectory() . '/' . 'template-block-expiry';
-        return $expiryCacheDir;
-    }
-
-    /*!
-     \static
-     \deprecated
-     Returns base directory where template block caches are stored.
-    */
-    static function templateBlockCacheDir()
-    {
-        return eZTemplateCacheBlock::templateBlockCacheDir();
-    }
-
-    /*!
-     \static
-     \deprecated
-     Returns path of the directory where 'subtree_expiry' caches are stored.
-    */
-    static function subtreeCacheSubDir( $subtreeExpiryParameter, $cacheFilename )
-    {
-        return eZTemplateCacheBlock::subtreeCacheSubDir( $subtreeExpiryParameter, $cacheFilename );
-    }
-
-    /*!
-     \static
-     \deprecated
-     Builds and returns path from $nodeID, e.g. if $nodeID = 23 then path = subtree/2/3
-    */
-    static function subtreeCacheSubDirForNode( $nodeID )
-    {
-        return eZTemplateCacheBlock::subtreeCacheSubDirForNode( $nodeID );
     }
 
     /// \privatesection

@@ -1,32 +1,12 @@
 <?php
-//
-// Definition of eZTemplateBlockFunction class
-//
-// Created on: <01-Mar-2002 13:50:33 amos>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * File containing the eZTemplateBlockFunction class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package lib
+ */
 
 /*!
   \class eZTemplateBlockFunction eztemplateblockfunction.php
@@ -72,10 +52,12 @@ class eZTemplateBlockFunction
     const SCOPE_ROOT = 2;
     const SCOPE_GLOBAL = 3;
 
-    /*!
-     Initializes the object with names.
-    */
-    function eZTemplateBlockFunction( $blockName = 'set-block',
+    /**
+     * @param string $blockName
+     * @param string $appendBlockName
+     * @param string $onceName
+     */
+    public function __construct(      $blockName = 'set-block',
                                       $appendBlockName = 'append-block',
                                       $onceName = 'run-once' )
     {
@@ -123,9 +105,9 @@ class eZTemplateBlockFunction
             $scope = eZTemplate::NAMESPACE_SCOPE_RELATIVE;
             if ( isset( $parameters['scope'] ) )
             {
-                if ( !eZTemplateNodeTool::isStaticElement( $parameters['scope'] ) )
+                if ( !eZTemplateNodeTool::isConstantElement( $parameters['scope'] ) )
                     return false;
-                $scopeText = eZTemplateNodeTool::elementStaticValue( $parameters['scope'] );
+                $scopeText = eZTemplateNodeTool::elementConstantValue( $parameters['scope'] );
                 if ( $scopeText == 'relative' )
                     $scope = eZTemplate::NAMESPACE_SCOPE_RELATIVE;
                 else if ( $scopeText == 'root' )
@@ -137,18 +119,21 @@ class eZTemplateBlockFunction
             $name = '';
             if ( isset( $parameters['name'] ) )
             {
-                if ( !eZTemplateNodeTool::isStaticElement( $parameters['name'] ) )
+                if ( !eZTemplateNodeTool::isConstantElement( $parameters['name'] ) )
                     return false;
-                $name = eZTemplateNodeTool::elementStaticValue( $parameters['name'] );
+                $name = eZTemplateNodeTool::elementConstantValue( $parameters['name'] );
             }
-            $variableName = eZTemplateNodeTool::elementStaticValue( $parameters['variable'] );
+            $variableName = eZTemplateNodeTool::elementConstantValue( $parameters['variable'] );
 
             $newNodes = array();
 
             $children = eZTemplateNodeTool::extractFunctionNodeChildren( $node );
 
             $newNodes[] = eZTemplateNodeTool::createOutputVariableIncreaseNode();
-            $newNodes = array_merge( $newNodes, $children );
+            if ( is_array( $children ) )
+            {
+                $newNodes = array_merge( $newNodes, $children );
+            }
             $newNodes[] = eZTemplateNodeTool::createAssignFromOutputVariableNode( 'blockText' );
             if ( $functionName == $this->AppendBlockName )
             {

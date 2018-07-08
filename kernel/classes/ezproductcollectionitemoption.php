@@ -1,47 +1,15 @@
 <?php
-//
-// Definition of eZProductCollectionItemOption class
-//
-// Created on: <10-æÅ×-2003 16:04:18 sp>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * File containing the eZProductCollectionItemOption class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 class eZProductCollectionItemOption extends eZPersistentObject
 {
-    /**
-     * Initialized an eZProductCollectionItemOption object with the given
-     * attribute array
-     *
-     * @param array $row Array of object attributes
-     **/
-    function eZProductCollectionItemOption( $row )
-    {
-        $this->eZPersistentObject( $row );
-
-    }
-
     static function definition()
     {
         return array( "fields" => array( "id" => array( 'name' => 'ID',
@@ -96,7 +64,7 @@ class eZProductCollectionItemOption extends eZPersistentObject
      * @param string $optionValue
      * @param string $optionPrice
      * @param int $attributeID
-     **/
+     */
     static function create( $productCollectionItemID, $optionItemID, $optionName, $optionValue, $optionPrice, $attributeID )
     {
         $row = array( 'item_id' => $productCollectionItemID,
@@ -111,7 +79,7 @@ class eZProductCollectionItemOption extends eZPersistentObject
     /**
      * Clones the collection item option object and returns it.
      * The ID of the clone is reset so that the clone can be saved
-     **/
+     */
     function __clone()
     {
         $this->setAttribute( 'id', null );
@@ -124,7 +92,7 @@ class eZProductCollectionItemOption extends eZPersistentObject
      * @param int $collectionItemID Collection item ID to match the option to
      *
      * @return eZProductCollectionItemOption The new object
-     **/
+     */
     function copy( $collectionItemID )
     {
         $item = clone $this;
@@ -141,7 +109,7 @@ class eZProductCollectionItemOption extends eZPersistentObject
      * @param bool $asObject
      *
      * @return array(eZProductCollectionItemOption)
-     **/
+     */
     static function fetchList( $productCollectionItemID, $asObject = true )
     {
         return eZPersistentObject::fetchObjectList( eZProductCollectionItemOption::definition(),
@@ -158,7 +126,7 @@ class eZProductCollectionItemOption extends eZPersistentObject
      * @param array $itemIDList Array of eZProductCollectionItem IDs
      *
      * @return void
-     **/
+     */
     static function cleanupList( $itemIDList )
     {
         $db = eZDB::instance();

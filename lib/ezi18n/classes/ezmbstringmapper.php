@@ -1,35 +1,12 @@
 <?php
-//
-// Definition of eZMBStringMapper class
-//
-// Created on: <12-Jul-2002 12:56:48 amos>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
-
-/*! \file
-*/
+/**
+ * File containing the eZMBStringMapper class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package lib
+ */
 
 /*!
   \class eZMBStringMapper ezmbstringmapper.php
@@ -46,10 +23,13 @@
 
 class eZMBStringMapper
 {
-    /*!
-     Constructor
-    */
-    function eZMBStringMapper( $input_charset_code, $output_charset_code )
+    /**
+     * Constructor
+     *
+     * @param string $input_charset_code
+     * @param string $output_charset_code
+     */
+    public function __construct( $input_charset_code, $output_charset_code )
     {
         $this->RequestedInputCharsetCode = $input_charset_code;
         $this->InputCharsetCode = eZCharsetInfo::realCharsetCode( $input_charset_code );
@@ -189,8 +169,8 @@ class eZMBStringMapper
      * Returns a shared instance of the eZMBStringMapper pr the $input_charset_code
      * and $output_charset_code params.
      *
-     * @param $input_charset_code string
-     * @param $output_charset_code string
+     * @param string $input_charset_code
+     * @param string $output_charset_code
      * @return eZMBStringMapper
      */
     static function instance( $input_charset_code, $output_charset_code )

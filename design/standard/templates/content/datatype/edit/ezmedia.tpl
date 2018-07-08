@@ -11,6 +11,8 @@
     {case match=real_player}{'RealPlayer'|i18n( 'design/standard/content/datatype' )}{/case}
     {case match=silverlight}{'Silverlight'|i18n( 'design/standard/content/datatype' )}{/case}
     {case match=windows_media_player}{'Windows Media Player'|i18n( 'design/standard/content/datatype' )}{/case}
+    {case match='html5_video'}{'Html5 Video'|i18n( 'design/standard/content/datatype' )}{/case}
+    {case match='html5_audio'}{'Html5 Audio'|i18n( 'design/standard/content/datatype' )}{/case}
     {case}{'Unknown'|i18n( 'design/standard/content/datatype' )}{/case}
     {/switch}
     </p>
@@ -61,12 +63,12 @@
 
 <div class="element">
     <label for="{$attribute_base}_media_{$attribute.id}_width">{'Width'|i18n( 'design/standard/content/datatype' )}:</label>
-    <input type="text" id="{$attribute_base}_media_{$attribute.id}_width" name="{$attribute_base}_data_media_width_{$attribute.id}" size="5" value="{$attribute.content.width}" />
+    <input type="text" id="{$attribute_base}_media_{$attribute.id}_width" name="{$attribute_base}_data_media_width_{$attribute.id}" size="5" value="{$attribute.content.width|wash}" />
 </div>
 
 <div class="element">
     <label for="{$attribute_base}_media_{$attribute.id}_height">{'Height'|i18n( 'design/standard/content/datatype' )}:</label>
-    <input type="text" id="{$attribute_base}_media_{$attribute.id}_height" name="{$attribute_base}_data_media_height_{$attribute.id}" size="5" value="{$attribute.content.height}" />
+    <input type="text" id="{$attribute_base}_media_{$attribute.id}_height" name="{$attribute_base}_data_media_height_{$attribute.id}" size="5" value="{$attribute.content.height|wash}" />
     &nbsp;
     &nbsp;
     &nbsp;
@@ -152,12 +154,12 @@
 
 <div class="element">
     <label for="{$attribute_base}_media_{$attribute.id}_width">{'Width'|i18n( 'design/standard/content/datatype' )}:</label>
-    <input type="text" id="{$attribute_base}_media_{$attribute.id}_width" name="{$attribute_base}_data_media_width_{$attribute.id}" size="5" value="{$attribute.content.width}" />
+    <input type="text" id="{$attribute_base}_media_{$attribute.id}_width" name="{$attribute_base}_data_media_width_{$attribute.id}" size="5" value="{$attribute.content.width|wash}" />
 </div>
 
 <div class="element">
     <label for="{$attribute_base}_media_{$attribute.id}_height">{'Height'|i18n( 'design/standard/content/datatype' )}:</label>
-    <input type="text" id="{$attribute_base}_media_{$attribute.id}_height" name="{$attribute_base}_data_media_height_{$attribute.id}" size="5" value="{$attribute.content.height}" />
+    <input type="text" id="{$attribute_base}_media_{$attribute.id}_height" name="{$attribute_base}_data_media_height_{$attribute.id}" size="5" value="{$attribute.content.height|wash}" />
     &nbsp;
     &nbsp;
     &nbsp;
@@ -196,12 +198,12 @@
 
 <div class="element">
     <label for="{$attribute_base}_media_{$attribute.id}_width">{'Width'|i18n( 'design/standard/content/datatype' )}:</label>
-    <input type="text" id="{$attribute_base}_media_{$attribute.id}_width" name="{$attribute_base}_data_media_width_{$attribute.id}" size="5" value="{$attribute.content.width}" />
+    <input type="text" id="{$attribute_base}_media_{$attribute.id}_width" name="{$attribute_base}_data_media_width_{$attribute.id}" size="5" value="{$attribute.content.width|wash}" />
 </div>
 
 <div class="element">
     <label for="{$attribute_base}_media_{$attribute.id}_height">{'Height'|i18n( 'design/standard/content/datatype' )}:</label>
-    <input type="text" id="{$attribute_base}_media_{$attribute.id}_height" name="{$attribute_base}_data_media_height_{$attribute.id}" size="5" value="{$attribute.content.height}" />
+    <input type="text" id="{$attribute_base}_media_{$attribute.id}_height" name="{$attribute_base}_data_media_height_{$attribute.id}" size="5" value="{$attribute.content.height|wash}" />
     &nbsp;
     &nbsp;
     &nbsp;
@@ -281,12 +283,12 @@
 
 <div class="element">
     <label for="{$attribute_base}_media_{$attribute.id}_width">{'Width'|i18n( 'design/standard/content/datatype' )}:</label>
-    <input type="text" id="{$attribute_base}_media_{$attribute.id}_width" name="{$attribute_base}_data_media_width_{$attribute.id}" size="5" value="{$attribute.content.width}" />
+    <input type="text" id="{$attribute_base}_media_{$attribute.id}_width" name="{$attribute_base}_data_media_width_{$attribute.id}" size="5" value="{$attribute.content.width|wash}" />
 </div>
 
 <div class="element">
     <label for="{$attribute_base}_media_{$attribute.id}_height">{'Height'|i18n( 'design/standard/content/datatype' )}:</label>
-    <input type="text" id="{$attribute_base}_media_{$attribute.id}_height" name="{$attribute_base}_data_media_height_{$attribute.id}" size="5" value="{$attribute.content.height}" />
+    <input type="text" id="{$attribute_base}_media_{$attribute.id}_height" name="{$attribute_base}_data_media_height_{$attribute.id}" size="5" value="{$attribute.content.height|wash}" />
 </div>
 
 <div class="break"></div>
@@ -306,12 +308,12 @@
 
 <div class="element">
     <label for="{$attribute_base}_media_{$attribute.id}_width">{'Width'|i18n( 'design/standard/content/datatype' )}:</label>
-    <input type="text" id="{$attribute_base}_media_{$attribute.id}_width" name="{$attribute_base}_data_media_width_{$attribute.id}" size="5" value="{$attribute.content.width}" />
+    <input type="text" id="{$attribute_base}_media_{$attribute.id}_width" name="{$attribute_base}_data_media_width_{$attribute.id}" size="5" value="{$attribute.content.width|wash}" />
 </div>
 
 <div class="element">
     <label for="{$attribute_base}_media_{$attribute.id}_height">{'Height'|i18n( 'design/standard/content/datatype' )}:</label>
-    <input type="text" id="{$attribute_base}_media_{$attribute.id}_height" name="{$attribute_base}_data_media_height_{$attribute.id}" size="5" value="{$attribute.content.height}" />
+    <input type="text" id="{$attribute_base}_media_{$attribute.id}_height" name="{$attribute_base}_data_media_height_{$attribute.id}" size="5" value="{$attribute.content.height|wash}" />
     &nbsp;
     &nbsp;
     &nbsp;
@@ -343,12 +345,12 @@
 
 <div class="element">
     <label for="{$attribute_base}_media_{$attribute.id}_width">{'Width'|i18n( 'design/standard/content/datatype' )}:</label>
-    <input type="text" id="{$attribute_base}_media_{$attribute.id}_width" name="{$attribute_base}_data_media_width_{$attribute.id}" size="5" value="{$attribute.content.width}" />
+    <input type="text" id="{$attribute_base}_media_{$attribute.id}_width" name="{$attribute_base}_data_media_width_{$attribute.id}" size="5" value="{$attribute.content.width|wash}" />
 </div>
 
 <div class="element">
     <label for="{$attribute_base}_media_{$attribute.id}_height">{'Height'|i18n( 'design/standard/content/datatype' )}:</label>
-    <input type="text" id="{$attribute_base}_media_{$attribute.id}_height" name="{$attribute_base}_data_media_height_{$attribute.id}" size="5" value="{$attribute.content.height}" />
+    <input type="text" id="{$attribute_base}_media_{$attribute.id}_height" name="{$attribute_base}_data_media_height_{$attribute.id}" size="5" value="{$attribute.content.height|wash}" />
     &nbsp;
     &nbsp;
     &nbsp;

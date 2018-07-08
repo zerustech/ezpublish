@@ -37,11 +37,11 @@ CREATE TABLE ezbinaryfile (
 
 
 CREATE TABLE ezcobj_state (
-  default_language_id int(11) NOT NULL default '0',
+  default_language_id bigint(20) NOT NULL default '0',
   group_id int(11) NOT NULL default '0',
   id int(11) NOT NULL auto_increment,
   identifier varchar(45) NOT NULL default '',
-  language_mask int(11) NOT NULL default '0',
+  language_mask bigint(20) NOT NULL default '0',
   priority int(11) NOT NULL default '0',
   PRIMARY KEY  (id),
   UNIQUE KEY ezcobj_state_identifier (group_id,identifier),
@@ -54,10 +54,10 @@ CREATE TABLE ezcobj_state (
 
 
 CREATE TABLE ezcobj_state_group (
-  default_language_id int(11) NOT NULL default '0',
+  default_language_id bigint(20) NOT NULL default '0',
   id int(11) NOT NULL auto_increment,
   identifier varchar(45) NOT NULL default '',
-  language_mask int(11) NOT NULL default '0',
+  language_mask bigint(20) NOT NULL default '0',
   PRIMARY KEY  (id),
   UNIQUE KEY ezcobj_state_group_identifier (identifier),
   KEY ezcobj_state_group_lmask (language_mask)
@@ -70,9 +70,10 @@ CREATE TABLE ezcobj_state_group (
 CREATE TABLE ezcobj_state_group_language (
   contentobject_state_group_id int(11) NOT NULL default '0',
   description longtext NOT NULL,
-  language_id int(11) NOT NULL default '0',
+  language_id bigint(20) NOT NULL default '0',
+  real_language_id bigint(20) NOT NULL default '0',
   name varchar(45) NOT NULL default '',
-  PRIMARY KEY  (contentobject_state_group_id,language_id)
+  PRIMARY KEY  (contentobject_state_group_id,real_language_id)
 ) ENGINE=InnoDB;
 
 
@@ -82,7 +83,7 @@ CREATE TABLE ezcobj_state_group_language (
 CREATE TABLE ezcobj_state_language (
   contentobject_state_id int(11) NOT NULL default '0',
   description longtext NOT NULL,
-  language_id int(11) NOT NULL default '0',
+  language_id bigint(20) NOT NULL default '0',
   name varchar(45) NOT NULL default '',
   PRIMARY KEY  (contentobject_state_id,language_id)
 ) ENGINE=InnoDB;
@@ -254,7 +255,7 @@ CREATE TABLE ezcollab_simple_message (
 
 CREATE TABLE ezcontent_language (
   disabled int(11) NOT NULL default '0',
-  id int(11) NOT NULL default '0',
+  id bigint(20) NOT NULL default '0',
   locale varchar(20) NOT NULL default '',
   name varchar(255) NOT NULL default '',
   PRIMARY KEY  (id),
@@ -299,9 +300,9 @@ CREATE TABLE ezcontentclass (
   creator_id int(11) NOT NULL default '0',
   id int(11) NOT NULL auto_increment,
   identifier varchar(50) NOT NULL default '',
-  initial_language_id int(11) NOT NULL default '0',
+  initial_language_id bigint(20) NOT NULL default '0',
   is_container int(11) NOT NULL default '0',
-  language_mask int(11) NOT NULL default '0',
+  language_mask bigint(20) NOT NULL default '0',
   modified int(11) NOT NULL default '0',
   modifier_id int(11) NOT NULL default '0',
   remote_id varchar(100) NOT NULL default '',
@@ -323,10 +324,10 @@ CREATE TABLE ezcontentclass_attribute (
   can_translate int(11) default '1',
   category varchar(25) NOT NULL default '',
   contentclass_id int(11) NOT NULL default '0',
-  data_float1 float default NULL,
-  data_float2 float default NULL,
-  data_float3 float default NULL,
-  data_float4 float default NULL,
+  data_float1 double default NULL,
+  data_float2 double default NULL,
+  data_float3 double default NULL,
+  data_float4 double default NULL,
   data_int1 int(11) default NULL,
   data_int2 int(11) default NULL,
   data_int3 int(11) default NULL,
@@ -370,7 +371,7 @@ CREATE TABLE ezcontentclass_classgroup (
 CREATE TABLE ezcontentclass_name (
   contentclass_id int(11) NOT NULL default '0',
   contentclass_version int(11) NOT NULL default '0',
-  language_id int(11) NOT NULL default '0',
+  language_id bigint(20) NOT NULL default '0',
   language_locale varchar(20) NOT NULL default '',
   name varchar(255) NOT NULL default '',
   PRIMARY KEY  (contentclass_id,contentclass_version,language_id)
@@ -398,8 +399,8 @@ CREATE TABLE ezcontentobject (
   contentclass_id int(11) NOT NULL default '0',
   current_version int(11) default NULL,
   id int(11) NOT NULL auto_increment,
-  initial_language_id int(11) NOT NULL default '0',
-  language_mask int(11) NOT NULL default '0',
+  initial_language_id bigint(20) NOT NULL default '0',
+  language_mask bigint(20) NOT NULL default '0',
   modified int(11) NOT NULL default '0',
   name varchar(255) default NULL,
   owner_id int(11) NOT NULL default '0',
@@ -425,21 +426,20 @@ CREATE TABLE ezcontentobject_attribute (
   attribute_original_id int(11) default '0',
   contentclassattribute_id int(11) NOT NULL default '0',
   contentobject_id int(11) NOT NULL default '0',
-  data_float float default NULL,
+  data_float double default NULL,
   data_int int(11) default NULL,
   data_text longtext,
   data_type_string varchar(50) default '',
   id int(11) NOT NULL auto_increment,
   language_code varchar(20) NOT NULL default '',
-  language_id int(11) NOT NULL default '0',
+  language_id bigint(20) NOT NULL default '0',
   sort_key_int int(11) NOT NULL default '0',
   sort_key_string varchar(255) NOT NULL default '',
   version int(11) NOT NULL default '0',
   PRIMARY KEY  (id,version),
-  KEY ezcontentobject_attr_id (id),
   KEY ezcontentobject_attribute_co_id_ver_lang_code (contentobject_id,version,language_code),
-  KEY ezcontentobject_attribute_contentobject_id (contentobject_id),
   KEY ezcontentobject_attribute_language_code (language_code),
+  KEY ezcontentobject_classattr_id (contentclassattribute_id),
   KEY sort_key_int (sort_key_int),
   KEY sort_key_string (sort_key_string)
 ) ENGINE=InnoDB;
@@ -453,7 +453,6 @@ CREATE TABLE ezcontentobject_link (
   from_contentobject_id int(11) NOT NULL default '0',
   from_contentobject_version int(11) NOT NULL default '0',
   id int(11) NOT NULL auto_increment,
-  op_code int(11) NOT NULL default '0',
   relation_type int(11) NOT NULL default '1',
   to_contentobject_id int(11) NOT NULL default '0',
   PRIMARY KEY  (id),
@@ -469,11 +468,10 @@ CREATE TABLE ezcontentobject_name (
   content_translation varchar(20) NOT NULL default '',
   content_version int(11) NOT NULL default '0',
   contentobject_id int(11) NOT NULL default '0',
-  language_id int(11) NOT NULL default '0',
+  language_id bigint(20) NOT NULL default '0',
   name varchar(255) default NULL,
   real_translation varchar(20) default NULL,
   PRIMARY KEY  (contentobject_id,content_version,content_translation),
-  KEY ezcontentobject_name_co_id (contentobject_id),
   KEY ezcontentobject_name_cov_id (content_version),
   KEY ezcontentobject_name_lang_id (language_id),
   KEY ezcontentobject_name_name (name)
@@ -547,8 +545,8 @@ CREATE TABLE ezcontentobject_version (
   created int(11) NOT NULL default '0',
   creator_id int(11) NOT NULL default '0',
   id int(11) NOT NULL auto_increment,
-  initial_language_id int(11) NOT NULL default '0',
-  language_mask int(11) NOT NULL default '0',
+  initial_language_id bigint(20) NOT NULL default '0',
+  language_mask bigint(20) NOT NULL default '0',
   modified int(11) NOT NULL default '0',
   status int(11) NOT NULL default '0',
   user_id int(11) NOT NULL default '0',
@@ -621,8 +619,7 @@ CREATE TABLE ezenumobjectvalue (
   enumelement varchar(255) NOT NULL default '',
   enumid int(11) NOT NULL default '0',
   enumvalue varchar(255) NOT NULL default '',
-  PRIMARY KEY  (contentobject_attribute_id,contentobject_attribute_version,enumid),
-  KEY ezenumobjectvalue_co_attr_id_co_attr_ver (contentobject_attribute_id,contentobject_attribute_version)
+  PRIMARY KEY  (contentobject_attribute_id,contentobject_attribute_version,enumid)
 ) ENGINE=InnoDB;
 
 
@@ -658,14 +655,14 @@ CREATE TABLE ezforgot_password (
 
 
 CREATE TABLE ezgeneral_digest_user_settings (
-  address varchar(255) NOT NULL default '',
+  user_id int(11) NOT NULL default '0',
   day varchar(255) NOT NULL default '',
   digest_type int(11) NOT NULL default '0',
   id int(11) NOT NULL auto_increment,
   receive_digest int(11) NOT NULL default '0',
   time varchar(255) NOT NULL default '',
   PRIMARY KEY  (id),
-  UNIQUE KEY ezgeneral_digest_user_settings_address (address)
+  UNIQUE KEY ezgeneral_digest_user_id (user_id)
 ) ENGINE=InnoDB;
 
 
@@ -765,8 +762,7 @@ CREATE TABLE ezkeyword (
   id int(11) NOT NULL auto_increment,
   keyword varchar(255) default NULL,
   PRIMARY KEY  (id),
-  KEY ezkeyword_keyword (keyword),
-  KEY ezkeyword_keyword_id (keyword,id)
+  KEY ezkeyword_keyword (keyword)
 ) ENGINE=InnoDB;
 
 
@@ -778,7 +774,6 @@ CREATE TABLE ezkeyword_attribute_link (
   keyword_id int(11) NOT NULL default '0',
   objectattribute_id int(11) NOT NULL default '0',
   PRIMARY KEY  (id),
-  KEY ezkeyword_attr_link_keyword_id (keyword_id),
   KEY ezkeyword_attr_link_kid_oaid (keyword_id,objectattribute_id),
   KEY ezkeyword_attr_link_oaid (objectattribute_id)
 ) ENGINE=InnoDB;
@@ -864,11 +859,12 @@ CREATE TABLE eznode_assignment (
   op_code int(11) NOT NULL default '0',
   parent_node int(11) default NULL,
   parent_remote_id varchar(100) NOT NULL default '',
-  remote_id int(11) NOT NULL default '0',
+  remote_id varchar(100) NOT NULL default '0',
   sort_field int(11) default '1',
   sort_order int(11) default '1',
+  priority int(11) NOT NULL default '0',
+  is_hidden int(11) NOT NULL default '0',
   PRIMARY KEY  (id),
-  KEY eznode_assignment_co_id (contentobject_id),
   KEY eznode_assignment_co_version (contentobject_version),
   KEY eznode_assignment_coid_cov (contentobject_id,contentobject_version),
   KEY eznode_assignment_is_main (is_main),
@@ -958,6 +954,15 @@ CREATE TABLE ezorder (
   PRIMARY KEY  (id),
   KEY ezorder_is_archived (is_archived),
   KEY ezorder_is_tmp (is_temporary)
+) ENGINE=InnoDB;
+
+
+
+
+
+CREATE TABLE ezorder_nr_incr (
+  id int(11) NOT NULL auto_increment,
+  PRIMARY KEY  (id)
 ) ENGINE=InnoDB;
 
 
@@ -1062,9 +1067,11 @@ CREATE TABLE ezpdf_export (
 
 
 CREATE TABLE ezpending_actions (
+  id int(11) NOT NULL auto_increment,
   action varchar(64) NOT NULL default '',
   created int(11) default NULL,
   param longtext,
+  PRIMARY KEY  (id),
   KEY ezpending_actions_action (action),
   KEY ezpending_actions_created (created)
 ) ENGINE=InnoDB;
@@ -1125,6 +1132,67 @@ CREATE TABLE ezpreferences (
 
 
 
+CREATE TABLE ezprest_authcode (
+  client_id varchar(200) NOT NULL default '',
+  expirytime bigint(20) NOT NULL default '0',
+  id varchar(200) NOT NULL default '',
+  scope varchar(200) default NULL,
+  user_id int(11) NOT NULL default '0',
+  PRIMARY KEY  (id),
+  KEY authcode_client_id (client_id)
+) ENGINE=InnoDB;
+
+
+
+
+
+CREATE TABLE ezprest_authorized_clients (
+  created int(11) default NULL,
+  id int(11) NOT NULL auto_increment,
+  rest_client_id int(11) default NULL,
+  user_id int(11) default NULL,
+  PRIMARY KEY  (id),
+  KEY client_user (rest_client_id,user_id)
+) ENGINE=InnoDB;
+
+
+
+
+
+CREATE TABLE ezprest_clients (
+  client_id varchar(200) default NULL,
+  client_secret varchar(200) default NULL,
+  created int(11) NOT NULL default '0',
+  description longtext,
+  endpoint_uri varchar(200) default NULL,
+  id int(11) NOT NULL auto_increment,
+  name varchar(100) default NULL,
+  owner_id int(11) NOT NULL default '0',
+  updated int(11) NOT NULL default '0',
+  version int(1) NOT NULL default '0',
+  PRIMARY KEY  (id),
+  UNIQUE KEY client_id_unique (client_id,version)
+) ENGINE=InnoDB;
+
+
+
+
+
+CREATE TABLE ezprest_token (
+  client_id varchar(200) NOT NULL default '',
+  expirytime bigint(20) NOT NULL default '0',
+  id varchar(200) NOT NULL default '',
+  refresh_token varchar(200) NOT NULL default '',
+  scope varchar(200) default NULL,
+  user_id int(11) NOT NULL default '0',
+  PRIMARY KEY  (id),
+  KEY token_client_id (client_id)
+) ENGINE=InnoDB;
+
+
+
+
+
 CREATE TABLE ezproductcategory (
   id int(11) NOT NULL auto_increment,
   name varchar(255) NOT NULL default '',
@@ -1175,6 +1243,20 @@ CREATE TABLE ezproductcollection_item_opt (
   value varchar(255) NOT NULL default '',
   PRIMARY KEY  (id),
   KEY ezproductcollection_item_opt_item_id (item_id)
+) ENGINE=InnoDB;
+
+
+
+
+
+CREATE TABLE ezpublishingqueueprocesses (
+  created int(11) default NULL,
+  ezcontentobject_version_id int(11) NOT NULL default '0',
+  finished int(11) default NULL,
+  pid int(8) default NULL,
+  started int(11) default NULL,
+  status int(2) default NULL,
+  PRIMARY KEY  (ezcontentobject_version_id)
 ) ENGINE=InnoDB;
 
 
@@ -1298,19 +1380,6 @@ CREATE TABLE ezsearch_object_word_link (
   KEY ezsearch_object_word_link_integer_value (integer_value),
   KEY ezsearch_object_word_link_object (contentobject_id),
   KEY ezsearch_object_word_link_word (word_id)
-) ENGINE=InnoDB;
-
-
-
-
-
-CREATE TABLE ezsearch_return_count (
-  count int(11) NOT NULL default '0',
-  id int(11) NOT NULL auto_increment,
-  phrase_id int(11) NOT NULL default '0',
-  time int(11) NOT NULL default '0',
-  PRIMARY KEY  (id),
-  KEY ezsearch_return_cnt_ph_id_cnt (phrase_id,count)
 ) ENGINE=InnoDB;
 
 
@@ -1491,20 +1560,17 @@ CREATE TABLE ezurlalias_ml (
   id int(11) NOT NULL default '0',
   is_alias int(11) NOT NULL default '0',
   is_original int(11) NOT NULL default '0',
-  lang_mask int(11) NOT NULL default '0',
+  lang_mask bigint(20) NOT NULL default '0',
   link int(11) NOT NULL default '0',
   parent int(11) NOT NULL default '0',
   text longtext NOT NULL,
   text_md5 varchar(32) NOT NULL default '',
   PRIMARY KEY  (parent,text_md5),
   KEY ezurlalias_ml_act_org (action(32),is_original),
-  KEY ezurlalias_ml_action (action(32),id,link),
-  KEY ezurlalias_ml_actt (action_type),
   KEY ezurlalias_ml_actt_org_al (action_type,is_original,is_alias),
   KEY ezurlalias_ml_id (id),
-  KEY ezurlalias_ml_par_act_id_lnk (parent,action(32),id,link),
-  KEY ezurlalias_ml_par_lnk_txt (parent,link,text(32)),
-  KEY ezurlalias_ml_par_txt (parent,text(32)),
+  KEY ezurlalias_ml_par_act_id_lnk (action(32),id,link,parent),
+  KEY ezurlalias_ml_par_lnk_txt (parent,text(32),link),
   KEY ezurlalias_ml_text (text(32),id,link),
   KEY ezurlalias_ml_text_lang (text(32),lang_mask,parent)
 ) ENGINE=InnoDB;
@@ -1538,9 +1604,10 @@ CREATE TABLE ezuser (
   contentobject_id int(11) NOT NULL default '0',
   email varchar(150) NOT NULL default '',
   login varchar(150) NOT NULL default '',
-  password_hash varchar(50) default NULL,
+  password_hash varchar(255) default NULL,
   password_hash_type int(11) NOT NULL default '1',
-  PRIMARY KEY  (contentobject_id)
+  PRIMARY KEY  (contentobject_id),
+  KEY ezuser_login (login)
 ) ENGINE=InnoDB;
 
 

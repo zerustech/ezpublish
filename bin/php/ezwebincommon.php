@@ -1,30 +1,12 @@
 <?php
-//
-// Created on: <26-Jun-2007 15:00:00 dl>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * File containing the ezwebincommon.php script.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 // eZWebin install/updagrade helper routines.
 // file  bin/php/ezwebincommon.php
@@ -175,9 +157,10 @@ function checkDir( $dirName )
     return true;
 }
 
-function installScriptDir( $packageRepository, $packageName )
+function installScriptDir( $packageRepository, $packageName = "" )
 {
-    return ( eZPackage::repositoryPath() . "/$packageRepository/$packageName" );
+    $dir = eZPackage::repositoryPath() . "/$packageRepository/$packageName";
+    return rtrim( $dir, '/' );
 }
 
 function defaultVendor()
@@ -329,8 +312,13 @@ function installPackages( $packageList, $params = array() )
 
     // process packages
     $action = false;
-    while( ( list( , $packageName ) = each( $packageList ) ) && $action != EZ_INSTALL_PACKAGE_EXTRA_ACTION_QUIT )
+    foreach ( $packageList as $packageName )
     {
+        if ( $action == EZ_INSTALL_PACKAGE_EXTRA_ACTION_QUIT )
+        {
+            break;
+        }
+
         $action = false;
 
         $cli->output( $cli->stylize( 'emphasize', "Installing package '$packageName'" ), true );
@@ -350,9 +338,13 @@ function installPackages( $packageList, $params = array() )
         $packageType = $package->attribute( 'type' );
         $packageItems = $package->installItemsList();
 
-        while( ( list( , $item ) = each( $packageItems ) ) && $action != EZ_INSTALL_PACKAGE_EXTRA_ACTION_QUIT
-                                                           && $action != EZ_INSTALL_PACKAGE_EXTRA_ACTION_SKIP_PACKAGE )
+        foreach ( $packageItems as $item )
         {
+            if ( $action == EZ_INSTALL_PACKAGE_EXTRA_ACTION_QUIT || $action == EZ_INSTALL_PACKAGE_EXTRA_ACTION_SKIP_PACKAGE )
+            {
+                break;
+            }
+
             $itemInstalled = false;
             do
             {
@@ -547,7 +539,7 @@ function templateLookObjectData( $params )
                                 "language_settings" => array( "MatrixTitle" => "Language settings",
                                                               "MatrixDefinition" => $languageSettingsMatrixDefinition,
                                                               "MatrixCells" => $siteaccessAliasTable ),
-                                "footer_text" => array( "DataText" => "Copyright &#169; 1999-2010 eZ Systems AS. All rights reserved." ),
+                                "footer_text" => array( "DataText" => "Copyright &#169; 1999-2014 eZ Systems AS. All rights reserved." ),
                                 "hide_powered_by" => array( "DataInt" => 0 ),
                                 "footer_script" => array( "DataText" => "" ) );
 

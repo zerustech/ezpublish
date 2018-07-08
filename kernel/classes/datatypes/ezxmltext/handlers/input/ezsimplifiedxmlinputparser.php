@@ -1,32 +1,12 @@
 <?php
-//
-// Definition of eZSimplifiedXMLInputParser class
-//
-// Created on: <27-Mar-2006 15:28:39 ks>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * File containing the eZSimplifiedXMLInputParser class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 // if ( !class_exists( 'eZXMLInputParser' ) )
 class eZSimplifiedXMLInputParser extends eZXMLInputParser
@@ -127,11 +107,11 @@ class eZSimplifiedXMLInputParser extends eZXMLInputParser
         '#text'     => array( 'structHandler' => 'structHandlerText' )
         );
 
-    function eZSimplifiedXMLInputParser( $contentObjectID, $validateErrorLevel = eZXMLInputParser::ERROR_ALL, $detectErrorLevel = eZXMLInputParser::ERROR_ALL,
+    public function __construct( $contentObjectID, $validateErrorLevel = eZXMLInputParser::ERROR_ALL, $detectErrorLevel = eZXMLInputParser::ERROR_ALL,
                                          $parseLineBreaks = false, $removeDefaultAttrs = false )
     {
         $this->contentObjectID = $contentObjectID;
-        $this->eZXMLInputParser( $validateErrorLevel, $detectErrorLevel, $parseLineBreaks, $removeDefaultAttrs );
+        parent::__construct( $validateErrorLevel, $detectErrorLevel, $parseLineBreaks, $removeDefaultAttrs );
     }
 
     /*
@@ -297,6 +277,21 @@ class eZSimplifiedXMLInputParser extends eZXMLInputParser
             $newLine = $newParent;
             $ret['result'] = $newParent;
         }
+        else if (
+            $parentName === 'header'
+            && (
+                $parent->getElementsByTagName( 'line' )->length
+                || $parent->getElementsByTagName( 'br' )->length
+            )
+        )
+        {
+            // by default the header element does not need a line element
+            // unless it contains a <br> or a previously created <line>
+            $newLine = $this->createAndPublishElement( 'line', $ret );
+            $element = $parent->replaceChild( $newLine, $element );
+            $newLine->appendChild( $element );
+            $ret['result'] = $newLine;
+        }
         elseif ( $parentName == 'paragraph' )
         {
             $newLine = $this->createAndPublishElement( 'line', $ret );
@@ -436,7 +431,7 @@ class eZSimplifiedXMLInputParser extends eZXMLInputParser
         $ret = null;
         $parent = $element->parentNode;
         $level = $element->getAttribute( 'level' );
-        if ( !$level )
+        if ( $level < 1 )
         {
             $level = 1;
         }
@@ -536,6 +531,11 @@ class eZSimplifiedXMLInputParser extends eZXMLInputParser
                     }
                 }
                 $elementToMove = $element;
+                while ( $elementToMove->parentNode->nodeName === 'custom' )
+                {
+                    $elementToMove = $elementToMove->parentNode;
+                    $parent = $elementToMove->parentNode;
+                }
                 while( $elementToMove &&
                        $elementToMove->nodeName != 'section' )
                 {
@@ -544,8 +544,13 @@ class eZSimplifiedXMLInputParser extends eZXMLInputParser
                     $current->appendChild( $elementToMove );
                     $elementToMove = $next;
 
-                    if ( $elementToMove->nodeName == 'header' &&
-                         $elementToMove->getAttribute( 'level' ) <= $level )
+                    if (
+                        !$elementToMove ||
+                        (
+                            $elementToMove->nodeName == 'header' &&
+                            $elementToMove->getAttribute( 'level' ) <= $level
+                        )
+                    )
                     {
                         break;
                     }
@@ -679,11 +684,16 @@ class eZSimplifiedXMLInputParser extends eZXMLInputParser
             if ( $trim )
             {
                 // Trim and remove if empty
-                $element->textContent = ltrim( $element->textContent );
-                if ( $element->textContent == '' )
+                $parent = $element->parentNode;
+                $trimmedElement = new DOMText( ltrim( $element->textContent ) );
+
+                if ( $trimmedElement->textContent == '' )
                 {
-                    $parent = $element->parentNode;
-                    $element = $parent->removeChild( $element );
+                    $parent->removeChild( $element );
+                }
+                else
+                {
+                    $parent->replaceChild( $trimmedElement, $element );
                 }
             }
         }
@@ -757,7 +767,7 @@ class eZSimplifiedXMLInputParser extends eZXMLInputParser
                     }
                     else
                     {
-                        $objectID = $node['contentobject_id'];
+                        $objectID = $node['id'];
                     }
                 }
                 else
@@ -771,7 +781,7 @@ class eZSimplifiedXMLInputParser extends eZXMLInputParser
                     else
                     {
                         $nodeID = $node['node_id'];
-                        $objectID = $node['contentobject_id'];
+                        $objectID = $node['id'];
                     }
                     $element->setAttribute( 'show_path', 'true' );
                 }
@@ -810,8 +820,8 @@ class eZSimplifiedXMLInputParser extends eZXMLInputParser
                         return $ret;
 
                     }
-                    // Check mail address validity
-                    if ( preg_match( "/^mailto:(.*)/i" , $url, $mailAddr ) &&
+                    // Check mail address validity following RFC 5322 and RFC 5321
+                    if ( preg_match( "/^mailto:([^.][a-z0-9!#\$%&'*+-\/=?`{|}~^]+@([a-z0-9.-]+))/i" , $url, $mailAddr ) &&
                          !eZMail::validate( $mailAddr[1] ) )
                     {
                         $this->handleError( eZXMLInputParser::ERROR_DATA,
@@ -921,7 +931,7 @@ class eZSimplifiedXMLInputParser extends eZXMLInputParser
                 }
 
                 $element->setAttribute( 'node_id', $nodeID );
-                $objectID = $node['contentobject_id'];
+                $objectID = $node['id'];
 
                 // protection from self-embedding
                 if ( $objectID == $this->contentObjectID )

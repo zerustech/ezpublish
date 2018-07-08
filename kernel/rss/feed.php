@@ -1,30 +1,10 @@
 <?php
-//
-// Created on: <19-Sep-2002 16:45:08 kk>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 $Module = $Params['Module'];
 
@@ -49,10 +29,10 @@ $cacheTime = intval( $config->variable( 'RSSSettings', 'CacheTime' ) );
 
 $lastModified = gmdate( 'D, d M Y H:i:s', time() ) . ' GMT';
 
+eZURI::setTransformURIMode( 'full' );
+
 if ( $cacheTime <= 0 )
 {
-    // use the new attribute rss-xml-content instead of the deprecated attribute rss-xml
-    // it returns the RSS as an XML string instead of a DomDocument object
     $xmlDoc = $RSSExport->attribute( 'rss-xml-content' );
     $rssContent = $xmlDoc;
 }
@@ -71,8 +51,6 @@ else
 
     if ( !$cacheFile->exists() or ( time() - $cacheFile->mtime() > $cacheTime ) )
     {
-        // use the new attribute rss-xml-content instead of the deprecated attribute rss-xml
-        // it returns the RSS as an XML string instead of a DomDocument object
         $xmlDoc = $RSSExport->attribute( 'rss-xml-content' );
         // Get current charset
         $charset = eZTextCodec::internalCharset();
@@ -96,7 +74,7 @@ else
             {
                 header( 'HTTP/1.1 304 Not Modified' );
                 header( 'Last-Modified: ' . $lastModified );
-                header( 'X-Powered-By: eZ Publish' );
+                header( 'X-Powered-By: ' . eZPublishSDK::EDITION );
                 eZExecution::cleanExit();
            }
         }
@@ -114,9 +92,12 @@ else
     header( 'Content-Type: application/rss+xml; charset=' . $httpCharset );
 
 header( 'Content-Length: ' . strlen( $rssContent ) );
-header( 'X-Powered-By: eZ Publish' );
+header( 'X-Powered-By: ' . eZPublishSDK::EDITION );
 
-while ( @ob_end_clean() );
+for ( $i = 0, $obLevel = ob_get_level(); $i < $obLevel; ++$i )
+{
+    ob_end_clean();
+}
 
 echo $rssContent;
 

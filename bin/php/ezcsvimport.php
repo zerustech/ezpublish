@@ -1,38 +1,15 @@
 #!/usr/bin/env php
 <?php
-//
-// Definition of eZCsvimport class
-//
-// Created on: <27-Sep-2006 22:23:27 sp>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * File containing the ezcsvimport.php bin script
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
-/*! \file
-*/
-
-require 'autoload.php';
+require_once 'autoload.php';
 
 $cli = eZCLI::instance();
 $script = eZScript::instance( array( 'description' => ( "eZ Publish CSV import script\n\n" .
@@ -128,7 +105,7 @@ while ( $objectData = fgetcsv( $fp, $csvLineLength , ';', '"' ) )
 
     $attributes = $contentObject->attribute( 'contentobject_attributes' );
 
-    while ( list( $key, $attribute ) = each( $attributes ) )
+    foreach ( $attributes as $key => $attribute )
     {
         $dataString = $objectData[$key];
         switch ( $datatypeString = $attribute->attribute( 'data_type_string' ) )
@@ -137,7 +114,8 @@ while ( $objectData = fgetcsv( $fp, $csvLineLength , ';', '"' ) )
             case 'ezbinaryfile':
             case 'ezmedia':
             {
-                $dataString = eZDir::path( array( $storageDir, $dataString ) );
+                $dataString = trim( $dataString );
+                $dataString = !empty( $dataString ) ? eZDir::path( array( $storageDir, $dataString ) ) : '';
                 break;
             }
             default:

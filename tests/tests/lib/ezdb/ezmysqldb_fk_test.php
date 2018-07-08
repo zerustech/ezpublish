@@ -1,32 +1,24 @@
 <?php
 /**
- * File containing the eZMySQLDBFKTest class.
+ * File containing the eZMySQLiDBFKTest class.
  *
- * @copyright Copyright (C) 1999-2010 eZ Systems AS. All rights reserved.
- * @license http://ez.no/licenses/gnu_gpl GNU GPL v2
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
  * @version //autogentag//
  * @package tests
  */
 
 /**
- * This test case handles removal of foreign keys using eZMySQLDB and eZMySQLiDB
+ * This test case handles removal of foreign keys using eZMySQLiDB
  */
-class eZMySQLDBFKTest extends ezpDatabaseTestCase
+class eZMySQLiDBFKTest extends ezpDatabaseTestCase
 {
-    function __construct()
-    {
-        $this->db = $this->sharedFixture;
-    }
-
     protected function setUp()
     {
         if ( !in_array( ezpTestRunner::dsn()->dbsyntax, array( 'mysql', 'mysqli' ) ) )
             self::markTestSkipped( "Not running MySQL nor MysQLi, skipping" );
 
         parent::setUp();
-
-        // clean up the database so that the tests are independant from the ezp database
-        ezpTestDatabaseHelper::clean( $this->sharedFixture );
     }
 
     /**
@@ -34,15 +26,15 @@ class eZMySQLDBFKTest extends ezpDatabaseTestCase
      */
     public function testForeignKeyRelations()
     {
-        $db = $this->sharedFixture;
+        $db = eZDB::instance();
         // This create 3 tables and 3 FK
         $this->createFKTables();
 
         // Count them
-        self::assertEquals( 3, $db->relationCount( eZMySQLDB::RELATION_FOREIGN_KEY ), "Wrong relation count returned by relationCount( FK )" );
+        self::assertEquals( 3, $db->relationCount( eZMySQLiDB::RELATION_FOREIGN_KEY ), "Wrong relation count returned by relationCount( FK )" );
 
         // List them
-        $foreignKeys = $db->relationList( eZMySQLDB::RELATION_FOREIGN_KEY );
+        $foreignKeys = $db->relationList( eZMySQLiDB::RELATION_FOREIGN_KEY );
 
         self::assertEquals( 3, count( $foreignKeys ), "Wrong FK count returned by relationList( FK )" );
 
@@ -58,9 +50,9 @@ class eZMySQLDBFKTest extends ezpDatabaseTestCase
         // remove them
         foreach( $foreignKeys as $foreignKey )
         {
-            $db->removeRelation( $foreignKey, eZMySQLDB::RELATION_FOREIGN_KEY );
+            $db->removeRelation( $foreignKey, eZMySQLiDB::RELATION_FOREIGN_KEY );
         }
-        self::assertEquals( 0, $db->relationCount( eZMySQLDB::RELATION_FOREIGN_KEY ) );
+        self::assertEquals( 0, $db->relationCount( eZMySQLiDB::RELATION_FOREIGN_KEY ) );
     }
 
     /**
@@ -68,7 +60,7 @@ class eZMySQLDBFKTest extends ezpDatabaseTestCase
      */
     public function createFKTables()
     {
-        $db = $this->sharedFixture;
+        $db = eZDB::instance();
         $db->query( "CREATE TABLE eztestfk_1 (
 id1 INT NOT NULL,
 id2 INT NOT NULL,

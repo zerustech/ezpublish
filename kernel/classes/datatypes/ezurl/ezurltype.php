@@ -1,32 +1,12 @@
 <?php
-//
-// Definition of eZURLType class
-//
-// Created on: <08-Oct-2002 19:12:43 bf>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * File containing the eZURLType class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 /*!
   \class eZURLType ezurltype.php
@@ -40,12 +20,9 @@ class eZURLType extends eZDataType
 {
     const DATA_TYPE_STRING = 'ezurl';
 
-    /*!
-     Initializes with a url id and a description.
-    */
-    function eZURLType()
+    public function __construct()
     {
-        $this->eZDataType( self::DATA_TYPE_STRING, ezpI18n::tr( 'kernel/classes/datatypes', 'URL', 'Datatype name' ),
+        parent::__construct( self::DATA_TYPE_STRING, ezpI18n::tr( 'kernel/classes/datatypes', 'URL', 'Datatype name' ),
                            array( 'serialize_supported' => true ) );
         $this->MaxLenValidator = new eZIntegerValidator();
     }
@@ -89,7 +66,7 @@ class eZURLType extends eZDataType
             $url = $http->PostVariable( $base . "_ezurl_url_" . $contentObjectAttribute->attribute( "id" ) );
             $text = $http->PostVariable( $base . "_ezurl_text_" . $contentObjectAttribute->attribute( "id" ) );
             if ( $contentObjectAttribute->validateIsRequired() )
-                if ( ( $url == "" ) or ( $text == "" ) )
+                if ( $url == "" )
                 {
                     $contentObjectAttribute->setValidationError( ezpI18n::tr( 'kernel/classes/datatypes',
                                                                          'Input required.' ) );
@@ -166,15 +143,25 @@ class eZURLType extends eZDataType
         if ( trim( $urlValue ) != '' )
         {
             $urlID = eZURL::registerURL( $urlValue );
-            //$urlID = $objectAttribute->attribute( 'data_int' );+
             $objectAttributeID = $objectAttribute->attribute( 'id' );
             $objectAttributeVersion = $objectAttribute->attribute( 'version' );
 
-            if ( !eZURLObjectLink::fetch( $urlID, $objectAttributeID, $objectAttributeVersion, false ) )
+            $db = eZDB::instance();
+            $db->begin();
+
+            $objectLinkList = eZURLObjectLink::fetchLinkObjectList( $objectAttributeID, $objectAttributeVersion );
+
+            // In order not to have duplicated links, delete existing ones that have been created during the version creation process
+            // and create a clean one (we can't update url_id since there's no primary key). This fixes EZP-20988
+            if ( !empty( $objectLinkList ) )
             {
-                $linkObjectLink = eZURLObjectLink::create( $urlID, $objectAttributeID, $objectAttributeVersion );
-                $linkObjectLink->store();
+                eZURLObjectLink::removeURLlinkList( $objectAttributeID, $objectAttributeVersion );
             }
+
+            $linkObjectLink = eZURLObjectLink::create( $urlID, $objectAttributeID, $objectAttributeVersion );
+            $linkObjectLink->store();
+
+            $db->commit();
         }
     }
 

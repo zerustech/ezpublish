@@ -1,32 +1,12 @@
 <?php
-//
-// Definition of eZLintSchema class
-//
-// Created on: <05-Nov-2004 14:03:27 jb>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * File containing the eZLintSchema class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package lib
+ */
 
 /*!
   \class eZLintSchema ezlintschema.php
@@ -59,15 +39,15 @@
 
 class eZLintSchema extends eZDBSchemaInterface
 {
-    /*!
-     Initializes the lint checker with a foreign db schema.
-
-     \param $db A dummy parameter, pass \c false.
-     \param $otherSchema The db schema that should be checked
-    */
-    function eZLintSchema( $db, $otherSchema )
+    /**
+     * Initializes the lint checker with a foreign db schema.
+     *
+     * @param array $db A dummy parameter, pass false.
+     * @param eZDBSchemaInterface $otherSchema The db schema that should be checked
+     */
+    public function __construct( $db, $otherSchema )
     {
-        $this->eZDBSchemaInterface( $db );
+        parent::__construct( $db );
         $this->OtherSchema = $otherSchema;
         $this->CorrectSchema = false;
         $this->IsLintChecked = false;
@@ -281,7 +261,7 @@ class eZLintSchema extends eZDBSchemaInterface
                         $schema[$existingTableName]['fields'][$existingFieldName]['comments'] = $comments;
                         foreach ( $comments as $comment )
                         {
-                            eZDebug::writeWarning( $comment, 'eZLintSchema::fieldComment' );
+                            eZDebug::writeWarning( $comment, __METHOD__ );
                         }
                     }
                 }
@@ -382,7 +362,7 @@ class eZLintSchema extends eZDBSchemaInterface
                         $schema[$existingTableName]['indexes'][$existingIndexName]['comments'] = $comments;
                         foreach ( $comments as $comment )
                         {
-                            eZDebug::writeWarning( $comment, 'eZLintSchema::indexComment' );
+                            eZDebug::writeWarning( $comment, __METHOD__ );
                         }
                     }
                 }
@@ -399,7 +379,7 @@ class eZLintSchema extends eZDBSchemaInterface
                 $schema[$existingTableName]['comments'] = $tableComments;
                 foreach ( $tableComments as $comment )
                 {
-                    eZDebug::writeWarning( $comment, 'eZLintSchema::tableComment' );
+                    eZDebug::writeWarning( $comment, __METHOD__ );
                 }
             }
         }

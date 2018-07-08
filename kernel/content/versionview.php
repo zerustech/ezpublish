@@ -1,36 +1,21 @@
 <?php
-//
-// Created on: <03-May-2002 15:17:01 bf>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
-
+/**
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 $http = eZHTTPTool::instance();
-$Offset = $Params['Offset'];
+$Offset = (int)$Params['Offset'];
+$ObjectID = (int)$ObjectID;
+$EditVersion = (int)$EditVersion;
+$LanguageCode = htmlspecialchars( $LanguageCode );
 $viewParameters = array( 'offset' => $Offset );
 
+// Will be sent from the content/edit page and should be kept
+// incase the user decides to continue editing.
+$FromLanguage = htmlspecialchars( $Params['FromLanguage'] );
 
 if ( $http->hasPostVariable( 'BackButton' )  )
 {
@@ -45,10 +30,6 @@ if ( $http->hasPostVariable( 'BackButton' )  )
         $userRedirectURI = $http->sessionVariable( "LastAccessesURI" );
     return $Module->redirectTo( $userRedirectURI );
 }
-
-// Will be sent from the content/edit page and should be kept
-// incase the user decides to continue editing.
-$FromLanguage = $Params['FromLanguage'];
 
 $contentObject = eZContentObject::fetch( $ObjectID );
 if ( $contentObject === null )
@@ -218,14 +199,14 @@ $node->setAttribute( 'depth', $depth );
 $node->setAttribute( 'node_id', $virtualNodeID );
 $node->setAttribute( 'sort_field', $class->attribute( 'sort_field' ) );
 $node->setAttribute( 'sort_order', $class->attribute( 'sort_order' ) );
-$node->setAttribute( 'remote_id', md5( (string)mt_rand() . (string)time() ) );
+$node->setAttribute( 'remote_id', eZRemoteIdUtility::generate( 'node' ) );
 $node->setName( $objectName );
 
 $node->setContentObject( $contentObject );
 
 if ( $Params['SiteAccess'] )
 {
-    $siteAccess = $Params['SiteAccess'];
+    $siteAccess = htmlspecialchars( $Params['SiteAccess'] );
 }
 else
 {
@@ -256,11 +237,13 @@ if ( $access['type'] === eZSiteAccess::TYPE_URI )
 
 eZSiteAccess::load( $access );
 
+eZDebug::checkDebugByUser();
+
 // Change content object default language
 $GLOBALS['eZContentObjectDefaultLanguage'] = $LanguageCode;
+eZTranslatorManager::resetTranslations();
+ezpI18n::reset();
 eZContentObject::clearCache();
-
-eZContentLanguage::expireCache();
 
 $Module->setTitle( 'View ' . $class->attribute( 'name' ) . ' - ' . $contentObject->attribute( 'name' ) );
 

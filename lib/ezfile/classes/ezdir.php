@@ -1,35 +1,12 @@
 <?php
-//
-// Definition of eZDir class
-//
-// Created on: <02-Jul-2002 15:33:41 sp>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
-
-/*! \file
-*/
+/**
+ * File containing the eZDir class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package lib
+ */
 
 /*!
   \class eZDir ezdir.php
@@ -117,14 +94,14 @@ class eZDir
     */
     static function cleanupEmptyDirectories( $dir )
     {
-        $dir = eZDir::cleanPath( $dir, self::SEPARATOR_UNIX );
+        $dir = self::cleanPath( $dir, self::SEPARATOR_UNIX );
         $dirElements = explode( '/', $dir );
         if ( count( $dirElements ) == 0 )
             return true;
         $currentDir = $dirElements[0];
         $result = true;
         if ( !file_exists( $currentDir ) and $currentDir != "" )
-            $result = eZDir::doMkdir( $currentDir, $perm );
+            $result = self::doMkdir( $currentDir, self::directoryPermission() );
         if ( !$result )
             return false;
 
@@ -289,15 +266,45 @@ class eZDir
         // RecursiveDelete fails if ...
         // $dir is not a directory
         if ( !is_dir( $dir ) )
+        {
+            eZDebug::writeError( "The path: $dir is not a folder" , __METHOD__ );
             return false;
+        }
 
-        // rootCheck is enabled and $dir is not part of the root directory
-        if ( $rootCheck && strpos( dirname( realpath( $dir ) ) . DIRECTORY_SEPARATOR, realpath( eZSys::rootDir() ) . DIRECTORY_SEPARATOR ) === false )
-            return false;
+        if ( $rootCheck )
+        {
+            // rootCheck is enabled, check if $dir is part of authorized directories
+            $allowedDirs = eZINI::instance()->variable( 'FileSettings', 'AllowedDeletionDirs' );
+            // Also adding eZ Publish root dir.
+            $rootDir = eZSys::rootDir() . DIRECTORY_SEPARATOR;
+            array_unshift( $allowedDirs, $rootDir );
+
+            $dirRealPath = dirname( realpath( $dir ) ) . DIRECTORY_SEPARATOR;
+            $canDelete = false;
+            foreach ( $allowedDirs as $allowedDir )
+            {
+                if ( strpos( $dirRealPath, realpath( $allowedDir ) ) === 0 )
+                {
+                    $canDelete = true;
+                    break;
+                }
+            }
+
+            if ( !$canDelete )
+            {
+                eZDebug::writeError(
+                    "Recursive delete denied for '$dir' as its realpath '$dirRealPath' is outside eZ Publish root and not registered in AllowedDeletionDirs."
+                );
+                return false;
+            }
+        }
 
         // the directory cannot be opened
         if ( ! ( $handle = @opendir( $dir ) ) )
+        {
+            eZDebug::writeError( "Cannot access folder:". dirname( $dir) , __METHOD__ );
             return false;
+        }
 
         while ( ( $file = readdir( $handle ) ) !== false )
         {
@@ -463,7 +470,6 @@ class eZDir
     */
     static function recursiveFindRelative( $baseDir, $subDir, $suffix )
     {
-        $returnFiles = array();
         $dir = $baseDir;
         if ( $subDir != "" )
         {
@@ -472,6 +478,13 @@ class eZDir
             else
                 $dir .= $subDir;
         }
+
+        if ( !is_dir( $dir ) )
+        {
+            return array();
+        }
+
+        $returnFiles = array();
         if ( $handle = @opendir( $dir ) )
         {
             while ( ( $file = readdir( $handle ) ) !== false )
@@ -521,17 +534,17 @@ class eZDir
         {
             while ( ( $element = readdir( $handle ) ) !== false )
             {
-                if ( $element == '.' or $element == '..' )
+                if ( $element === '.' || $element === '..' )
                     continue;
-                if ( !$includeHidden and $element[0] == "." )
+                if ( !$includeHidden && $element[0] === '.' )
                     continue;
-                if ( $excludeItems and preg_match( $excludeItems, $element ) )
+                if ( $excludeItems && preg_match( $excludeItems, $element ) )
                     continue;
-                if ( @is_dir( $dir . '/' . $element ) and strpos( $types, 'd' ) === false )
+                if ( strpos( $types, 'd' ) === false && is_dir( $dir . '/' . $element ) )
                     continue;
-                if ( @is_link( $dir . '/' . $element ) and strpos( $types, 'l' ) === false )
+                if ( strpos( $types, 'l' ) === false && is_link( $dir . '/' . $element ) )
                     continue;
-                if ( @is_file( $dir . '/' . $element ) and strpos( $types, 'f' ) === false )
+                if ( strpos( $types, 'f' ) === false && is_file( $dir . '/' . $element ))
                     continue;
                 if ( $fullPath )
                 {
@@ -566,14 +579,12 @@ class eZDir
     {
         if ( !is_dir( $sourceDirectory ) )
         {
-            eZDebug::writeError( "Source $sourceDirectory is not a directory, cannot copy from it",
-                                 'eZDir::copy' );
+            eZDebug::writeError( "Source $sourceDirectory is not a directory, cannot copy from it", __METHOD__ );
             return false;
         }
         if ( !is_dir( $destinationDirectory ) )
         {
-            eZDebug::writeError( "Destination $destinationDirectory is not a directory, cannot copy to it",
-                                 'eZDir::copy' );
+            eZDebug::writeError( "Destination $destinationDirectory is not a directory, cannot copy to it", __METHOD__ );
             return false;
         }
         if ( $asChild )

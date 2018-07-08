@@ -1,41 +1,21 @@
 <?php
-//
-// Definition of eZSearchEngine class
-//
-// Created on: <25-Jun-2002 13:09:57 bf>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * File containing the eZSearchEngine class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 /*!
   \class eZSearchEngine ezsearch.php
 
 */
 
-class eZSearchEngine
+class eZSearchEngine implements ezpSearchEngine
 {
-    function eZSearchEngine()
+    public function __construct()
     {
         $generalFilter = array( 'subTreeTable' => '',
                                 'searchDateQuery' => '',
@@ -50,21 +30,25 @@ class eZSearchEngine
     }
 
 
-    static function needCommit()
+    public function needCommit()
     {
         //commits are NA
         return false;
     }
 
-    static function needRemoveWithUpdate()
+    public function needRemoveWithUpdate()
     {
         return true;
     }
 
-    /*!
-     Adds an object to the search database.
-    */
-    function addObject( $contentObject, $commit )
+    /**
+     * Adds object $contentObject to the search database.
+     *
+     * @param eZContentObject $contentObject Object to add to search engine
+     * @param bool $commit Whether to commit after adding the object
+     * @return bool True if the operation succeed.
+     */
+    public function addObject( $contentObject, $commit = true )
     {
         $contentObjectID = $contentObject->attribute( 'id' );
         $currentVersion = $contentObject->currentVersion();
@@ -74,7 +58,7 @@ class eZSearchEngine
             $errCurrentVersion = $contentObject->attribute( 'current_version');
             eZDebug::writeError( "Failed to fetch \"current version\" ({$errCurrentVersion})" .
                                  " of content object (ID: {$contentObjectID})", 'eZSearchEngine' );
-            return;
+            return false;
         }
 
         $indexArray = array();
@@ -163,6 +147,8 @@ class eZSearchEngine
             $placement = $this->indexWords( $contentObject, array_slice( $indexArray, $arrayCount, 1000 ), $wordIDArray, $placement );
         }
         $db->commit();
+
+        return true;
     }
 
     /*!
@@ -182,7 +168,6 @@ class eZSearchEngine
         $trans = eZCharTransform::instance();
 
         $wordCount = count( $indexArrayOnlyWords );
-        $wordIDArray = array();
         $wordArray = array();
         // store the words in the index and remember the ID
         $dbName = $db->databaseName();
@@ -199,6 +184,7 @@ class eZSearchEngine
                 // Build a has of the existing words
                 $wordResCount = count( $wordRes );
                 $existingWordArray = array();
+                $wordIDArray = array();
                 for ( $i = 0; $i < $wordResCount; $i++ )
                 {
                     $wordIDArray[] = $wordRes[$i]['id'];
@@ -311,7 +297,8 @@ class eZSearchEngine
             $indexWord = $indexArray[$i]['Word'];
             $contentClassAttributeID = $indexArray[$i]['ContentClassAttributeID'];
             $identifier = $indexArray[$i]['identifier'];
-            $integerValue = $indexArray[$i]['integer_value'];
+            $integerValue = min( $indexArray[$i]['integer_value'], eZDBInterface::MAX_INT );
+            $integerValue = max( $integerValue, eZDBInterface::MIN_INT );
             $wordID = $wordIDArray[$indexWord];
 
             if ( isset( $indexArray[$i+1] ) )
@@ -383,20 +370,37 @@ class eZSearchEngine
         return $placement;
     }
 
-    /*!
-     \static
-    */
-    function removeObject( $contentObject, $commit )
+    /**
+     * Removes object $contentObject from the search database.
+     *
+     * @deprecated Since 5.0, use removeObjectById()
+     * @param eZContentObject $contentObject the content object to remove
+     * @param bool $commit Whether to commit after removing the object
+     * @return bool True if the operation succeed.
+     */
+    public function removeObject( $contentObject, $commit = null )
+    {
+        return $this->removeObjectById( $contentObject->attribute( "id" ), $commit );
+    }
+
+    /**
+     *  Removes a content object by Id from the search database.
+     *
+     * @since 5.0
+     * @param int $contentObjectId The content object to remove by id
+     * @param bool $commit Whether to commit after removing the object
+     * @return bool True if the operation succeed.
+     */
+    public function removeObjectById( $contentObjectId, $commit = null )
     {
         $db = eZDB::instance();
-        $objectID = $contentObject->attribute( "id" );
         $doDelete = false;
-        $db->begin();
 
-        if ( $db->databaseName() == 'mysql' )
+        $db->begin();
+        if ( $db->databaseName() === 'mysql' )
         {
             // fetch all the words and decrease the object count on all the words
-            $wordArray = $db->arrayQuery( "SELECT word_id FROM ezsearch_object_word_link WHERE contentobject_id='$objectID'" );
+            $wordArray = $db->arrayQuery( "SELECT word_id FROM ezsearch_object_word_link WHERE contentobject_id='$contentObjectId'" );
             $wordIDList = array();
             foreach ( $wordArray as $word )
                 $wordIDList[] = $word["word_id"];
@@ -409,10 +413,10 @@ class eZSearchEngine
         }
         else
         {
-            $cnt = $db->arrayQuery( "SELECT COUNT( word_id ) AS cnt FROM ezsearch_object_word_link WHERE contentobject_id='$objectID'" );
+            $cnt = $db->arrayQuery( "SELECT COUNT( word_id ) AS cnt FROM ezsearch_object_word_link WHERE contentobject_id='$contentObjectId'" );
             if ( $cnt[0]['cnt'] > 0 )
             {
-                $db->query( "UPDATE ezsearch_word SET object_count=( object_count - 1 ) WHERE id in ( SELECT word_id FROM ezsearch_object_word_link WHERE contentobject_id='$objectID' )" );
+                $db->query( "UPDATE ezsearch_word SET object_count=( object_count - 1 ) WHERE id in ( SELECT word_id FROM ezsearch_object_word_link WHERE contentobject_id='$contentObjectId' )" );
                 $doDelete = true;
             }
         }
@@ -420,9 +424,11 @@ class eZSearchEngine
         if ( $doDelete )
         {
             $db->query( "DELETE FROM ezsearch_word WHERE object_count='0'" );
-            $db->query( "DELETE FROM ezsearch_object_word_link WHERE contentobject_id='$objectID'" );
+            $db->query( "DELETE FROM ezsearch_object_word_link WHERE contentobject_id='$contentObjectId'" );
         }
         $db->commit();
+
+        return true;
     }
 
     /*!
@@ -460,7 +466,7 @@ class eZSearchEngine
     /*!
      Runs a query to the search engine.
     */
-    function search( $searchText, $params = array(), $searchTypes = array() )
+    public function search( $searchText, $params = array(), $searchTypes = array() )
     {
         if ( count( $searchTypes ) == 0 )
         {
@@ -582,12 +588,12 @@ class eZSearchEngine
             $sectionQuery = '';
             if ( is_numeric( $searchSectionID ) and  $searchSectionID > 0 )
             {
-                $sectionQuery = "ezsearch_object_word_link.section_id = '$searchSectionID' AND ";
+                $sectionQuery = "ezsearch_object_word_link.section_id = '" . (int)$searchSectionID . "' AND ";
             }
             else if ( is_array( $searchSectionID ) )
             {
                 // Build query for searching in an array of sections
-                $sectionQuery = $db->generateSQLINStatement( $searchSectionID, 'ezsearch_object_word_link.section_id', false, false, 'int' ) . " AND ";
+                $sectionQuery = $db->generateSQLINStatement( array_map( 'intval', $searchSectionID ), 'ezsearch_object_word_link.section_id', false, false, 'int' ) . " AND ";
             }
 
             $searchDateQuery = '';
@@ -655,13 +661,13 @@ class eZSearchEngine
             if ( is_numeric( $searchContentClassID ) and $searchContentClassID > 0 )
             {
                 // Build query for searching in one class
-                $classQuery = "ezsearch_object_word_link.contentclass_id = '$searchContentClassID' AND ";
+                $classQuery = "ezsearch_object_word_link.contentclass_id = '" . (int)$searchContentClassID . "' AND ";
                 $this->GeneralFilter['classAttributeQuery'] = $classQuery;
             }
             else if ( is_array( $searchContentClassID ) )
             {
                 // Build query for searching in a number of classes
-                $classString = $db->generateSQLINStatement( $searchContentClassID, 'ezsearch_object_word_link.contentclass_id', false, false, 'int' );
+                $classString = $db->generateSQLINStatement( array_map( 'intval', $searchContentClassID ), 'ezsearch_object_word_link.contentclass_id', false, false, 'int' );
                 $classQuery = "$classString AND ";
                 $this->GeneralFilter['classAttributeQuery'] = $classQuery;
             }
@@ -674,7 +680,7 @@ class eZSearchEngine
             else if ( is_array( $searchContentClassAttributeID ) )
             {
                 // Build query for searching in a number of attributes
-                $classAttributeQuery = $db->generateSQLINStatement( $searchContentClassAttributeID , 'ezsearch_object_word_link.contentclass_attribute_id', false, false, 'int' ) . ' AND ';
+                $classAttributeQuery = $db->generateSQLINStatement( array_map( 'intval', $searchContentClassAttributeID ), 'ezsearch_object_word_link.contentclass_attribute_id', false, false, 'int' ) . ' AND ';
             }
 
             // Get the total number of objects
@@ -792,16 +798,7 @@ class eZSearchEngine
             $sqlPermissionChecking = eZContentObjectTreeNode::createPermissionCheckingSQL( $limitationList );
             $this->GeneralFilter['sqlPermissionChecking'] = $sqlPermissionChecking;
 
-            $useVersionName = true;
-            if ( $useVersionName )
-            {
-                $versionNameTables = ', ezcontentobject_name ';
-                $versionNameTargets = ', ezcontentobject_name.name as name,  ezcontentobject_name.real_translation ';
-
-                $versionNameJoins = " and  ezcontentobject_tree.contentobject_id = ezcontentobject_name.contentobject_id and
-                                  ezcontentobject_tree.contentobject_version = ezcontentobject_name.content_version and ";
-                $versionNameJoins .= eZContentLanguage::sqlFilter( 'ezcontentobject_name', 'ezcontentobject' );
-            }
+            $versionNameJoins = " AND " . eZContentLanguage::sqlFilter( 'ezcontentobject_name', 'ezcontentobject' );
 
             /// Only support AND search at this time
             // build fulltext search SQL part
@@ -878,11 +875,11 @@ class eZSearchEngine
                         $this->saveCreatedTempTableName( 0, $table );
                         $db->createTempTable( "CREATE TEMPORARY TABLE $table ( contentobject_id int primary key not null, published int )" );
                         $db->query( "INSERT INTO $table SELECT DISTINCT ezsearch_object_word_link.contentobject_id, ezsearch_object_word_link.published
-                                         FROM ezcontentobject,
-                                              ezsearch_object_word_link
-                                              $subTreeTable,
-                                              ezcontentclass,
-                                              ezcontentobject_tree
+                                         FROM ezcontentobject
+                                              INNER JOIN ezsearch_object_word_link ON (ezsearch_object_word_link.contentobject_id = ezcontentobject.id)
+                                              $subTreeTable
+                                              INNER JOIN ezcontentclass ON (ezcontentclass.id = ezcontentobject.contentclass_id)
+                                              INNER JOIN ezcontentobject_tree ON (ezcontentobject_tree.contentobject_id = ezcontentobject.id)
                                               $sqlPermissionChecking[from]
                                          WHERE
                                                $searchDateQuery
@@ -891,10 +888,7 @@ class eZSearchEngine
                                                $classAttributeQuery
                                                $searchPartText
                                                $subTreeSQL
-                                         ezcontentobject.id=ezsearch_object_word_link.contentobject_id and
-                                         ezcontentobject.contentclass_id = ezcontentclass.id and
-                                         ezcontentclass.version = '0' and
-                                         ezcontentobject.id = ezcontentobject_tree.contentobject_id and
+                                         ezcontentclass.version = '0' AND
                                          ezcontentobject_tree.node_id = ezcontentobject_tree.main_node_id
                                          $showInvisibleNodesCond
                                          $sqlPermissionChecking[where]",
@@ -909,25 +903,21 @@ class eZSearchEngine
                         $db->createTempTable( "CREATE TEMPORARY TABLE $table ( contentobject_id int primary key not null, published int )" );
                         $db->query( "INSERT INTO $table SELECT DISTINCT ezsearch_object_word_link.contentobject_id, ezsearch_object_word_link.published
                                          FROM
-                                             ezcontentobject,
-                                             ezsearch_object_word_link
-                                             $subTreeTable,
-                                             ezcontentclass,
-                                             ezcontentobject_tree,
-                                             $tmpTable0
+                                             ezcontentobject
+                                             INNER JOIN ezsearch_object_word_link ON (ezsearch_object_word_link.contentobject_id = ezcontentobject.id)
+                                             $subTreeTable
+                                             INNER JOIN ezcontentclass ON (ezcontentclass.id = ezcontentobject.contentclass_id)
+                                             INNER JOIN ezcontentobject_tree ON (ezcontentobject_tree.contentobject_id = ezcontentobject.id)
+                                             INNER JOIN $tmpTable0 ON ($tmpTable0.contentobject_id = ezsearch_object_word_link.contentobject_id)
                                              $sqlPermissionChecking[from]
                                           WHERE
-                                          $tmpTable0.contentobject_id=ezsearch_object_word_link.contentobject_id AND
                                           $searchDateQuery
                                           $sectionQuery
                                           $classQuery
                                           $classAttributeQuery
                                           $searchPartText
                                           $subTreeSQL
-                                          ezcontentobject.id=ezsearch_object_word_link.contentobject_id and
-                                          ezcontentobject.contentclass_id = ezcontentclass.id and
-                                          ezcontentclass.version = '0' and
-                                          ezcontentobject.id = ezcontentobject_tree.contentobject_id and
+                                          ezcontentclass.version = '0' AND
                                           ezcontentobject_tree.node_id = ezcontentobject_tree.main_node_id
                                           $showInvisibleNodesCond
                                           $sqlPermissionChecking[where]",
@@ -947,11 +937,11 @@ class eZSearchEngine
                  $this->saveCreatedTempTableName( 0, $table );
                  $db->createTempTable( "CREATE TEMPORARY TABLE $table ( contentobject_id int primary key not null, published int )" );
                  $db->query( "INSERT INTO $table SELECT DISTINCT ezsearch_object_word_link.contentobject_id, ezsearch_object_word_link.published
-                                     FROM ezcontentobject,
-                                          ezsearch_object_word_link
-                                          $subTreeTable,
-                                          ezcontentclass,
-                                          ezcontentobject_tree
+                                     FROM ezcontentobject
+                                          INNER JOIN ezsearch_object_word_link ON (ezsearch_object_word_link.contentobject_id = ezcontentobject.id)
+                                          $subTreeTable
+                                          INNER JOIN ezcontentclass ON (ezcontentclass.id = ezcontentobject.contentclass_id)
+                                          INNER JOIN ezcontentobject_tree ON (ezcontentobject_tree.contentobject_id = ezcontentobject.id)
                                           $sqlPermissionChecking[from]
                                      WHERE
                                           $searchDateQuery
@@ -959,10 +949,7 @@ class eZSearchEngine
                                           $classQuery
                                           $classAttributeQuery
                                           $subTreeSQL
-                                          ezcontentobject.id=ezsearch_object_word_link.contentobject_id and
-                                          ezcontentobject.contentclass_id = ezcontentclass.id and
-                                          ezcontentclass.version = '0' and
-                                          ezcontentobject.id = ezcontentobject_tree.contentobject_id and
+                                          ezcontentclass.version = '0' AND
                                           ezcontentobject_tree.node_id = ezcontentobject_tree.main_node_id
                                           $showInvisibleNodesCond
                                           $sqlPermissionChecking[where]",
@@ -1000,7 +987,7 @@ class eZSearchEngine
             $tmpTablesSeparator = '';
             if ( $tmpTableCount > 0 )
             {
-                $tmpTablesSeparator = ',';
+                $tmpTablesSeparator = ', ';
             }
 
             $tmpTable0 = $this->getSavedTempTableName( 0 );
@@ -1026,53 +1013,37 @@ class eZSearchEngine
             $orderByFieldsSQL = $orderBySQLArray['sortingFields'];
             $sortWhereSQL = $orderBySQLArray['whereSQL'];
             $sortFromSQL = $orderBySQLArray['fromSQL'];
+            $sortSelectSQL = $orderBySQLArray['selectSQL'];
 
             // Fetch data from table
-            $searchQuery ='';
-            $dbName = $db->databaseName();
-            if ( $dbName == 'mysql' )
-            {
-                $searchQuery = "SELECT DISTINCT ezcontentobject.*, ezcontentclass.serialized_name_list as class_serialized_name_list, ezcontentobject_tree.*
-                            $versionNameTargets
-                    FROM
-                       $tmpTablesFrom $tmpTablesSeparator
-                       ezcontentobject,
-                       ezcontentclass,
-                       ezcontentobject_tree
-                       $versionNameTables
-                       $sortFromSQL
-                    WHERE
-                    $tmpTablesWhere $and
-                    $tmpTablesWhereExtra
-                    ezcontentobject.contentclass_id = ezcontentclass.id and
-                    ezcontentclass.version = '0' and
-                    ezcontentobject.id = ezcontentobject_tree.contentobject_id and
-                    ezcontentobject_tree.node_id = ezcontentobject_tree.main_node_id
-                    $versionNameJoins
-                    $showInvisibleNodesCond
-                    $sortWhereSQL
-                    ORDER BY $orderByFieldsSQL";
-            }
-            else
-            {
-                $searchQuery = "SELECT DISTINCT ezcontentobject.*, ezcontentclass.serialized_name_list as class_serialized_name_list, ezcontentobject_tree.*
-                            $versionNameTargets
-                    FROM
-                       $tmpTablesFrom $tmpTablesSeparator
-                       ezcontentobject,
-                       ezcontentclass,
-                       ezcontentobject_tree
-                       $versionNameTables
-                    WHERE
-                    $tmpTablesWhere $and
-                    $tmpTablesWhereExtra
-                    ezcontentobject.contentclass_id = ezcontentclass.id and
-                    ezcontentclass.version = '0' and
-                    ezcontentobject.id = ezcontentobject_tree.contentobject_id and
-                    ezcontentobject_tree.node_id = ezcontentobject_tree.main_node_id
-                    $versionNameJoins
-                     ";
-            }
+            $searchQuery = "SELECT DISTINCT " .
+            "ezcontentobject.contentclass_id, ezcontentobject.current_version, ezcontentobject.id, ezcontentobject.initial_language_id, ezcontentobject.language_mask, " .
+            "ezcontentobject.modified, ezcontentobject.name, ezcontentobject.owner_id, ezcontentobject.published, ezcontentobject.remote_id AS object_remote_id, ezcontentobject.section_id, " .
+            "ezcontentobject.status, ezcontentobject_tree.contentobject_is_published, ezcontentobject_tree.contentobject_version, ezcontentobject_tree.depth, ezcontentobject_tree.is_hidden, " .
+            "ezcontentobject_tree.is_invisible, ezcontentobject_tree.main_node_id, ezcontentobject_tree.modified_subnode, ezcontentobject_tree.node_id, ezcontentobject_tree.parent_node_id, " .
+            "ezcontentobject_tree.path_identification_string, ezcontentobject_tree.path_string, ezcontentobject_tree.priority, ezcontentobject_tree.remote_id, ezcontentobject_tree.sort_field, " .
+            "ezcontentobject_tree.sort_order, ezcontentclass.serialized_name_list as class_serialized_name_list, ezcontentobject_name.name as name, " .
+            "ezcontentobject_name.real_translation $sortSelectSQL " .
+            "FROM " .
+            "$tmpTablesFrom $tmpTablesSeparator " .
+            "ezcontentobject " .
+            "INNER JOIN ezcontentclass ON (ezcontentclass.id = ezcontentobject.contentclass_id ) " .
+            "INNER JOIN ezcontentobject_tree ON (ezcontentobject_tree.contentobject_id = ezcontentobject.id) " .
+            "INNER JOIN ezcontentobject_name ON ( " .
+            "    ezcontentobject_name.contentobject_id = ezcontentobject_tree.contentobject_id AND " .
+            "    ezcontentobject_name.content_version = ezcontentobject_tree.contentobject_version " .
+            ") " .
+            $sortFromSQL . " " .
+            "WHERE " .
+            "$tmpTablesWhere $and " .
+            $tmpTablesWhereExtra . " " .
+            "ezcontentclass.version = '0' AND " .
+            "ezcontentobject_tree.node_id = ezcontentobject_tree.main_node_id AND " .
+            "" . eZContentLanguage::sqlFilter( 'ezcontentobject_name', 'ezcontentobject' ) . " " .
+            $showInvisibleNodesCond . " " .
+            $sortWhereSQL . " " .
+            "ORDER BY $orderByFieldsSQL";
+
             // Count query
             $languageCond = eZContentLanguage::languagesSQLFilter( 'ezcontentobject' );
             if ( $tmpTableCount == 0 )
@@ -1150,6 +1121,7 @@ class eZSearchEngine
         $attributeJoinCount = 0;
         $attributeFromSQL = "";
         $attributeWereSQL = "";
+        $selectSQL = '';
         if ( $sortList !== false )
         {
             $sortingFields = '';
@@ -1185,13 +1157,14 @@ class eZSearchEngine
                         case 'class_identifier':
                         {
                             $sortingFields .= 'ezcontentclass.identifier';
+                            $selectSQL .= ', ezcontentclass.identifier';
                         } break;
                         case 'class_name':
                         {
                             $classNameFilter = eZContentClassName::sqlFilter();
-                            $sortingFields .= $classNameFilter['nameField'];
-                            $attributeFromSQL .= ", $classNameFilter[from]";
-                            $attributeWhereSQL .= "$classNameFilter[where] AND ";
+                            $selectSQL .= ", " . $classNameFilter['nameField'] . " AS class_name";
+                            $sortingFields .= "class_name";
+                            $attributeFromSQL .= " INNER JOIN $classNameFilter[from] ON ($classNameFilter[where])";
                         } break;
                         case 'priority':
                         {
@@ -1223,19 +1196,18 @@ class eZSearchEngine
                             }
 
                             $sortingFields .= "a$attributeJoinCount.$sortKey";
-                            $attributeFromSQL .= ", ezcontentobject_attribute as a$attributeJoinCount";
-                            $attributeWereSQL .= " AND a$attributeJoinCount.contentobject_id = ezcontentobject.id AND
-                                                  a$attributeJoinCount.contentclassattribute_id = $sortClassID AND
-                                                  a$attributeJoinCount.version = ezcontentobject_name.content_version";
+                            $attributeFromSQL .= " INNER JOIN ezcontentobject_attribute as a$attributeJoinCount ON (a$attributeJoinCount.contentobject_id = ezcontentobject.id AND a$attributeJoinCount.version = ezcontentobject_name.content_version)";
+                            $attributeWereSQL .= " AND a$attributeJoinCount.contentclassattribute_id = $sortClassID";
+                            $selectSQL .= ", a$attributeJoinCount.$sortKey";
 
                             $attributeJoinCount++;
                         }break;
 
                         default:
                         {
-                            eZDebug::writeWarning( 'Unknown sort field: ' . $sortField, 'eZContentObjectTreeNode::subTree' );
+                            eZDebug::writeWarning( 'Unknown sort field: ' . $sortField, __METHOD__ );
                             continue;
-                        };
+                        }
                     }
                     $sortOrder = true; // true is ascending
                     if ( isset( $sortBy[1] ) )
@@ -1253,6 +1225,7 @@ class eZSearchEngine
         }
 
         return array( 'sortingFields' => $sortingFields,
+                      'selectSQL' => $selectSQL,
                       'fromSQL' => $attributeFromSQL,
                       'whereSQL' => $attributeWereSQL );
     }
@@ -1321,27 +1294,33 @@ class eZSearchEngine
     */
     function splitString( $text )
     {
-        // strip quotes
-        $text = preg_replace("#'#", "", $text );
-        $text = preg_replace( "#\"#", "", $text );
+        $text = self::removeDuplicatedSpaces( trim( self::removeAllQuotes( $text ) ) );
 
-        // Strip multiple whitespace
-        $text = trim( $text );
-        $text = preg_replace("(\s+)", " ", $text );
+        return empty( $text ) ? array() : explode( " ", $text );
+    }
 
-        // Split text on whitespace
-        $wordArray = explode( ' ', $text );
+    /**
+     * Remove duplicated spaces
+     *
+     * @param string $text
+     *
+     * @return string
+     */
+    static protected function removeDuplicatedSpaces( $text )
+    {
+        return preg_replace( "/\s{2,}/", " ", $text );
+    }
 
-        $retArray = array();
-        foreach ( $wordArray as $word )
-        {
-            if ( trim( $word ) != "" )
-            {
-                $retArray[] = trim( $word );
-            }
-        }
-
-        return $retArray;
+    /**
+     * Remove single and double quotes, including UTF-8 variations
+     *
+     * @param string $text
+     *
+     * @return string
+     */
+    static protected function removeAllQuotes( $text )
+    {
+        return preg_replace( "/([\x{2018}-\x{201f}]|'|\")/u", " ", $text );
     }
 
     /*!
@@ -1351,13 +1330,18 @@ class eZSearchEngine
     */
     function normalizeText( $text, $isMetaData = false )
     {
-        $trans = eZCharTransform::instance();
-        $text = $trans->transformByGroup( $text, 'search' );
+        $text = self::removeDuplicatedSpaces(
+            trim(
+                self::removeAllQuotes(
+                    eZCharTransform::instance()->transformByGroup( $text, 'search' )
+                )
+            )
+        );
 
         // Remove quotes and asterix when not handling search text by end-user
         if ( $isMetaData )
         {
-            $text = str_replace( array( "\"", "*" ), array( " ", " " ), $text );
+            $text = str_replace( "*", " ", $text );
         }
 
         return $text;
@@ -1368,7 +1352,7 @@ class eZSearchEngine
      \return Returns an array describing the supported search types in thie search engine.
      \note It has been renamed. In eZ Publish 3.4 and older it was (wrongly) named suportedSearchTypes().
     */
-    function supportedSearchTypes()
+    public function supportedSearchTypes()
     {
         $searchTypes = array( array( 'type' => 'attribute',
                                      'subtype' => 'fulltext',
@@ -1416,8 +1400,9 @@ class eZSearchEngine
 
     function searchAttributeInteger( $searchParams )
     {
-        $classAttributeID = $searchParams['classattribute_id'];
-        $value = $searchParams['value'];
+        $db = eZDB::instance();
+        $classAttributeID = $db->escapeString( $searchParams['classattribute_id'] );
+        $value = (int)$db->escapeString( $searchParams['value'] );
 
         $classAttributeQuery = "";
         if ( is_numeric( $classAttributeID ) and  $classAttributeID > 0 )
@@ -1425,7 +1410,7 @@ class eZSearchEngine
             $classAttributeQuery = "ezsearch_object_word_link.contentclass_attribute_id = '$classAttributeID' AND ";
         }
 
-        $searchPartSql = " ezsearch_object_word_link.integer_value = $value AND";
+        $searchPartSql = " ezsearch_object_word_link.integer_value = '$value' AND";
 
         $searchPartText =  $classAttributeQuery . $searchPartSql;
         $tableResult = $this->createTemporaryTable( $searchPartText );
@@ -1442,8 +1427,13 @@ class eZSearchEngine
 
     function searchAttributeIntegers( $searchParams )
     {
-        $classAttributeID = $searchParams['classattribute_id'];
-        $values = $searchParams['values'];
+        $db = eZDB::instance();
+        $classAttributeID = $db->escapeString( $searchParams['classattribute_id'] );
+        $values = array();
+        foreach ( $searchParams['values'] as $value )
+        {
+            $values[] = (int)$db->escapeString( $value );
+        }
 
         $classAttributeQuery = "";
         if ( is_numeric( $classAttributeID ) and  $classAttributeID > 0 )
@@ -1451,8 +1441,8 @@ class eZSearchEngine
             $classAttributeQuery = "ezsearch_object_word_link.contentclass_attribute_id = '$classAttributeID' AND ";
         }
 
-        $integerValuesSql = implode( ', ', $values );
-        $searchPartSql = " ezsearch_object_word_link.integer_value IN ( $integerValuesSql ) AND";
+        $integerValuesSql = implode( "', '", $values );
+        $searchPartSql = " ezsearch_object_word_link.integer_value IN ( '$integerValuesSql' ) AND";
 
         $searchPartText =  $classAttributeQuery . $searchPartSql;
         $tableResult = $this->createTemporaryTable( $searchPartText );
@@ -1469,9 +1459,10 @@ class eZSearchEngine
 
     function searchAttributeByRange( $searchParams )
     {
-        $classAttributeID = $searchParams['classattribute_id'];
-        $fromValue = $searchParams['from'];
-        $toValue = $searchParams['to'];
+        $db = eZDB::instance();
+        $classAttributeID = $db->escapeString( $searchParams['classattribute_id'] );
+        $fromValue = (int)$db->escapeString( $searchParams['from'] );
+        $toValue = (int)$db->escapeString( $searchParams['to'] );
 
         $classAttributeQuery = "";
         if ( is_numeric( $classAttributeID ) and  $classAttributeID > 0 )
@@ -1479,7 +1470,7 @@ class eZSearchEngine
             $classAttributeQuery = "ezsearch_object_word_link.contentclass_attribute_id = '$classAttributeID' AND ";
         }
 
-        $searchPartSql = " ezsearch_object_word_link.integer_value BETWEEN $fromValue AND $toValue AND";
+        $searchPartSql = " ezsearch_object_word_link.integer_value BETWEEN '$fromValue' AND '$toValue' AND";
         $searchPartText =  $classAttributeQuery . $searchPartSql;
         $tableResult = $this->createTemporaryTable( $searchPartText );
 
@@ -1496,7 +1487,8 @@ class eZSearchEngine
 
     function searchAttributeByIdentifier( $searchParams )
     {
-        $identifier = $searchParams['identifier'];
+        $db = eZDB::instance();
+        $identifier = $db->escapeString( $searchParams['identifier'] );
         $textValue = $searchParams['value'];
 
         $searchText = $this->normalizeText( $textValue, false );
@@ -1528,11 +1520,12 @@ class eZSearchEngine
 
     function searchAttributeByIdentifierRange( $searchParams )
     {
-        $identifier = $searchParams['identifier'];
-        $fromValue = $searchParams['from'];
-        $toValue = $searchParams['to'];
+        $db = eZDB::instance();
+        $identifier = $db->escapeString( $searchParams['identifier'] );
+        $fromValue = (int)$db->escapeString( $searchParams['from'] );
+        $toValue = (int)$db->escapeString( $searchParams['to'] );
 
-        $searchPartSql = " ezsearch_object_word_link.integer_value BETWEEN $fromValue AND $toValue AND ezsearch_object_word_link.identifier = '$identifier' AND";
+        $searchPartSql = " ezsearch_object_word_link.integer_value BETWEEN '$fromValue' AND '$toValue' AND ezsearch_object_word_link.identifier = '$identifier' AND";
         $tableResult = $this->createTemporaryTable( $searchPartSql );
 
         if ( $tableResult === false )
@@ -1547,11 +1540,16 @@ class eZSearchEngine
 
     function searchAttributeIntegersByIdentifier( $searchParams )
     {
-        $identifier = $searchParams['identifier'];
-        $values = $searchParams['values'];
+        $db = eZDB::instance();
+        $identifier = $db->escapeString( $searchParams['identifier'] );
+        $values = array();
+        foreach ( $searchParams['values'] as $value )
+        {
+            $values[] = (int)$db->escapeString( $value );
+        }
 
-        $integerValuesSql = implode( ', ', $values );
-        $searchPartSql = " ezsearch_object_word_link.integer_value IN ( $integerValuesSql ) AND ezsearch_object_word_link.identifier = '$identifier' AND";
+        $integerValuesSql = implode( "', '", $values );
+        $searchPartSql = " ezsearch_object_word_link.integer_value IN ( '$integerValuesSql' ) AND ezsearch_object_word_link.identifier = '$identifier' AND";
         $tableResult = $this->createTemporaryTable( $searchPartSql );
 
         if ( $tableResult === false )
@@ -1566,7 +1564,8 @@ class eZSearchEngine
 
     function searchAttributePatternText( $searchParams )
     {
-        $classAttributeID = $searchParams['classattribute_id'];
+        $db = eZDB::instance();
+        $classAttributeID = $db->escapeString( $searchParams['classattribute_id'] );
         $textValue = $searchParams['value'];
 
 //        $searchText = $this->normalizeText( $textValue );
@@ -1620,7 +1619,8 @@ class eZSearchEngine
 
     function searchAttributeFulltext( $searchParams )
     {
-        $classAttributeID = $searchParams['classattribute_id'];
+        $db = eZDB::instance();
+        $classAttributeID = $db->escapeString( $searchParams['classattribute_id'] );
         $textValue = $searchParams['value'];
 
         $searchText = $this->normalizeText( $textValue, false );
@@ -1678,11 +1678,11 @@ class eZSearchEngine
             $db->createTempTable( "CREATE TEMPORARY TABLE $table ( contentobject_id int primary key not null, published int )" );
             $db->query( "INSERT INTO $table SELECT DISTINCT ezsearch_object_word_link.contentobject_id, ezsearch_object_word_link.published
                     FROM
-                       ezcontentobject,
-                       ezsearch_object_word_link
-                       $subTreeTable,
-                       ezcontentclass,
-                       ezcontentobject_tree
+                       ezcontentobject
+                       INNER JOIN ezsearch_object_word_link ON (ezsearch_object_word_link.contentobject_id = ezcontentobject.id)
+                       $subTreeTable
+                       INNER JOIN ezcontentclass ON (ezcontentclass.id = ezcontentobject.contentclass_id)
+                       INNER JOIN ezcontentobject_tree ON (ezcontentobject_tree.contentobject_id = ezcontentobject.id)
                        $sqlPermissionChecking[from]
                     WHERE
                     $searchDateQuery
@@ -1691,10 +1691,7 @@ class eZSearchEngine
                     $classAttributeQuery
                     $searchPartText
                     $subTreeSQL
-                    ezcontentobject.id=ezsearch_object_word_link.contentobject_id and
-                    ezcontentobject.contentclass_id = ezcontentclass.id and
-                    ezcontentclass.version = '0' and
-                    ezcontentobject.id = ezcontentobject_tree.contentobject_id and
+                    ezcontentclass.version = '0' AND
                     ezcontentobject_tree.node_id = ezcontentobject_tree.main_node_id
                     $sqlPermissionChecking[where]",
                     eZDBInterface::SERVER_SLAVE );
@@ -1707,25 +1704,21 @@ class eZSearchEngine
             $db->createTempTable( "CREATE TEMPORARY TABLE $table ( contentobject_id int primary key not null, published int )" );
             $db->query( "INSERT INTO $table SELECT DISTINCT ezsearch_object_word_link.contentobject_id, ezsearch_object_word_link.published
                     FROM
-                       ezcontentobject,
-                       ezsearch_object_word_link
-                       $subTreeTable,
-                       ezcontentclass,
-                       ezcontentobject_tree,
-                       $tmpTable0
+                       ezcontentobject
+                       INNER JOIN ezsearch_object_word_link ON (ezsearch_object_word_link.contentobject_id = ezcontentobject.id)
+                       $subTreeTable
+                       INNER JOIN ezcontentclass ON (ezcontentclass.id = ezcontentobject.contentclass_id)
+                       INNER JOIN ezcontentobject_tree ON (ezcontentobject_tree.contentobject_id = ezcontentobject.id)
+                       INNER JOIN $tmpTable0 ON ($tmpTable0.contentobject_id = ezsearch_object_word_link.contentobject_id)
                        $sqlPermissionChecking[from]
                     WHERE
-                    $tmpTable0.contentobject_id=ezsearch_object_word_link.contentobject_id AND
                     $searchDateQuery
                     $sectionQuery
                     $classQuery
                     $classAttributeQuery
                     $searchPartText
                     $subTreeSQL
-                    ezcontentobject.id=ezsearch_object_word_link.contentobject_id and
-                    ezcontentobject.contentclass_id = ezcontentclass.id and
-                    ezcontentclass.version = '0' and
-                    ezcontentobject.id = ezcontentobject_tree.contentobject_id and
+                    ezcontentclass.version = '0' AND
                     ezcontentobject_tree.node_id = ezcontentobject_tree.main_node_id
                     $sqlPermissionChecking[where]",
                     eZDBInterface::SERVER_SLAVE );
@@ -1824,11 +1817,11 @@ class eZSearchEngine
                     $db->createTempTable( "CREATE TEMPORARY TABLE $table ( contentobject_id int primary key not null, published int )" );
                     $db->query( "INSERT INTO $table SELECT DISTINCT ezsearch_object_word_link.contentobject_id, ezsearch_object_word_link.published
                     FROM
-                       ezcontentobject,
-                       ezsearch_object_word_link
-                       $subTreeTable,
-                       ezcontentclass,
-                       ezcontentobject_tree
+                       ezcontentobject
+                       INNER JOIN ezsearch_object_word_link ON (ezsearch_object_word_link.contentobject_id = ezcontentobject.id)
+                       $subTreeTable
+                       INNER JOIN ezcontentclass ON (ezcontentclass.id = ezcontentobject.contentclass_id)
+                       INNER JOIN ezcontentobject_tree ON (ezcontentobject_tree.contentobject_id = ezcontentobject.id)
                        $sqlPermissionChecking[from]
                     WHERE
                     $searchDateQuery
@@ -1837,10 +1830,7 @@ class eZSearchEngine
                     $classAttributeQuery
                     $searchPartText
                     $subTreeSQL
-                    ezcontentobject.id=ezsearch_object_word_link.contentobject_id and
-                    ezcontentobject.contentclass_id = ezcontentclass.id and
-                    ezcontentclass.version = '0' and
-                    ezcontentobject.id = ezcontentobject_tree.contentobject_id and
+                    ezcontentclass.version = '0' AND
                     ezcontentobject_tree.node_id = ezcontentobject_tree.main_node_id
                     $sqlPermissionChecking[where]",
                     eZDBInterface::SERVER_SLAVE );
@@ -1853,25 +1843,21 @@ class eZSearchEngine
                     $db->createTempTable( "CREATE TEMPORARY TABLE $table ( contentobject_id int primary key not null, published int )" );
                     $db->query( "INSERT INTO $table SELECT DISTINCT ezsearch_object_word_link.contentobject_id, ezsearch_object_word_link.published
                     FROM
-                       ezcontentobject,
-                       ezsearch_object_word_link
-                       $subTreeTable,
-                       ezcontentclass,
-                       ezcontentobject_tree,
-                       $tmpTable0
+                       ezcontentobject
+                       INNER JOIN ezsearch_object_word_link ON (ezsearch_object_word_link.contentobject_id = ezcontentobject.id)
+                       $subTreeTable
+                       INNER JOIN ezcontentclass ON (ezcontentclass.id = ezcontentobject.contentclass_id)
+                       INNER JOIN ezcontentobject_tree ON (ezcontentobject_tree.contentobject_id = ezcontentobject.id)
+                       INNER JOIN $tmpTable0 ON ($tmpTable0.contentobject_id = ezsearch_object_word_link.contentobject_id)
                        $sqlPermissionChecking[from]
                     WHERE
-                    $tmpTable0.contentobject_id=ezsearch_object_word_link.contentobject_id AND
                     $searchDateQuery
                     $sectionQuery
                     $classQuery
                     $classAttributeQuery
                     $searchPartText
                     $subTreeSQL
-                    ezcontentobject.id=ezsearch_object_word_link.contentobject_id and
-                    ezcontentobject.contentclass_id = ezcontentclass.id and
-                    ezcontentclass.version = '0' and
-                    ezcontentobject.id = ezcontentobject_tree.contentobject_id and
+                    ezcontentclass.version = '0' AND
                     ezcontentobject_tree.node_id = ezcontentobject_tree.main_node_id
                     $sqlPermissionChecking[where]",
                     eZDBInterface::SERVER_SLAVE );
@@ -2044,7 +2030,7 @@ class eZSearchEngine
             {
                 if ( $wordsCount > 0 )
                     $wordQueryString .= " or ";
-                $wordQueryString .= " word='$searchWord' ";
+                $wordQueryString .= " word='" . $db->escapeString( $searchWord ) . "' ";
                 $wordsCount++;
             }
         }
@@ -2066,7 +2052,7 @@ class eZSearchEngine
         $patternWordIDHash = array();
         foreach ( $patternWordArray as $word )
         {
-            $patternWordIDRes = $db->arrayQuery( "SELECT id, word, object_count FROM ezsearch_word where  word like '" . $word . "%'  order by object_count" );
+            $patternWordIDRes = $db->arrayQuery( "SELECT id, word, object_count FROM ezsearch_word where  word like '" . $db->escapeString( $word ) . "%'  order by object_count" );
             $matchedWords = array();
             foreach ( $patternWordIDRes as $wordRes )
             {
@@ -2126,20 +2112,20 @@ class eZSearchEngine
                 if ( $searchWord[$wordLength] == '*' )
                 {
                     $baseWord = substr( $searchWord, 0, $wordLength );
-                    $wildCardQueryString[] = " word LIKE '". $baseWord ."%' ";
+                    $wildCardQueryString[] = " word LIKE '". $db->escapeString( $baseWord ) ."%' ";
                     continue;
                 }
                 else if ( $searchWord[0] == '*' ) /* Change this to allow searching for shorter/longer words using wildcard */
                 {
                     $baseWord = substr( $searchWord, 1, $wordLength );
-                    $wildCardQueryString[] = " word LIKE '%". $baseWord ."' ";
+                    $wildCardQueryString[] = " word LIKE '%". $db->escapeString( $baseWord ) ."' ";
                     continue;
                 }
             }
             if ( $i > 0 )
                 $wordQueryString .= " or ";
 
-            $wordQueryString .= " word='$searchWord' ";
+            $wordQueryString .= " word='" . $db->escapeString( $searchWord ) . "' ";
             $i++;
         }
 
@@ -2300,6 +2286,29 @@ class eZSearchEngine
             }
         }
         return false;
+    }
+
+    /**
+     * Commit the changes to the search engine
+     */
+    public function commit()
+    {
+    }
+
+    /**
+     * Update the section in the search engine
+     *
+     * @param array $objectID
+     * @param int $sectionID
+     * @return void
+     * @see eZSearch::updateObjectsSection()
+     */
+    public function updateObjectsSection( array $objectIDs, $sectionID )
+    {
+        $db = eZDB::instance();
+        $db->query( "UPDATE ezsearch_object_word_link SET section_id='$sectionID' WHERE " .
+            $db->generateSQLINStatement( $objectIDs, 'contentobject_id', false, true, 'int' )
+        );
     }
 
 

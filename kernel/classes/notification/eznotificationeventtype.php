@@ -1,35 +1,12 @@
 <?php
-//
-// Definition of eZNotificationEventType class
-//
-// Created on: <12-May-2003 09:58:12 sp>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
-
-/*! \file
-*/
+/**
+ * File containing the eZNotificationEventType class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 /*!
   \class eZNotificationEventType eznotificationeventtype.php
@@ -39,10 +16,12 @@
 
 class eZNotificationEventType
 {
-    /*!
-     Constructor
-    */
-    function eZNotificationEventType( $notificationEventTypeString )
+    /**
+     * Constructor
+     *
+     * @param string $notificationEventTypeString
+     */
+    public function __construct( $notificationEventTypeString )
     {
         $this->NotificationEventTypeString = $notificationEventTypeString;
     }
@@ -102,7 +81,7 @@ class eZNotificationEventType
             return $this->Attributes[$attr];
         }
 
-        eZDebug::writeError( "Attribute '$attr' does not exist", 'eZNotificationEventType::attribute' );
+        eZDebug::writeError( "Attribute '$attr' does not exist", __METHOD__ );
         return null;
     }
 
@@ -146,7 +125,7 @@ class eZNotificationEventType
         $types = $GLOBALS["eZNotificationEventTypes"];
         if ( isset( $types[$type] ) )
         {
-            eZDebug::writeError( "Notification event type already registered: $type", "eZNotificationEventType::loadAndRegisterType" );
+            eZDebug::writeError( "Notification event type already registered: $type", __METHOD__ );
             return false;
         }
 
@@ -172,7 +151,7 @@ class eZNotificationEventType
         }
         if ( !$foundEventType )
         {
-            eZDebug::writeError( "Notification event type not found: $type, searched in these directories: " . implode( ', ', $repositoryDirectories ), "eZNotificationEventType::loadAndRegisterType" );
+            eZDebug::writeError( "Notification event type not found: $type, searched in these directories: " . implode( ', ', $repositoryDirectories ), __METHOD__ );
             return false;
         }
         include_once( $includeFile );

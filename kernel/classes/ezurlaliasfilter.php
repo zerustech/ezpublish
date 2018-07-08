@@ -1,32 +1,12 @@
 <?php
-//
-// Definition of eZURLAliasFilter class
-//
-// Created on: <22-Jun-2007 09:03:31 amos>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * File containing the eZURLAliasFilter class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 /**
  * The eZURLAliasFilter class the interface for all url alias filters,
@@ -40,13 +20,6 @@
 
 abstract class eZURLAliasFilter
 {
-    /**
-     * Initialize the filter object.
-     */
-    public function eZURLAliasFilter()
-    {
-    }
-
     /*
      *
      * Process the url alias element $text and return the new element as a string.
@@ -70,9 +43,7 @@ abstract class eZURLAliasFilter
      *
      * Process all configured filters and return the resulting text.
      *
-     * Filters are found in the INI group URLTranslator and the setting Filters.
-     * This is done in combination with the setting Extensions which controls
-     * which extensions have filter classes.
+     * Filters are found in the INI group URLTranslator and the setting FilterClasses.
      *
      * The parameters $text, $languageObject and $caller are sent to the method
      * process on the filter object.

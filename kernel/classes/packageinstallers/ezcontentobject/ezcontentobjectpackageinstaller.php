@@ -1,35 +1,12 @@
 <?php
-//
-// Definition of eZContentObjectPackageInstaller class
-//
-// Created on: <01-Apr-2004 12:39:59 kk>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
-
-/*! \file
-*/
+/**
+ * File containing the eZContentObjectPackageInstaller class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 /*!
   \ingroup package
@@ -39,8 +16,14 @@
 
 class eZContentObjectPackageInstaller extends eZPackageInstallationHandler
 {
-
-    function eZContentObjectPackageInstaller( $package, $type, $installItem )
+    /**
+     * Constructor
+     *
+     * @param eZPackage $package
+     * @param string $type
+     * @param mixed $installItem
+     */
+    public function __construct( $package, $type, $installItem )
     {
         $steps = array();
         $steps[] = array( 'id' => 'site_access',
@@ -58,11 +41,9 @@ class eZContentObjectPackageInstaller extends eZPackageInstallationHandler
                           'methods' => array( 'initialize' => 'initializeAdvancedOptions',
                                               'validate' => 'validateAdvancedOptions' ),
                           'template' => 'advanced_options.tpl' );
-        $this->eZPackageInstallationHandler( $package,
-                                             $type,
-                                             $installItem,
-                                             ezpI18n::tr( 'kernel/package', 'Content object import' ),
-                                             $steps );
+        parent::__construct(
+            $package, $type, $installItem, ezpI18n::tr( 'kernel/package', 'Content object import' ), $steps
+        );
     }
 
     /*!

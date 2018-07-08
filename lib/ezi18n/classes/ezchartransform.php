@@ -1,35 +1,12 @@
 <?php
-//
-// Definition of eZCharTransform class
-//
-// Created on: <16-Jul-2004 15:54:21 amos>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
-
-/*! \file
-*/
+/**
+ * File containing the eZCharTransform class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package lib
+ */
 
 /*!
   \class eZCharTransform ezchartransform.php
@@ -48,13 +25,6 @@ class eZCharTransform
     /// 30. Jan. 2007 - 1170165730
     /// 24. Apr. 2007 - 1177423380
     const CODE_DATE = 1177423380;
-
-    /*!
-     Constructor
-    */
-    function eZCharTransform()
-    {
-    }
 
     /*!
      Transforms the text according to the rules defined in \a $rule using character set \a $charset.
@@ -237,15 +207,13 @@ class eZCharTransform
         $groups = $ini->variable( 'Transformation', 'Groups' );
         if ( !in_array( $group, $groups ) )
         {
-            eZDebug::writeError( "Transformation group $group is not part of the active group list Groups in transform.ini",
-                                 'eZCharTransform::groupCommands' );
+            eZDebug::writeError( "Transformation group $group is not part of the active group list Groups in transform.ini", __METHOD__ );
             return false;
         }
 
         if ( !$ini->hasGroup( $group ) )
         {
-            eZDebug::writeError( "Transformation group $group is missing in transform.ini",
-                                 'eZCharTransform::groupCommands' );
+            eZDebug::writeError( "Transformation group $group is missing in transform.ini", __METHOD__ );
             return false;
         }
 
@@ -419,13 +387,11 @@ class eZCharTransform
     {
         $sep  = eZCharTransform::wordSeparator();
         $sepQ = preg_quote( $sep );
-        $text = preg_replace( array( "#[^a-zA-Z0-9_!.-]+#",
-                                     "#^[.]+|[!.]+$#", # Remove dots at beginning/end
+        $text = preg_replace( array( "#[^a-zA-Z0-9_!\.-]+#",
                                      "#\.\.+#", # Remove double dots
                                      "#[{$sepQ}]+#", # Turn multiple separators into one
-                                     "#^[{$sepQ}]+|[{$sepQ}]+$#" ), # Strip separator from beginning/end
+                                     "#^[\.{$sepQ}]+|[!\.{$sepQ}]+$#" ), # Strip "!", dots and separator from beginning/end
                               array( $sep,
-                                     $sep,
                                      $sep,
                                      $sep,
                                      "" ),
@@ -436,10 +402,10 @@ class eZCharTransform
     static function commandUrlCleanupIRI( $text, $charsetName )
     {
         // With IRI support we keep all characters except some reserved ones,
-        // they are space, ampersand, semi-colon, forward slash, colon, equal sign, question mark,
+        // they are space, tab, ampersand, semi-colon, forward slash, colon, equal sign, question mark,
         //          square brackets, parenthesis, plus.
         //
-        // Note: Space is turned into a dash to make it easier for people to
+        // Note: Spaces and tabs are turned into a dash to make it easier for people to
         //       paste urls from the system and have the whole url recognized
         //       instead of being broken off
         $sep  = eZCharTransform::wordSeparator();
@@ -447,13 +413,11 @@ class eZCharTransform
         $prepost = " ." . $sepQ;
         if ( $sep != "-" )
             $prepost .= "-";
-        $text = preg_replace( array( "#[ \\\\%\#&;/:=?\[\]()+]+#",
-                                     "#^[.]+|[!.]+$#", # Remove dots at beginning/end
+        $text = preg_replace( array( "#[ \t\\\\%\#&;/:=?\[\]()+]+#",
                                      "#\.\.+#", # Remove double dots
                                      "#[{$sepQ}]+#", # Turn multiple separators into one
-                                     "#^[{$prepost}]+|[{$prepost}]+$#" ),
+                                     "#^[{$prepost}]+|[!{$prepost}]+$#" ), # Strip "!", dots and separator from beginning/end
                               array( $sep,
-                                     $sep,
                                      $sep,
                                      $sep,
                                      "" ),

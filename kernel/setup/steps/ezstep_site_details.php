@@ -1,36 +1,12 @@
 <?php
-//
-// Definition of eZStepSiteDetails class
-//
-// Created on: <12-Aug-2003 18:30:57 kk>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
-
-/*! \file
-*/
-
+/**
+ * File containing the eZStepSiteDetails class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 /*!
   \class eZStepSiteDetails ezstep_site_details.php
@@ -46,13 +22,17 @@ class eZStepSiteDetails extends eZStepInstaller
     const SITE_ACCESS_HOSTNAME_REGEXP = '/^([a-zA-Z0-9.\-:]*)$/';
     const SITE_ACCESS_PORT_REGEXP = '/^([0-9]*)$/';
 
-    /*!
-     Constructor
-    */
-    function eZStepSiteDetails( $tpl, $http, $ini, &$persistenceList )
+    /**
+     * Constructor
+     *
+     * @param eZTemplate $tpl
+     * @param eZHTTPTool $http
+     * @param eZINI $ini
+     * @param array $persistenceList
+     */
+    public function __construct( $tpl, $http, $ini, &$persistenceList )
     {
-        $this->eZStepInstaller( $tpl, $http, $ini, $persistenceList,
-                                'site_details', 'Site details' );
+        parent::__construct( $tpl, $http, $ini, $persistenceList, 'site_details', 'Site details' );
     }
 
     function processPostData()
@@ -267,7 +247,7 @@ class eZStepSiteDetails extends eZStepInstaller
                         $siteType['admin_access_type_value'] = $siteType['identifier'] . '_admin';
                 }
                 break;
-            };
+            }
 
             $siteType['database'] = $data['Database'];
             $action = eZStepInstaller::DB_DATA_APPEND;
@@ -337,7 +317,7 @@ class eZStepSiteDetails extends eZStepInstaller
         $db = eZDB::instance( $dbDriver, $dbParameters, true );
         $availDatabases = $db->availableDatabases();
 
-        if ( count( $availDatabases ) > 0 ) // login succeded, and at least one database available
+        if ( count( $availDatabases ) > 0 ) // login succeeded, and at least one database available
         {
             $this->PersistenceList['database_info_available'] = $availDatabases;
         }

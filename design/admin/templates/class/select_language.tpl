@@ -2,13 +2,13 @@
 
 <div class="context-block">
 
-{* DESIGN: Header START *}<div class="box-header"><div class="box-tc"><div class="box-ml"><div class="box-mr"><div class="box-tl"><div class="box-tr">
+{* DESIGN: Header START *}<div class="box-header"><div class="box-ml">
 
 <h2 class="context-title">{'Edit <%class_name>'|i18n( 'design/admin/class/select_languages',, hash( '%class_name', $class.name ) )|wash}</h2>
 
-{* DESIGN: Subline *}<div class="header-subline"></div>
 
-{* DESIGN: Header END *}</div></div></div></div></div></div>
+
+{* DESIGN: Header END *}</div></div>
 
 {* DESIGN: Content START *}<div class="box-ml"><div class="box-mr"><div class="box-content">
 
@@ -22,7 +22,7 @@
     <div class="indent">
         {foreach $editLanguages as $language}
             <label>
-                <input name="EditLanguage" type="radio" value="{$language.locale}"{run-once} checked="checked"{/run-once} /> {$language.name|wash}
+                <input name="EditLanguage" type="radio" value="{$language.locale|wash}"{run-once} checked="checked"{/run-once} /> {$language.name|wash}
             </label>
             <div class="labelbreak"></div>
         {/foreach}
@@ -41,7 +41,7 @@
 
         {foreach $class.prioritized_languages as $language}
             <label>
-                <input name="FromLanguage" type="radio" value="{$language.locale}" /> {$language.name|wash}
+                <input name="FromLanguage" type="radio" value="{$language.locale|wash}" /> {$language.name|wash}
             </label>
             <div class="labelbreak"></div>
         {/foreach}
@@ -54,12 +54,12 @@
 {* DESIGN: Content END *}</div></div></div>
 
 <div class="controlbar">
-{* DESIGN: Control bar START *}<div class="box-bc"><div class="box-ml"><div class="box-mr"><div class="box-tc"><div class="box-bl"><div class="box-br">
+{* DESIGN: Control bar START *}<div class="box-bc"><div class="box-ml">
 <div class="block">
     <input class="button" type="submit" name="SelectLanguageButton" value="{'Edit'|i18n('design/admin/class/edit_language')}" />
     <input class="button" type="submit" name="DiscardButton" value="{'Cancel'|i18n('design/admin/class/select_language')}" />
 </div>
-{* DESIGN: Control bar END *}</div></div></div></div></div></div>
+{* DESIGN: Control bar END *}</div></div>
 
 </div>
 

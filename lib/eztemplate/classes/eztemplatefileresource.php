@@ -1,32 +1,12 @@
 <?php
-//
-// Definition of eZTemplateFileResource class
-//
-// Created on: <01-Mar-2002 13:49:18 amos>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * File containing the eZTemplateFileResource class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package lib
+ */
 
 /*!
  \class eZTemplateFileResource eztemplatefileresource.php
@@ -38,12 +18,14 @@
 
 class eZTemplateFileResource
 {
-    /*!
-     Initializes with a default resource name "file".
-     Also sets whether the resource servers static data files, this is needed
-     for the cache system.
-    */
-    function eZTemplateFileResource( $name = "file", $servesStaticData = true )
+    /**
+     * Initializes with a default resource name "file".
+     * Also sets whether the resource servers static data files, this is needed for the cache system.
+     *
+     * @param string $name
+     * @param bool $servesStaticData
+     */
+    public function __construct( $name = "file", $servesStaticData = true )
     {
         $this->Name = $name;
         $this->ServesStaticData = $servesStaticData;
@@ -290,7 +272,7 @@ class eZTemplateFileResource
                 {
                     eZDebug::accumulatorStart( 'template_resource_conversion', 'template_total', 'String conversion in template resource' );
                     $text = $codec->convertString( $text );
-                    eZDebug::accumulatorStop( 'template_resource_conversion', 'template_total', 'String conversion in template resource' );
+                    eZDebug::accumulatorStop( 'template_resource_conversion' );
                 }
                 $result = true;
             }

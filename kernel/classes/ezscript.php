@@ -1,35 +1,12 @@
 <?php
-//
-// Definition of eZScript class
-//
-// Created on: <06-Aug-2003 11:06:35 amos>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
-
-/*! \file
-*/
+/**
+ * File containing the eZScript class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 /*!
   \class eZScript ezscript.php
@@ -68,46 +45,30 @@ $script->shutdown(); // Finish execution
 \endcode
 
 */
-
-require_once( 'access.php' );
-require_once( 'kernel/common/i18n.php' );
-
 class eZScript
 {
-    /*!
-     Constructor
-    */
-    function eZScript( $settings = array() )
+    /**
+     * @param array $settings
+     */
+    function __construct( $settings = array() )
     {
-        $settings = array_merge( array( 'debug-message' => false,
-                                        'debug-output' => false,
-                                        'debug-include' => false,
-                                        'debug-levels' => false,
-                                        'debug-accumulator' => false,
-                                        'debug-timing' => false,
-                                        'use-session' => false,
-                                        'use-extensions' => false,
-                                        'use-modules' => false,
-                                        'user' => false,
-                                        'description' => 'eZ Publish script',
-                                        'site-access' => false,
-                                        'min_version' => false,
-                                        'max_version' => false ),
-                                 $settings );
-        $this->DebugMessage = $settings['debug-message'];
-        $this->UseDebugOutput = $settings['debug-output'];
-        $this->AllowedDebugLevels = $settings['debug-levels'];
-        $this->UseDebugAccumulators = $settings['debug-accumulator'];
-        $this->UseDebugTimingPoints = $settings['debug-timing'];
-        $this->UseIncludeFiles = $settings['debug-include'];
-        $this->UseSession = $settings['use-session'];
-        $this->UseModules = $settings['use-modules'];
-        $this->UseExtensions = $settings['use-extensions'];
-        $this->User = $settings['user'];
-        $this->SiteAccess = $settings['site-access'];
-        $this->Description = $settings['description'];
-        $this->MinVersion = $settings['min_version'];
-        $this->MaxVersion = $settings['max_version'];
+        $settings += array(
+            'debug-message' => false,
+            'debug-output' => false,
+            'debug-include' => false,
+            'debug-levels' => false,
+            'debug-accumulator' => false,
+            'debug-timing' => false,
+            'use-session' => false,
+            'use-extensions' => true,
+            'use-modules' => false,
+            'user' => false,
+            'description' => 'eZ Publish script',
+            'site-access' => false,
+            'min_version' => false,
+            'max_version' => false
+        );
+        $this->updateSettings( $settings );
         $this->ExitCode = false;
         $this->IsQuiet = false;
         $this->ShowVerbose = false;
@@ -127,6 +88,59 @@ class eZScript
         $this->IterationColumnMax = 70;
         $this->IterationMax = false;
         $this->InitializationErrorMessage = 'unknown error';
+    }
+
+    /**
+     * Updates settings for current script.
+     *
+     * Valid keys for $settings are :
+     * - use-session
+     * - use-modules
+     * - use-extensions
+     * - user
+     * - site-access
+     * - description
+     * - min_version
+     * - max_version
+     * - debug-message
+     * - debug-output
+     * - debug-levels
+     * - debug-accumulator
+     * - debug-timing
+     * - debug-include
+     *
+     * @param array $settings
+     */
+    private function updateSettings( array $settings = array() )
+    {
+        if ( isset( $settings['debug-message'] ) )
+            $this->DebugMessage = $settings['debug-message'];
+        if ( isset( $settings['debug-output'] ) )
+            $this->UseDebugOutput = $settings['debug-output'];
+        if ( isset( $settings['debug-levels'] ) )
+            $this->AllowedDebugLevels = $settings['debug-levels'];
+        if ( isset( $settings['debug-accumulator'] ) )
+            $this->UseDebugAccumulators = $settings['debug-accumulator'];
+        if ( isset( $settings['debug-timing'] ) )
+            $this->UseDebugTimingPoints = $settings['debug-timing'];
+        if ( isset( $settings['debug-include'] ) )
+            $this->UseIncludeFiles = $settings['debug-include'];
+        if ( isset( $settings['use-session'] ) )
+            $this->UseSession = $settings['use-session'];
+        if ( isset( $settings['use-modules'] ) )
+            $this->UseModules = $settings['use-modules'];
+        if ( isset( $settings['use-extensions'] ) )
+            $this->UseExtensions = $settings['use-extensions'];
+        if ( isset( $settings['user'] ) )
+            $this->User = $settings['user'];
+        if ( isset( $settings['site-access'] ) )
+            $this->SiteAccess = $settings['site-access'];
+        if ( isset( $settings['description'] ) )
+            $this->Description = $settings['description'];
+        if ( isset( $settings['min_version'] ) )
+            $this->MinVersion = $settings['min_version'];
+        if ( isset( $settings['max_version'] ) )
+            $this->MaxVersion = $settings['max_version'];
     }
 
     /*!
@@ -171,7 +185,7 @@ class eZScript
     */
     function startup()
     {
-        error_reporting( E_ALL );
+        error_reporting( E_ALL & ~E_DEPRECATED );
 
         eZDebug::setHandleType( eZDebug::HANDLE_TO_PHP );
 
@@ -195,6 +209,21 @@ class eZScript
         {
             date_default_timezone_set( $timezone );
         }
+
+        // Check if the current system user is allowed to execute the script
+        $fileIni = eZINI::instance( 'file.ini' );
+        $checkSystemUser = $fileIni->variable( 'FileSettings', 'SystemUserCheck' ) == 'enabled' ;
+        if ( $checkSystemUser && function_exists( 'posix_geteuid' ) )
+        {
+            $currentUser = posix_getpwuid( posix_geteuid() );
+            $requiredUser = $fileIni->variable( 'FileSettings', 'RequiredSystemUser' );
+            if ( $currentUser['name'] !== $requiredUser )
+            {
+                $cli = eZCLI::instance();
+                $cli->error( "Scripts must be executed as '{$requiredUser}'." );
+                exit( 1 );
+            }
+        }
     }
 
     /*!
@@ -206,10 +235,11 @@ class eZScript
     */
     function initialize()
     {
-        if( ob_get_length() != 0 )
-            ob_end_clean();
-        $debugINI = eZINI::instance( 'debug.ini' );
-        eZDebugSetting::setDebugINI( $debugINI );
+        if ( !ezpKernel::hasInstance() )
+        {
+            if ( ob_get_length() != 0 )
+                ob_end_clean();
+        }
 
         // Initialize text codec settings
         $this->updateTextCodecSettings();
@@ -235,12 +265,15 @@ class eZScript
         if ( $this->UseExtensions )
         {
             // Check for extension
-            require_once( 'kernel/common/ezincludefunctions.php' );
             eZExtension::activateExtensions( 'default' );
             // Extension check end
         }
+        else if ( !$this->isQuiet() )
+        {
+            $cli = eZCLI::instance();
+            $cli->output( "Notice: This script uses 'use-extensions' => false, meaning extension settings are not loaded!" );
+        }
 
-        require_once( "access.php" );
         $siteaccess = $this->SiteAccess;
         if ( $siteaccess )
         {
@@ -264,6 +297,10 @@ class eZScript
             // Extension check end
         }
 
+        // Now that all extensions are activated and siteaccess has been changed, reset
+        // all eZINI instances as they may not take into account siteaccess specific settings.
+        eZINI::resetAllInstances( false );
+
         // Set the global setting which is read by the session lib
         $GLOBALS['eZSiteBasics']['session-required'] = $this->UseSession;
 
@@ -276,7 +313,7 @@ class eZScript
             }
             else
             {
-                $this->IsInitialized = false;
+                $this->setIsInitialized( false );
                 $this->InitializationErrorMessage = 'database error: ' . $db->errorMessage();
                 return;
             }
@@ -306,12 +343,17 @@ class eZScript
             $moduleRepositories = eZModule::activeModuleRepositories( $this->UseExtensions );
             eZModule::setGlobalPathList( $moduleRepositories );
         }
-        $this->IsInitialized = true;
+        $this->setIsInitialized( true );
     }
 
     function isInitialized()
     {
         return $this->IsInitialized;
+    }
+
+    public function setIsInitialized( $isInitialized )
+    {
+        $this->IsInitialized = (bool)$isInitialized;
     }
 
     function initializationError()
@@ -363,7 +405,8 @@ class eZScript
 
         eZExecution::cleanup();
         eZExecution::setCleanExit();
-        $this->IsInitialized = false;
+        eZExpiryHandler::shutdown();
+        $this->setIsInitialized( false );
         if ( $exitCode !== false )
             $this->ExitCode = $exitCode;
         if ( $this->ExitCode !== false )
@@ -1019,7 +1062,7 @@ class eZScript
                     else if ( $level == 'notice' )
                         $level = eZDebug::LEVEL_NOTICE;
                     else if ( $level == 'timing' )
-                        $level = eZDebug::EZ_LEVEL_TIMING;
+                        $level = eZDebug::LEVEL_TIMING_POINT;
                     $allowedDebugLevels[] = $level;
                 }
                 $this->setUseDebugOutput( true );
@@ -1029,10 +1072,14 @@ class eZScript
                 $this->setUseIncludeFiles( $useIncludeFiles );
                 $this->setDebugMessage( "\n\n" . str_repeat( '#', 36 ) . $cli->style( 'emphasize' ) . " DEBUG " . $cli->style( 'emphasize-end' )  . str_repeat( '#', 36 ) . "\n" );
             }
-            if ( count( $options['verbose'] ) > 0 )
+            if ( is_array( $options['verbose'] ) && count( $options['verbose'] ) > 0 )
             {
                 $this->setShowVerboseOutput( count( $options['verbose'] ) );
             }
+
+            if ( isset( $options['siteaccess'] ) and $options['siteaccess'] )
+                $this->setUseSiteAccess( $options['siteaccess'] );
+
             if ( $options['help'] )
             {
                 if ( !$this->IsInitialized )
@@ -1040,8 +1087,6 @@ class eZScript
                 $this->showHelp();
                 $this->shutdown( 0 );
             }
-            if ( isset( $options['siteaccess'] ) and $options['siteaccess'] )
-                $this->setUseSiteAccess( $options['siteaccess'] );
 
             if ( isset( $options['login'] ) and $options['login'] )
                 $this->setUser( $options['login'], isset( $options['password'] ) ? $options['password'] : false );
@@ -1052,16 +1097,23 @@ class eZScript
     /**
      * Returns a shared instance of the eZScript class.
      *
-     * @param $settings array Used by the first generated instance, but ignored for subsequent calls.
+     * @param array $settings Used by the first generated instance, but ignored for subsequent calls.
      * @return eZScript
      */
     static function instance( $settings = array() )
     {
-        if ( !isset( $GLOBALS['eZScriptInstance'] ) or
-             !( $GLOBALS['eZScriptInstance'] instanceof eZScript ) )
+        if (
+            !isset( $GLOBALS['eZScriptInstance'] )
+            || !( $GLOBALS['eZScriptInstance'] instanceof eZScript )
+        )
         {
             $GLOBALS['eZScriptInstance'] = new eZScript( $settings );
         }
+        else if ( !empty( $settings ) )
+        {
+            $GLOBALS['eZScriptInstance']->updateSettings( $settings );
+        }
+
         return $GLOBALS['eZScriptInstance'];
     }
 
@@ -1119,6 +1171,7 @@ class eZScript
     }
 
     /// \privatesection
+    public $IsInitialized;
     public $InitializationErrorMessage;
     public $DebugMessage;
     public $UseDebugOutput;
@@ -1167,8 +1220,11 @@ function eZFatalError()
 /*!
   Dummy function, required by some scripts in eZ Publish.
 */
-function eZUpdateDebugSettings( $useDebug = null )
+if ( !function_exists( 'eZUpdateDebugSettings' ) )
 {
+    function eZUpdateDebugSettings( $useDebug = null )
+    {
+    }
 }
 
 /*!

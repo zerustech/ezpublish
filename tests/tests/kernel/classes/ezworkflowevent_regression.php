@@ -2,8 +2,9 @@
 /**
  * File containing the eZWorkflowEventRegression class
  *
- * @copyright Copyright (C) 1999-2010 eZ Systems AS. All rights reserved.
- * @license http://ez.no/licenses/gnu_gpl GNU GPLv2
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
  * @package tests
  */
 
@@ -15,6 +16,16 @@ class eZWorkflowEventRegression extends ezpDatabaseTestCase
     {
         parent::__construct();
         $this->setName( "eZWorkflowEvent Regression Tests" );
+    }
+
+    protected function tearDown()
+    {
+        if ( $this->trigger )
+        {
+            $this->trigger->remove();
+            $this->trigger = null;
+        }
+        parent::tearDown();
     }
 
     /**
@@ -32,7 +43,7 @@ class eZWorkflowEventRegression extends ezpDatabaseTestCase
      * @result: Redirection to content/history
      * @expected: The object gets published without being redirected
      * @link http://issues.ez.no/14371
-     **/
+     */
     public function testEditAfterFetchTemplateRepeatModule()
     {
         // first, we need to create an appropriate test workflow
@@ -101,7 +112,7 @@ class eZWorkflowEventRegression extends ezpDatabaseTestCase
      * @result: Redirection to content/history
      * @expected: The object gets published without being redirected
      * @link http://issues.ez.no/14371
-     **/
+     */
     public function testEditAfterFetchTemplateRepeatOperation()
     {
         // first, we need to create an appropriate test workflow
@@ -138,7 +149,7 @@ class eZWorkflowEventRegression extends ezpDatabaseTestCase
         $operationResult = eZOperationHandler::execute( 'content', 'publish', array( 'object_id' => $objectID,
                                                                                      'version'   => 1 ) );
 
-        $this->assertType( 'array', $operationResult );
+        $this->assertInternalType( 'array', $operationResult );
         $this->assertEquals( $operationResult['status'], eZModuleOperationInfo::STATUS_CONTINUE,
             "The operation result wasn't CONTINUE" );
 
@@ -149,12 +160,12 @@ class eZWorkflowEventRegression extends ezpDatabaseTestCase
     }
 
     /**
-    * Creates the test workflow.
-    * @todo Currently only handles the fetchtemplaterepeat event. Will have to be
-    *       refactored to handle more events when necessary
-    *
-    * @return eZWorkflow
-    **/
+     * Creates the test workflow.
+     * @todo Currently only handles the fetchtemplaterepeat event. Will have to be
+     *       refactored to handle more events when necessary
+     *
+     * @return eZWorkflow
+     */
     function createWorkFlow( $adminUserID )
     {
         $registerResult = $this->registerCustomWorkflowEvent(
@@ -210,11 +221,11 @@ class eZWorkflowEventRegression extends ezpDatabaseTestCase
     }
 
     /**
-    * Connects a workflow to a trigger
-    * @param int $workflowID
-    * @todo Currently registers a content/publish/before event. Refactor when required
-    * @return void
-    **/
+     * Connects a workflow to a trigger
+     * @param int $workflowID
+     * @todo Currently registers a content/publish/before event. Refactor when required
+     * @return void
+     */
     protected function createTrigger( $workflowID )
     {
         // @todo Also test with before publish
@@ -265,7 +276,7 @@ class eZWorkflowEventRegression extends ezpDatabaseTestCase
      *
      * @param eZWorkflow $workflow
      * @return void
-     **/
+     */
     protected function removeWorkflow( eZWorkflow $workflow )
     {
         // Remove trigger
@@ -278,18 +289,18 @@ class eZWorkflowEventRegression extends ezpDatabaseTestCase
     }
     /**
      * @var eZWorkflow
-     **/
+     */
     protected $workflow;
 
     /**
      * @var eZTrigger
-     **/
+     */
     protected $trigger;
 
     /**
-    * Currently logged in user backup
-    * @var eZUser
-    **/
+     * Currently logged in user backup
+     * @var eZUser
+     */
     private $currentUser;
 }
 

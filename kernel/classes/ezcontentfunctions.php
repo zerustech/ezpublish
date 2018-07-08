@@ -1,31 +1,12 @@
 <?php
-
-//
-// Created on: <13-Nov-2006 15:00:00 dl>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * File containing the eZContentFunctions class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 class eZContentFunctions
 {
@@ -102,8 +83,7 @@ class eZContentFunctions
      *                      - 'storage_dir'      :
      *                      - 'remote_id'        : The value for the remoteID  (optional)
      *                      - 'section_id'       : The value for the sectionID (optional)
-     * @static
-     * @return an eZContentObject object if success, false otherwise
+     * @return eZContentObject|false An eZContentObject object if success, false otherwise
      */
     static function createAndPublishObject( $params )
     {
@@ -120,18 +100,17 @@ class eZContentFunctions
         if ( is_array( $parentNode ) )
         {
             $contentClass = eZContentClass::fetchByIdentifier( $classIdentifier );
-            if ( is_object( $contentClass ) )
+            if ( $contentClass instanceof eZContentClass )
             {
                 $db = eZDB::instance();
                 $db->begin();
 
-                $contentObject = $contentClass->instantiate( $creatorID );
+                $languageCode = isset( $params['language'] ) ? $params['language'] : false;
+                $sectionID = isset( $params['section_id'] ) ? $params['section_id'] : 0;
+                $contentObject = $contentClass->instantiate( $creatorID , $sectionID, false, $languageCode );
 
                 if ( array_key_exists( 'remote_id', $params ) )
                     $contentObject->setAttribute( 'remote_id', $params['remote_id'] );
-
-                if ( array_key_exists( 'section_id', $params ) )
-                    $contentObject->setAttribute( 'section_id', $params['section_id'] );
 
                 $contentObject->store();
 
@@ -148,7 +127,7 @@ class eZContentFunctions
                 $version->setAttribute( 'status', eZContentObjectVersion::STATUS_DRAFT );
                 $version->store();
 
-                if ( is_array( $attributesData ) && count( $attributesData ) > 0 )
+                if ( is_array( $attributesData ) && !empty( $attributesData ) )
                 {
                     $attributes = $contentObject->attribute( 'contentobject_attributes' );
 
@@ -183,12 +162,12 @@ class eZContentFunctions
             }
             else
             {
-                eZDebug::writeError( "Content class with identifier '$classIdentifier' doesn't exist.", 'eZContentFunctions::createAndPublishObject' );
+                eZDebug::writeError( "Content class with identifier '$classIdentifier' doesn't exist.", __METHOD__ );
             }
         }
         else
         {
-            eZDebug::writeError( "Node with id '$parentNodeID' doesn't exist.", 'eZContentFunctions::createAndPublishObject' );
+            eZDebug::writeError( "Node with id '$parentNodeID' doesn't exist.", __METHOD__ );
         }
 
         return $contentObject;
@@ -249,8 +228,7 @@ class eZContentFunctions
     {
         if ( !array_key_exists( 'attributes', $params ) and !is_array( $params['attributes'] ) and count( $params['attributes'] ) > 0 )
         {
-            eZDebug::writeError( 'No attributes specified for object' . $object->attribute( 'id' ),
-                                 'eZContentFunctions::updateAndPublishObject' );
+            eZDebug::writeError( 'No attributes specified for object' . $object->attribute( 'id' ), __METHOD__ );
             return false;
         }
 
@@ -294,8 +272,7 @@ class eZContentFunctions
 
         if ( !$newVersion instanceof eZContentObjectVersion )
         {
-            eZDebug::writeError( 'Unable to create a new version for object ' . $object->attribute( 'id' ),
-                                 'eZContentFunctions::updateAndPublishObject' );
+            eZDebug::writeError( 'Unable to create a new version for object ' . $object->attribute( 'id' ), __METHOD__ );
 
             $db->rollback();
 

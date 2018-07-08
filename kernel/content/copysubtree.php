@@ -1,30 +1,10 @@
 <?php
-//
-// Created on: <23-Mar-2005 23:23:23 rl>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 $Module = $Params['Module'];
 $NodeID = $Params['NodeID'];
@@ -187,6 +167,9 @@ function copyPublishContentObject( $sourceObject,
         return 0;
     }
 
+    $db = eZDB::instance();
+    $db->begin();
+
     // make copy of source object
     $newObject             = $sourceObject->copy( $allVersions ); // insert source and new object's ids in $syncObjectIDList
     // We should reset section that will be updated in updateSectionID().
@@ -247,6 +230,8 @@ function copyPublishContentObject( $sourceObject,
         }
     }
 
+    $db->commit();
+
     // publish the newly created object
     $result = eZOperationHandler::execute( 'content', 'publish', array( 'object_id' => $newObject->attribute( 'id' ),
                                                                         'version'   => $curVersion ) );
@@ -298,6 +283,7 @@ function copyPublishContentObject( $sourceObject,
                 else
                     $newNode->setAttribute( 'is_invisible', $srcNode->attribute( 'is_invisible' ) );
 
+                $newNode->store();
                 $syncNodeIDListSrc[] = $srcNode->attribute( 'node_id' );
                 $syncNodeIDListNew[] = $newNode->attribute( 'node_id' );
                 $bSrcParentFound = true;
@@ -309,20 +295,6 @@ function copyPublishContentObject( $sourceObject,
             eZDebug::writeError( "Cannot find source parent node in list of nodes already copied.",
                                  "Subtree Copy Error!" );
         }
-        // Create unique remote_id
-        $newRemoteID = md5( (string)mt_rand() . (string)time() );
-        $oldRemoteID = $newNode->attribute( 'remote_id' );
-        $newNode->setAttribute( 'remote_id', $newRemoteID );
-        // Change parent_remote_id for object assignments
-        foreach ( $objAssignments as $assignment )
-        {
-            if ( $assignment->attribute( 'parent_remote_id' ) == $oldRemoteID )
-            {
-                 $assignment->setAttribute( 'parent_remote_id', $newRemoteID );
-                 $assignment->store();
-            }
-        }
-        $newNode->store();
     }
 
     // if $keepCreator == true then keep owner of contentobject being
@@ -796,7 +768,7 @@ function browse( $Module, $srcNode )
 
     $viewMode = 'full';
     if ( $Module->hasActionParameter( 'ViewMode' ) )
-        $viewMode = $module->actionParameter( 'ViewMode' );
+        $viewMode = $Module->actionParameter( 'ViewMode' );
 
     eZContentBrowse::browse(
          array( 'action_name'          => 'CopySubtree',
@@ -860,7 +832,7 @@ function showNotificationAfterCopying( $http, $Module, &$Result, &$Notifications
         }
 
         if ( $Module->hasActionParameter( 'ViewMode' ) )
-            $viewMode = $module->actionParameter( 'ViewMode' );
+            $viewMode = $Module->actionParameter( 'ViewMode' );
         else
             $viewMode = 'full';
 

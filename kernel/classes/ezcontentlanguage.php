@@ -1,47 +1,15 @@
 <?php
-//
-// Definition of eZContentLanguage class
-//
-// Created on: <08-Feb-2006 10:23:51 jk>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * File containing the eZContentLanguage class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 class eZContentLanguage extends eZPersistentObject
 {
-    const MAX_COUNT = 30;
-
-    /**
-     * Constructor.
-     *
-     * \param row Parameter passed to the constructor of eZPersistentObject.
-     */
-    function eZContentLanguage( $row = array() )
-    {
-        $this->eZPersistentObject( $row );
-    }
-
     /**
      * Persistent object's definition.
      */
@@ -78,7 +46,7 @@ class eZContentLanguage extends eZPersistentObject
      * \param name Optional. Name of the language. If not specified, the international language name for the $locale locale
      *             will be used.
      * \return eZContentLanguage object of the added language (or the existing one if specified language has been already used)
-     *         or false in case of any error (invalid locale code or already reached eZContentLanguage::MAX_COUNT languages).
+     *         or false in case of any error (invalid locale code or already reached eZContentLanguage::maxCount() languages).
      * \static
      */
     static function addLanguage( $locale, $name = null )
@@ -86,7 +54,7 @@ class eZContentLanguage extends eZPersistentObject
         $localeObject = eZLocale::instance( $locale );
         if ( !$localeObject )
         {
-            eZDebug::writeError( "No such locale $locale!", 'eZContentLanguage::addLanguage' );
+            eZDebug::writeError( "No such locale $locale!", __METHOD__ );
             return false;
         }
 
@@ -101,13 +69,13 @@ class eZContentLanguage extends eZPersistentObject
 
         if ( ( $existingLanguage = eZContentLanguage::fetchByLocale( $locale ) ) )
         {
-            eZDebug::writeWarning( "Language '$locale' already exists!", 'eZContentLanguage::addLanguage' );
+            eZDebug::writeWarning( "Language '$locale' already exists!", __METHOD__ );
             return $existingLanguage;
         }
 
-        if ( count( $languages ) >= eZContentLanguage::MAX_COUNT )
+        if ( count( $languages ) >= self::maxCount() )
         {
-            eZDebug::writeError( 'Too many languages, cannot add more!', 'eZContentLanguage::addLanguage' );
+            eZDebug::writeError( 'Too many languages, cannot add more!', __METHOD__ );
             return false;
         }
 
@@ -175,7 +143,7 @@ class eZContentLanguage extends eZPersistentObject
             return false;
         }
 
-        eZPersistentObject::remove();
+        $this->remove();
 
         eZContentCacheManager::clearAllContentCache();
 
@@ -206,7 +174,19 @@ class eZContentLanguage extends eZPersistentObject
             $clusterFileHandler->fileStoreContents( $cachePath, serialize( $languages ), 'content', 'php' );
         }
         else
+        {
             $languages = unserialize( $clusterFileHandler->fetchContents() );
+            // If for some reason unserialize operation fails, we force the cache file to regenerate
+            // See http://issues.ez.no/18613
+            if ( $languages === false )
+            {
+                eZDebug::writeError(
+                    "An error occurred while reading content language cache file $cachePath. File is being re-generated",
+                    __METHOD__
+                );
+                return self::fetchList( true );
+            }
+        }
 
         unset( $GLOBALS['eZContentLanguageList'] );
         unset( $GLOBALS['eZContentLanguageMask'] );
@@ -350,7 +330,7 @@ class eZContentLanguage extends eZPersistentObject
                 }
                 else
                 {
-                    eZDebug::writeWarning( "Language '$localeCode' does not exist or is not used!", 'eZContentLanguage::prioritizedLanguages' );
+                    eZDebug::writeWarning( "Language '$localeCode' does not exist or is not used!", __METHOD__ );
                 }
             }
 
@@ -586,7 +566,7 @@ class eZContentLanguage extends eZPersistentObject
             $language = eZContentLanguage::fetchByLocale( $locale );
             if ( $language )
             {
-                $mask += $language->attribute( 'id' );
+                $mask |= $language->attribute( 'id' );
             }
         }
 
@@ -607,7 +587,7 @@ class eZContentLanguage extends eZPersistentObject
      */
     public static function decodeLanguageMask( $langMask, $returnLanguageLocale = false )
     {
-        $maxNumberOfLanguges = eZContentLanguage::MAX_COUNT;
+        $maxNumberOfLanguges = self::maxCount();
         $maxInteger = pow( 2, $maxNumberOfLanguges );
 
         $list = array();
@@ -700,15 +680,16 @@ class eZContentLanguage extends eZPersistentObject
      * Returns the SQL where-condition for selecting the rows (with object names, attributes etc.) in the correct language,
      * i. e. in the most prioritized language from those in which an object exists.
      *
-     * \param languageTable Name of the table containing the attribute with the language id.
-     * \param languageListTable Name of the table containing the attribute with the available languages bitmap.
-     * \param languageAttributeName Optional. Name of the attribute in $languageTable which contains
+     * @param string $languageTable Name of the table containing the attribute with the language id.
+     * @param string $languageListTable Name of the table containing the attribute with the available languages bitmap.
+     * @param string $languageAttributeName Optional. Name of the attribute in $languageTable which contains
      *                               the language id. 'language_id' by default.
-     * \param languageListAttributeName Optional. Name of the attribute in $languageListTable which contains
+     * @param string $languageListAttributeName Optional. Name of the attribute in $languageListTable which contains
      *                                  the bitmap mask. 'language_mask' by default.
-     * \return SQL where-condition described above.
+     * @param string $lang Language code of the most prioritized language
+     * @return string
      */
-    static function sqlFilter( $languageTable, $languageListTable = null, $languageAttributeName = 'language_id', $languageListAttributeName = 'language_mask' )
+    static function sqlFilter( $languageTable, $languageListTable = null, $languageAttributeName = 'language_id', $languageListAttributeName = 'language_mask', $lang = false )
     {
         $db = eZDB::instance();
 
@@ -718,6 +699,11 @@ class eZContentLanguage extends eZPersistentObject
         }
 
         $prioritizedLanguages = eZContentLanguage::prioritizedLanguages();
+        if ( is_string( $lang ) )
+            $lang = eZContentLanguage::fetchByLocale( $lang );
+        if ( $lang instanceof eZContentLanguage )
+            array_unshift( $prioritizedLanguages, $lang );
+
         if ( $db->databaseName() == 'oracle' )
         {
             $leftSide = "bitand( $languageListTable.$languageListAttributeName - bitand( $languageListTable.$languageListAttributeName, $languageTable.$languageAttributeName ), 1 )\n";
@@ -861,13 +847,6 @@ class eZContentLanguage extends eZPersistentObject
     }
 
     /**
-     * \deprecated
-     */
-    function updateObjectNames()
-    {
-    }
-
-    /**
      * Switches on the cronjob mode. In this mode, the languages which are not in the list of the prioritized languages
      * will be automatically added to it.
      *
@@ -875,7 +854,7 @@ class eZContentLanguage extends eZPersistentObject
      */
     static function setCronjobMode( $enable = true )
     {
-        $GLOBALS['eZContentLanguageCronjobMode'] = true;
+        $GLOBALS['eZContentLanguageCronjobMode'] = $enable;
         unset( $GLOBALS['eZContentLanguagePrioritizedLanguages'] );
     }
 
@@ -898,17 +877,17 @@ class eZContentLanguage extends eZPersistentObject
      */
     static function jsArrayByMask( $mask )
     {
-        $jsArray = array();
+        $localList = array();
         $languages = eZContentLanguage::prioritizedLanguagesByMask( $mask );
         foreach ( $languages as $key => $language )
         {
-            $jsArray[] = "{ locale: '".$language->attribute( 'locale' ).
-                "', name: '".$language->attribute( 'name' )."' }";
+            $localList[] = array( 'locale' => $language->attribute( 'locale' ),
+                                  'name'   => $language->attribute( 'name' ) );
         }
 
-        if ( $jsArray )
+        if ( $localList )
         {
-            return '[ '.implode( ', ', $jsArray ).' ]';
+            return json_encode( $localList );
         }
         else
         {
@@ -929,11 +908,12 @@ class eZContentLanguage extends eZPersistentObject
     }
 
     /**
-     * Removes all memory cache forcing it to read from database again for next method calls.
+     * Removes all caches forcing it to read from database again for next method calls.
      *
      * \static
+     * @param bool $expireCluster whether expire cluster or not.
      */
-    static function expireCache()
+    static function expireCache( $expireCluster = true )
     {
         unset( $GLOBALS['eZContentLanguageList'],
                $GLOBALS['eZContentLanguagePrioritizedLanguages'],
@@ -942,9 +922,23 @@ class eZContentLanguage extends eZPersistentObject
 
         // With the solution to #14227 we also need to clear the cached
         // list of languages
-        $cachePath = eZSys::cacheDirectory() . '/ezcontentlanguage_cache.php';
-        eZClusterFileHandler::instance()->fileDelete( $cachePath );
+        if ( $expireCluster )
+        {
+            $cachePath = eZSys::cacheDirectory() . '/ezcontentlanguage_cache.php';
+            eZClusterFileHandler::instance()->fileDelete( $cachePath );
+        }
+    }
+
+    /**
+     * Returns the maximum number of languages supported.
+     *
+     * On 64-bit platforms we support more languages. PHP uses signed integers,
+     * and the first bit is reserved for the "always available" flag,
+     * so we can use 62 bits on 64 bits hardware, or 30 on 32-bit. The database
+     * uses a 64-bit integer on all platforms.
+     */
+    static public function maxCount()
+    {
+        return ( 8 * PHP_INT_SIZE ) - 2;
     }
 }
-
-?>

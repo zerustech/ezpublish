@@ -1,35 +1,12 @@
 <?php
-//
-// Definition of eZExecution class
-//
-// Created on: <29-Nov-2002 11:24:42 amos>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
-
-/*! \file
-*/
+/**
+ * File containing the eZExecution class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package lib
+ */
 
 /*!
   \class eZExecution ezexecution.php
@@ -48,9 +25,9 @@ class eZExecution
      Sets the clean exit flag to on,
      this notifies the exit handler that everything finished properly.
     */
-    static function setCleanExit()
+    static function setCleanExit( $hasCleanExit = true )
     {
-        self::$hasCleanExit = true;
+        self::$hasCleanExit = $hasCleanExit;
     }
 
     /*!
@@ -64,7 +41,7 @@ class eZExecution
             if ( is_callable( $handler ) )
                 call_user_func( $handler );
             else
-                eZDebug::writeError('Could not call cleanup handler, is it a static public function?', 'eZExecution::cleanup');
+                eZDebug::writeError('Could not call cleanup handler, is it a static public function?', __METHOD__ );
         }
     }
 
@@ -136,13 +113,19 @@ class eZExecution
     {
         // Need to change the current directory, since this information is lost
         // when the callbackfunction is called. eZDocumentRoot is set in ::registerShutdownHandler
+        // Getting the previous current working directory as we might need to get back there (i.e. Symfony web/ directory).
+        $previousCwd = getcwd();
         if ( self::$eZDocumentRoot !== null )
         {
             chdir( self::$eZDocumentRoot );
         }
 
         if ( eZExecution::isCleanExit() )
+        {
+            chdir( $previousCwd );
             return;
+        }
+
         eZExecution::cleanup();
         $handlers = eZExecution::fatalErrorHandlers();
         foreach ( $handlers as $handler )
@@ -151,8 +134,10 @@ class eZExecution
                 call_user_func( $handler );
             else
 
-                eZDebug::writeError('Could not call fatal error handler, is it a static public function?', 'eZExecution::uncleanShutdownHandler');
+                eZDebug::writeError('Could not call fatal error handler, is it a static public function?', __METHOD__ );
         }
+
+        chdir( $previousCwd );
     }
 
     /*!
@@ -189,10 +174,10 @@ class eZExecution
     /**
      * Installs the default Exception handler
      *
-     * @params Exception the exception
+     * @params Exception|Throwable the exception
      * @return void
      */
-    static public function defaultExceptionHandler( Exception $e )
+    static public function defaultExceptionHandler( $e )
     {
         if( PHP_SAPI != 'cli' )
         {

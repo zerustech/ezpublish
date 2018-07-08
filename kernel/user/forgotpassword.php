@@ -1,35 +1,10 @@
 <?php
-//
-// Created on: <13-Маr-2003 13:06:18 sp>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
-
-/*! \file
-*/
-
-
+/**
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 $tpl = eZTemplate::factory();
 $tpl->setVariable( 'generated', false );
@@ -133,12 +108,39 @@ if ( $module->isCurrentAction( "Generate" ) )
                                                        null,
                                                        true );
         }
-        if ( count($users) > 0 )
+
+        $random_bytes = false;
+        if ( function_exists( "openssl_random_pseudo_bytes" ) )
+        {
+            $is_crypto_strong = false;
+            $random_bytes = openssl_random_pseudo_bytes( 32, $is_crypto_strong );
+            if ( $random_bytes === false )
+            {
+                eZDebug::writeWarning('openssl_random_pseudo_bytes() cannot generate random data, falling back to insecure mt_rand(). ' .
+                    'Please check your PHP installation.' );
+            }
+            else if ( $is_crypto_strong === false )
+            {
+                eZDebug::writeWarning('openssl_random_pseudo_bytes() could not use a cryptographically strong algorithm. ' .
+                    'Please check your PHP installation.' );
+            }
+        }
+        else
+        {
+            eZDebug::writeWarning('openssl_random_pseudo_bytes() is not available, falling back to insecure mt_rand(). ' .
+                'Please install the openssl PHP extension.' );
+        }
+        if ( $random_bytes === false )
+        {
+            $random_bytes = mt_rand(); // Not secure, but should not happen since SSL is required, and anyway admins have been warned.
+        }
+
+        if ( isset($users) && count($users) > 0 )
         {
             $user   = $users[0];
             $time   = time();
             $userID = $user->id();
-            $hashKey = md5( $userID . ':' . $time . ':' . mt_rand() );
+            $hashKey = md5($userID . ':' . microtime() . ':' . $random_bytes );
 
             // Create forgot password object
             if ( eZOperationHandler::operationIsAvailable( 'user_forgotpassword' ) )

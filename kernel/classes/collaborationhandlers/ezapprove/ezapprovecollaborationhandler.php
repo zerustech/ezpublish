@@ -1,35 +1,12 @@
 <?php
-//
-// Definition of eZApproveCollaborationHandler class
-//
-// Created on: <23-Jan-2003 11:57:11 amos>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
-
-/*! \file
-*/
+/**
+ * File containing the eZApproveCollaborationHandler class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 /*!
   \class eZApproveCollaborationHandler ezapprovecollaborationhandler.php
@@ -61,16 +38,17 @@ class eZApproveCollaborationHandler extends eZCollaborationItemHandler
     /// The contentobject was deferred and will be a draft again for reediting.
     const STATUS_DEFERRED = 3;
 
-    /*!
-     Initializes the handler
-    */
-    function eZApproveCollaborationHandler()
+    public function __construct()
     {
-        $this->eZCollaborationItemHandler( 'ezapprove',
-                                           ezpI18n::tr( 'kernel/classes', 'Approval' ),
-                                           array( 'use-messages' => true,
-                                                  'notification-types' => true,
-                                                  'notification-collection-handling' => eZCollaborationItemHandler::NOTIFICATION_COLLECTION_PER_PARTICIPATION_ROLE ) );
+        parent::__construct(
+            'ezapprove',
+            ezpI18n::tr( 'kernel/classes', 'Approval' ),
+            array(
+                'use-messages' => true,
+                'notification-types' => true,
+                'notification-collection-handling' => eZCollaborationItemHandler::NOTIFICATION_COLLECTION_PER_PARTICIPATION_ROLE
+            )
+        );
     }
 
     function title( $collaborationItem )

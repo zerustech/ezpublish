@@ -2,8 +2,9 @@
 /**
  * File containing the eZXMLTextRegression class
  *
- * @copyright Copyright (C) 1999-2010 eZ Systems AS. All rights reserved.
- * @license http://ez.no/licenses/gnu_gpl GNU GPLv2
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
  * @package tests
  */
 
@@ -26,7 +27,7 @@ class eZXMLTextRegression extends ezpDatabaseTestCase
         if ( $this->language instanceof eZContentLanguage )
         {
             if ( !$this->language->removeThis() )
-                ;//trigger_error( 'Could not remove language nor-NO, probably still existing content / class in this language!' );
+                trigger_error( 'Could not remove language nor-NO, probably still existing content / class in this language!' );
         }
 
         parent::tearDown();
@@ -72,7 +73,7 @@ class eZXMLTextRegression extends ezpDatabaseTestCase
         $folder->refresh();
         $version2Xml = $folder->short_description->attribute('output')->attribute( 'output_text' );
 
-        $folder->removeThis();
+        $folder->remove();
 
         ezpINIHelper::restoreINISettings();
         self::assertEquals( $version1Xml, $version2Xml );
@@ -106,7 +107,7 @@ END;
             // This can only used as an indication for now.
             self::fail( "XML parser does not handle spaces in attributes" );
         }
-        $folder->removeThis();
+        $folder->remove();
     }
 
     /**
@@ -127,7 +128,7 @@ END;
 
         $xhtml = $folder->short_description->attribute('output')->attribute( 'output_text' );
 
-        $folder->removeThis();
+        $folder->remove();
 
         self::assertEquals( '<p>esp&nbsp;ace</p>', $xhtml );
     }

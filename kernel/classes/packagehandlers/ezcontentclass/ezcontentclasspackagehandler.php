@@ -1,35 +1,12 @@
 <?php
-//
-// Definition of eZContentClassPackageHandler class
-//
-// Created on: <23-Jul-2003 16:11:42 amos>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
-
-/*! \file
-*/
+/**
+ * File containing the eZContentClassPackageHandler class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 /*!
   \class eZContentClassPackageHandler ezcontentclasspackagehandler.php
@@ -47,13 +24,9 @@ class eZContentClassPackageHandler extends eZPackageHandler
     const ACTION_NEW = 3;
     const ACTION_DELETE = 4;
 
-    /*!
-     Constructor
-    */
-    function eZContentClassPackageHandler()
+    public function __construct()
     {
-        $this->eZPackageHandler( 'ezcontentclass',
-                                 array( 'extract-install-content' => true ) );
+        parent::__construct( 'ezcontentclass', array( 'extract-install-content' => true ) );
     }
 
     /*!
@@ -134,7 +107,7 @@ class eZContentClassPackageHandler extends eZPackageHandler
 
         if ( $class == null )
         {
-            eZDebug::writeNotice( "Class having remote id '$classRemoteID' not found.", 'eZContentClassPackageHandler::uninstall()' );
+            eZDebug::writeNotice( "Class having remote id '$classRemoteID' not found.", __METHOD__ );
             return true;
         }
 
@@ -248,7 +221,7 @@ class eZContentClassPackageHandler extends eZPackageHandler
                 return true;
 
             case self::ACTION_NEW:
-                $class->setAttribute( 'remote_id', md5( (string)mt_rand() . (string)time() ) );
+                $class->setAttribute( 'remote_id', eZRemoteIdUtility::generate( 'class' ) );
                 $class->store();
                 $classNameList->appendGroupName( " (imported)" );
                 break;

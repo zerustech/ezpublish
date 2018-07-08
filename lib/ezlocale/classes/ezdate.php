@@ -1,32 +1,12 @@
 <?php
-//
-// Definition of eZDate class
-//
-// Created on: <01-Mar-2002 13:48:04 amos>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * File containing the eZDate class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package lib
+ */
 
 /*!
   \class eZDate ezdate.php
@@ -56,8 +36,6 @@
 
 Example:
 \code
-//include_once( 'lib/ezlocale/classes/ezlocale.php' );
-//include_once( 'lib/ezlocale/classes/ezdate.php' );
 
 $us_locale = eZLocale::instance( 'us' );
 
@@ -78,11 +56,11 @@ print( $date1->isEqualTo( $date3 ) ? 'true' : 'false' ); // Prints 'true'
 
 class eZDate
 {
-    /*!
-     Creates a new date object with default locale, if $date is not supplied
-     the current date is used.
-    */
-    function eZDate( $date = false )
+    /**
+     * Creates a new date object with default locale, if $date is not supplied the current date is used.
+     * @param int|bool $date
+     */
+    public function __construct( $date = false )
     {
         if ( $date === false )
         {
@@ -95,7 +73,7 @@ class eZDate
         }
         $this->Date = $date;
         $this->Locale = eZLocale::instance();
-        $this->IsValid = $date > 0;
+        $this->IsValid = $date !== null;
     }
 
     function attributes()
@@ -125,7 +103,7 @@ class eZDate
         else if ( $name == 'month'  )
             return $this->month();
 
-        eZDebug::writeError( "Attribute '$name' does not exist", 'eZDate::attribute' );
+        eZDebug::writeError( "Attribute '$name' does not exist", __METHOD__ );
         return false;
     }
 
@@ -166,7 +144,7 @@ class eZDate
     function setTimeStamp( $stamp )
     {
         $this->Date = $stamp;
-        $this->IsValid = $stamp > 0;
+        $this->IsValid = $stamp !== null;
     }
 
     /*!

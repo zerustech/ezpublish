@@ -1,32 +1,12 @@
 <?php
-//
-// Definition of eZXMLTextType class
-//
-// Created on: <06-May-2002 20:02:55 bf>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * File containing the eZXMLTextType class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 /*!
   \class eZXMLTextType ezxmltexttype
@@ -115,10 +95,11 @@ class eZXMLTextType extends eZDataType
     // timestamp is less than this it needs to be upgraded until it is correct.
     const VERSION_TIMESTAMP = 1045487555; // AS 21-09-2007: should be the same as VERSION_30_TIMESTAMP
 
-    function eZXMLTextType()
+    public function __construct()
     {
-        $this->eZDataType( self::DATA_TYPE_STRING, ezpI18n::tr( 'kernel/classes/datatypes', "XML block", 'Datatype name' ),
+        parent::__construct( self::DATA_TYPE_STRING, ezpI18n::tr( 'kernel/classes/datatypes', "XML block", 'Datatype name' ),
                            array( 'serialize_supported' => true ) );
+        $this->deletedStoredObjectAttribute = array();
     }
 
     /*!
@@ -157,6 +138,9 @@ class eZXMLTextType extends eZDataType
      * are registered in the ezurl_object_link table, and thus retained, if
      * previous versions of an object are removed.
      *
+     * It also checks for embedded objects in other languages xml, and makes
+     * sure the matching object relations are stored for the publish version.
+     *
      * @param eZContentObjectAttribute $contentObjectAttribute
      * @param eZContentObject $object
      * @param array $publishedNodes
@@ -182,21 +166,17 @@ class eZXMLTextType extends eZDataType
                                                                 $currentVersion->attribute( 'version' ),
                                                                 $languageList );
 
-        foreach ( $attributeArray as $attr )
+        foreach ( $attributeArray as $attribute )
         {
-            $xmlText = eZXMLTextType::rawXMLText( $attr );
+            $xmlText = eZXMLTextType::rawXMLText( $attribute );
+
             $dom = new DOMDocument( '1.0', 'utf-8' );
-            $success = $dom->loadXML( $xmlText );
-
-            if ( !$success )
-            {
+            if ( !$dom->loadXML( $xmlText ) )
                 continue;
-            }
 
-            $linkNodes = $dom->getElementsByTagName( 'link' );
+            // urls
             $urlIdArray = array();
-
-            foreach ( $linkNodes as $link )
+            foreach ( $dom->getElementsByTagName( 'link' ) as $link )
             {
                 // We are looking for external 'http://'-style links, not the internal
                 // object or node links.
@@ -205,12 +185,62 @@ class eZXMLTextType extends eZDataType
                     $urlIdArray[] = $link->getAttribute( 'url_id' );
                 }
             }
+            $urlIdArray = array_unique( $urlIdArray );
 
-            if ( count( $urlIdArray ) > 0 )
+            $db = eZDB::instance();
+            $db->begin();
+            eZSimplifiedXMLInput::updateUrlObjectLinks( $attribute, $urlIdArray );
+            $db->commit();
+
+            // linked objects
+            $linkedObjectIdArray = $this->getRelatedObjectList( $dom->getElementsByTagName( 'link' ) );
+
+            // embedded objects
+            $embeddedObjectIdArray = array_merge(
+                $this->getRelatedObjectList( $dom->getElementsByTagName( 'embed' ) ),
+                $this->getRelatedObjectList( $dom->getElementsByTagName( 'embed-inline' ) )
+            );
+
+            if ( !empty( $embeddedObjectIdArray ) )
             {
-                eZSimplifiedXMLInput::updateUrlObjectLinks( $attr, $urlIdArray );
+                $object->appendInputRelationList( $embeddedObjectIdArray, eZContentObject::RELATION_EMBED );
+            }
+
+            if ( !empty( $linkedObjectIdArray ) )
+            {
+                $object->appendInputRelationList( $linkedObjectIdArray, eZContentObject::RELATION_LINK );
+            }
+            if ( !empty( $linkedObjectIdArray ) || !empty( $embeddedObjectIdArray ) )
+            {
+                $object->commitInputRelations( $currentVersion->attribute( 'version' ) );
+            }
+
+        }
+    }
+
+    /**
+     * Extracts ids of embedded/linked objects in an eZXML DOMNodeList
+     * @param DOMNodeList $domNodeList
+     * @return array
+     */
+    private function getRelatedObjectList( DOMNodeList $domNodeList )
+    {
+        $embeddedObjectIdArray = array();
+        foreach( $domNodeList as $embed )
+        {
+            if ( $embed->hasAttribute( 'object_id' ) )
+            {
+                $embeddedObjectIdArray[] = $embed->getAttribute( 'object_id' );
+            }
+            elseif ( $embed->hasAttribute( 'node_id' ) )
+            {
+                if ( $object = eZContentObject::fetchByNodeID( $embed->getAttribute( 'node_id' ) ) )
+                {
+                    $embeddedObjectIdArray[] = $object->attribute( 'id' );
+                }
             }
         }
+        return $embeddedObjectIdArray;
     }
 
     /*!
@@ -456,7 +486,7 @@ class eZXMLTextType extends eZDataType
             $textDom = $section->firstChild;
         }
 
-        if ( $textDom and $textDom->hasChildNodes )
+        if ( $textDom && $textDom->hasChildNodes() )
         {
             $text = $textDom->firstChild->textContent;
         }
@@ -697,7 +727,7 @@ class eZXMLTextType extends eZDataType
                 $objectArray = eZContentObject::fetchByRemoteID( $objectRemoteID, false );
                 if ( !is_array( $objectArray ) )
                 {
-                    eZDebug::writeWarning( "Can't fetch object with remoteID = $objectRemoteID", 'eZXMLTextType::unserialize' );
+                    eZDebug::writeWarning( "Can't fetch object with remoteID = $objectRemoteID", __METHOD__ );
                     continue;
                 }
 
@@ -721,24 +751,19 @@ class eZXMLTextType extends eZDataType
                 $nodeArray = eZContentObjectTreeNode::fetchByRemoteID( $nodeRemoteID, false );
                 if ( !is_array( $nodeArray ) )
                 {
-                    eZDebug::writeWarning( "Can't fetch node with remoteID = $nodeRemoteID", 'eZXMLTextType::unserialize' );
+                    eZDebug::writeWarning( "Can't fetch node with remoteID = $nodeRemoteID", __METHOD__ );
                     continue;
                 }
 
-                $nodeID = $nodeArray['node_id'];
-                $node->setAttribute( 'node_id', $nodeID );
+                $node->setAttribute( 'node_id', $nodeArray['node_id'] );
                 $node->removeAttribute( 'node_remote_id' );
                 $modified = true;
 
                 // add as related object
                 if ( $contentObject )
                 {
-                    $node = eZContentObjectTreeNode::fetch( $nodeID, false, false );
-                    if ( $node )
-                    {
-                        $relationType = $node->nodeName == 'link' ? eZContentObject::RELATION_LINK : eZContentObject::RELATION_EMBED;
-                        $contentObject->addContentObjectRelation( $node['contentobject_id'], $objectAttribute->attribute( 'version' ), 0, $relationType );
-                    }
+                    $relationType = $node->nodeName == 'link' ? eZContentObject::RELATION_LINK : eZContentObject::RELATION_EMBED;
+                    $contentObject->addContentObjectRelation( $nodeArray['id'], $objectAttribute->attribute( 'version' ), 0, $relationType );
                 }
             }
         }
@@ -752,6 +777,9 @@ class eZXMLTextType extends eZDataType
     function deleteStoredObjectAttribute( $contentObjectAttribute, $version = null )
     {
         $contentObjectAttributeID = $contentObjectAttribute->attribute( "id" );
+
+        if ( isset( $this->deletedStoredObjectAttribute[ $contentObjectAttributeID ] ) )
+            return;
 
         $db = eZDB::instance();
 
@@ -795,6 +823,12 @@ class eZXMLTextType extends eZDataType
 
             $db->query( "DELETE FROM ezurl WHERE id IN ($unusedUrlIDString)" );
         }
+
+        /* If all the versions/urls of the attribute were removed, do not try to remove them again */
+        if ( $version == null )
+        {
+            $this->deletedStoredObjectAttribute[ $contentObjectAttributeID ] = true;
+        }
     }
 
     function diff( $old, $new, $options = false )
@@ -820,6 +854,12 @@ class eZXMLTextType extends eZDataType
         $xmlText = "'" . $db->escapeString( $xmlText ) . "'";
         return array( 'data_text' => $xmlText );
     }
+
+    /**
+     * List of fully deleted object attributes by id, used to know when we don't need to perform additional url cleanup
+     * @var array
+     */
+    protected $deletedStoredObjectAttribute;
 }
 
 eZDataType::register( eZXMLTextType::DATA_TYPE_STRING, "eZXMLTextType" );

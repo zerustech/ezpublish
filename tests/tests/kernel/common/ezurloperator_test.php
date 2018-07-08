@@ -2,8 +2,9 @@
 /**
  * File containing the eZURLOperatorTest class
  *
- * @copyright Copyright (C) 1999-2010 eZ Systems AS. All rights reserved.
- * @license http://ez.no/licenses/gnu_gpl GNU GPLv2
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
  * @package tests
  */
 
@@ -54,7 +55,11 @@ class eZURLOperatorTest extends ezpTestCase
             case 'get'    : $_GET[$argument]     = $expectedResult; break;
             case 'post'   : $_POST[$argument]    = $expectedResult; break;
             case 'cookie' : $_COOKIE[$argument]  = $expectedResult; break;
-            case 'session': $_SESSION[$argument] = $expectedResult; break;
+            case 'session':
+                $_SESSION[$argument] = $expectedResult;
+                // session is lazy loaded, expected result is null (session has not started) to be returned
+                $expectedResult = null;
+                break;
         }
 
         $operatorParameters = array(
@@ -68,7 +73,7 @@ class eZURLOperatorTest extends ezpTestCase
         );
 
         $operator->modify(
-            $tpl, $operatorName, $operatorParameters, '', '', $operatorValue, $namedParameters
+            $tpl, $operatorName, $operatorParameters, '', '', $operatorValue, $namedParameters, false
         );
 
         $this->assertEquals( $expectedResult, $operatorValue );

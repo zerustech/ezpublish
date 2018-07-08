@@ -1,33 +1,12 @@
 <?php
-//
-// Created on: <17-Apr-2002 10:34:48 bf>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 /*!
-  \file
   This file is a shared code file which is used by different parts of the system
   to edit objects. This file only implements editing of attributes and uses
   hooks to allow external code to add functionality.
@@ -213,6 +192,7 @@ $storeActions = array( 'Preview',
                        'DeleteRelation',
                        'DeleteNode',
                        'SectionEdit',
+                       'StateEdit',
                        'MoveNode' );
 $storingAllowed = ( in_array( $Module->currentAction(), $storeActions ) ||
                     eZContentObjectEditHandler::isStoreAction() );
@@ -239,35 +219,40 @@ if ( $_SERVER['REQUEST_METHOD'] === 'POST' )
 {
     // Need to detect if post_max_size has been reached. If so, all post variables are gone...
     $postMaxSize = trim( ini_get( 'post_max_size' ) );
-    $postMaxSizeBytes = $postMaxSize;
-    $postMaxSizeUnit = 'b';
-    // post_max_size can have values like 8M which needs to be converted to bytes
-    $last = strtolower( $postMaxSize[strlen($postMaxSize)-1] );
-    if ( !is_numeric( $last ) )
-        $postMaxSize = substr( $postMaxSize, 0, -1 );
-    switch ( $last )
+    $postMaxSizeBytes = (int)$postMaxSize;
+
+    // As of PHP 5.3.2 it is possible to configure unlimited post_max_size, further checking
+    if ($postMaxSizeBytes !== 0)
     {
-        case 'g':
-            $postMaxSizeBytes *= 1073741824; // = 1024 * 1024 * 1024
-            $postMaxSizeUnit = 'Gb';
-            break;
-        case 'm':
-            $postMaxSizeBytes *= 1048576; // = 1024 * 1024
-            $postMaxSizeUnit = 'Mb';
-            break;
-        case 'k':
-            $postMaxSizeBytes *= 1024;
-            $postMaxSizeUnit = 'Kb';
-            break;
-    }
-    if ( (int)$_SERVER['CONTENT_LENGTH'] > $postMaxSizeBytes &&  // This is not 100% acurrate as $_SERVER['CONTENT_LENGTH'] doesn't only count post data but also other things
-        count( $_POST ) === 0 )                                 // Therefore we also check if request got no post variables.
-    {
-        $validation['attributes'][] = array( 'id' => '1',
-                                             'identified' => 'generalid',
-                                             'name' => ezpI18n::tr( 'kernel/content', 'Error' ),
-                                             'description' => ezpI18n::tr( 'kernel/content', 'The request sent to the server was too big to be accepted. This probably means that you uploaded a file which was too big. The maximum allowed request size is %max_size_string.', null, array( '%max_size_string' => "$postMaxSize $postMaxSizeUnit" ) ) );
-        $validation['processed'] = true;
+        $postMaxSizeUnit = 'b';
+        // post_max_size can have values like 8M which needs to be converted to bytes
+        $last = strtolower( $postMaxSize[strlen($postMaxSize)-1] );
+        if ( !is_numeric( $last ) )
+            $postMaxSize = substr( $postMaxSize, 0, -1 );
+        switch ( $last )
+        {
+            case 'g':
+                $postMaxSizeBytes *= 1073741824; // = 1024 * 1024 * 1024
+                $postMaxSizeUnit = 'Gb';
+                break;
+            case 'm':
+                $postMaxSizeBytes *= 1048576; // = 1024 * 1024
+                $postMaxSizeUnit = 'Mb';
+                break;
+            case 'k':
+                $postMaxSizeBytes *= 1024;
+                $postMaxSizeUnit = 'Kb';
+                break;
+        }
+        if ( (int)$_SERVER['CONTENT_LENGTH'] > $postMaxSizeBytes &&  // This is not 100% acurrate as $_SERVER['CONTENT_LENGTH'] doesn't only count post data but also other things
+            count( $_POST ) === 0 )                                 // Therefore we also check if request got no post variables.
+        {
+            $validation['attributes'][] = array( 'id' => '1',
+                                                 'identified' => 'generalid',
+                                                 'name' => ezpI18n::tr( 'kernel/content', 'Error' ),
+                                                 'description' => ezpI18n::tr( 'kernel/content', 'The request sent to the server was too big to be accepted. This probably means that you uploaded a file which was too big. The maximum allowed request size is %max_size_string.', null, array( '%max_size_string' => "$postMaxSize $postMaxSizeUnit" ) ) );
+            $validation['processed'] = true;
+        }
     }
 }
 
@@ -318,12 +303,16 @@ if ( $storingAllowed && $hasObjectInput)
         $Module->setExitStatus( eZModule::STATUS_OK );
 
     $db = eZDB::instance();
-    if ( $inputValidated and count( $attributeInputMap ) > 0 )
+    if ( !empty( $attributeInputMap ) )
     {
-        if ( $Module->runHooks( 'pre_commit', array( $class, $object, $version, $contentObjectAttributes, $EditVersion, $EditLanguage, $FromLanguage ) ) )
-            return;
+        if ( $inputValidated )
+        {
+            if ( $Module->runHooks( 'pre_commit', array( $class, $object, $version, $contentObjectAttributes, $EditVersion, $EditLanguage, $FromLanguage ) ) )
+                return;
+            $version->setAttribute( 'status', eZContentObjectVersion::STATUS_DRAFT );
+        }
+
         $version->setAttribute( 'modified', time() );
-        $version->setAttribute( 'status', eZContentObjectVersion::STATUS_DRAFT );
 
         $db->begin();
         $version->store();
@@ -332,6 +321,10 @@ if ( $storingAllowed && $hasObjectInput)
         $object->storeInput( $contentObjectAttributes,
                              $attributeInputMap );
         $db->commit();
+        ezpEvent::getInstance()->notify(
+            'content/cache/version',
+            array( $object->attribute( 'id' ), $version->attribute( 'version' ) )
+        );
     }
 
     $validation['processed'] = true;
@@ -341,6 +334,10 @@ if ( $storingAllowed && $hasObjectInput)
     $db->begin();
     $object->setName( $class->contentObjectName( $object, $version->attribute( 'version' ), $EditLanguage ), $version->attribute( 'version' ), $EditLanguage );
     $db->commit();
+
+    // While being fetched, attributes might have been modified.
+    // The list needs to be refreshed so it is accurately displayed.
+    $contentObjectAttributes = $version->contentObjectAttributes( $EditLanguage );
 }
 elseif ( $storingAllowed )
 {
@@ -412,6 +409,14 @@ if ( $inputValidated == true )
             return;
     }
 }
+else if ( $http->hasPostVariable( 'PublishAfterConflict' ) )
+{
+    if ( $http->postVariable( 'PublishAfterConflict' ) == 1 )
+    {
+        if ( $Module->runHooks( 'action_check', array( $class, $object, $version, $contentObjectAttributes, $EditVersion, $EditLanguage, $FromLanguage, &$Result  ) ) )
+            return;
+    }
+}
 
 if ( isset( $Params['TemplateObject'] ) )
     $tpl = $Params['TemplateObject'];
@@ -468,9 +473,15 @@ if ( !isset( $OmitSectionSetting ) )
 if ( $OmitSectionSetting !== true )
 {
     $sectionID = $object->attribute( 'section_id' );
+    $sectionIdentifier = '';
     $section = eZSection::fetch( $sectionID );
+    if ( $section instanceof eZSection )
+    {
+        $sectionIdentifier = $section->attribute( 'identifier' );
+    }
+
     $res->setKeys( array( array( 'section', $object->attribute( 'section_id' ) ),
-                          array( 'section_identifier', $section->attribute( 'identifier' ) ) ) );
+                          array( 'section_identifier', $sectionIdentifier ) ) );
 }
 
 $object->setCurrentLanguage( $EditLanguage );
@@ -490,13 +501,13 @@ $tpl->setVariable( 'class', $class );
 $tpl->setVariable( 'object', $object );
 $tpl->setVariable( 'attribute_base', $attributeDataBaseName );
 
-$locationUIEnabled = true;
+$objectIsDraft = $object->attribute( 'status' ) == eZContentObject::STATUS_DRAFT;
+
 // If the object has been published we disable the location UI
-if ( $object->attribute( 'status' ) != eZContentObject::STATUS_DRAFT )
-{
-    $locationUIEnabled = false;
-}
-$tpl->setVariable( "location_ui_enabled", $locationUIEnabled );
+$tpl->setVariable( "location_ui_enabled", $objectIsDraft );
+
+// Give templates easy access to check if object is draft
+$tpl->setVariable( "object_is_draft", $objectIsDraft );
 
 
 if ( $Module->runHooks( 'pre_template', array( $class, $object, $version, $contentObjectAttributes, $EditVersion, $EditLanguage, $tpl, $FromLanguage ) ) )

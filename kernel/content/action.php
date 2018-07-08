@@ -1,37 +1,13 @@
 <?php
-//
-// Created on: <04-Jul-2002 13:06:30 bf>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 $http = eZHTTPTool::instance();
 $module = $Params['Module'];
-
-/* We retrieve the class ID for users as this is used in many places in this
- * code in order to be able to cleanup the user-policy cache. */
-$userClassIDArray = eZUser::contentClassIDs();
 
 if ( $module->hasActionParameter( 'LanguageCode' ) )
     $languageCode = $module->actionParameter( 'LanguageCode' );
@@ -410,7 +386,6 @@ else if ( $module->isCurrentAction( 'SwapNode' ) )
     if ( !$object )
         return $module->handleError( eZError::KERNEL_NOT_AVAILABLE, 'kernel', array() );
     $objectID = $object->attribute( 'id' );
-    $objectVersion = $object->attribute( 'current_version' );
 
     if ( $module->hasActionParameter( 'NewNode' ) )
     {
@@ -427,21 +402,33 @@ else if ( $module->isCurrentAction( 'SwapNode' ) )
     {
         eZDebug::writeWarning( "Content node with ID $selectedNodeID does not exist, cannot use that as exchanging node for node $nodeID",
                                'content/action' );
-        return $module->redirectToView( 'view', array( 'full', 2 ) );
+        return $module->handleError( eZError::KERNEL_NOT_AVAILABLE, 'kernel', array() );
     }
     if ( !$selectedNode->canSwap() )
     {
         eZDebug::writeError( "Cannot use node $selectedNodeID as the exchanging node for $nodeID, the current user does not have edit permission for it",
                              'content/action' );
-        return $module->redirectToView( 'view', array( 'full', 2 ) );
+        return $module->handleError( eZError::KERNEL_ACCESS_DENIED, 'kernel', array() );
+    }
+
+    // verify one of the nodes contains children and the other is not a container.
+    if ( !$node->classIsContainer() && $selectedNode->childrenCount() > 0 )
+    {
+        eZDebug::writeError( "Cannot use node $selectedNodeID as the exchanging node for $nodeID, as it contains sub items (node is not container)",
+                             'content/action' );
+        return $module->handleError( eZError::KERNEL_NOT_AVAILABLE, 'kernel', array() );
+    }
+    if ( !$selectedNode->classIsContainer() && $node->childrenCount() > 0 )
+    {
+        eZDebug::writeError( "Cannot use node $selectedNodeID as the exchanging node for $nodeID, as it is not container (node contains sub items)",
+                             'content/action' );
+        return $module->handleError( eZError::KERNEL_NOT_AVAILABLE, 'kernel', array() );
     }
 
     // clear cache.
     eZContentCacheManager::clearContentCacheIfNeeded( $objectID );
 
     $selectedObject = $selectedNode->object();
-    $selectedObjectID = $selectedObject->attribute( 'id' );
-    $selectedObjectVersion = $selectedObject->attribute( 'current_version' );
     $selectedNodeParentNodeID = $selectedNode->attribute( 'parent_node_id' );
 
 
@@ -1024,7 +1011,6 @@ else if ( $http->hasPostVariable( 'MoveButton' ) )
             if ( !$parentObject )
                 return $module->handleError( eZError::KERNEL_NOT_AVAILABLE, 'kernel', array() );
             $parentObjectID = $parentObject->attribute( 'id' );
-            $parentClass = $parentObject->contentClass();
 
             $ignoreNodesSelect = array_unique( $ignoreNodesSelect );
             $ignoreNodesSelectSubtree = array_unique( $ignoreNodesSelectSubtree );
@@ -1112,7 +1098,7 @@ else if ( $http->hasPostVariable( 'UpdatePriorityButton' ) )
     if ( $http->hasPostVariable( 'ContentObjectID' ) )
     {
         $objectID = $http->postVariable( 'ContentObjectID' );
-        eZContentCacheManager::clearContentCache( $objectID );
+        eZContentCacheManager::clearContentCacheIfNeeded( $objectID );
     }
 
     if ( $http->hasPostVariable( 'RedirectURIAfterPriority' ) )
@@ -1152,8 +1138,6 @@ else if ( $http->hasPostVariable( "ActionAddToNotification" ) )
 else if ( $http->hasPostVariable( "ContentObjectID" )  )
 {
     $objectID = $http->postVariable( "ContentObjectID" );
-    $action = $http->postVariable( "ContentObjectID" );
-
 
     // Check which action to perform
     if ( $http->hasPostVariable( "ActionAddToBasket" ) )
@@ -1172,8 +1156,7 @@ else if ( $http->hasPostVariable( "ContentObjectID" )  )
     }
     else if ( $http->hasPostVariable( "ActionAddToWishList" ) )
     {
-        $user = eZUser::currentUser();
-        if ( !$user->isLoggedIn() )
+        if ( !eZUser::isCurrentUserRegistered() )
             return $module->handleError( eZError::KERNEL_ACCESS_DENIED, 'kernel' );
 
         $shopModule = eZModule::exists( "shop" );
@@ -1436,33 +1419,8 @@ else if ( $module->isCurrentAction( 'ClearViewCache' ) or
         {
             return $module->handleError( eZError::KERNEL_NOT_AVAILABLE, 'kernel' );
         }
-        $limit = 50;
-        $offset = 0;
-        $params = array( 'AsObject' => false,
-                         'Depth' => false,
-                         'Limitation' => array() ); // Empty array means no permission checking
-        $subtreeCount = $node->subTreeCount( $params );
-        while ( $offset < $subtreeCount )
-        {
-            $params['Offset'] = $offset;
-            $params['Limit'] = $limit;
-            $subtree = $node->subTree( $params );
-            $offset += count( $subtree );
-            if ( count( $subtree ) == 0 )
-            {
-                break;
-            }
-            $objectIDList = array();
-            foreach ( $subtree as $subtreeNode )
-            {
-                $objectIDList[] = $subtreeNode['contentobject_id'];
-            }
-            $objectIDList = array_unique( $objectIDList );
-            unset( $subtree );
 
-            foreach ( $objectIDList as $objectID )
-                eZContentCacheManager::clearContentCacheIfNeeded( $objectID );
-        }
+        eZContentObjectTreeNode::clearViewCacheForSubtree( $node );
     }
 
     if ( $module->hasActionParameter( 'CurrentURL' ) )

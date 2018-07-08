@@ -1,35 +1,12 @@
 <?php
-//
-// Definition of eZMultiPrice class
-//
-// Created on: <04-Nov-2005 12:26:52 dl>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
-
-/*! \file
-*/
+/**
+ * File containing the eZMultiPrice class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 /*!
   \class eZMultiPrice ezmultiprice.php
@@ -58,12 +35,9 @@ class eZMultiPrice extends eZSimplePrice
     const CALCULATION_TYPE_DISCOUNT_INCLUDE = 3;
     const CALCULATION_TYPE_DISCOUNT_EXCLUDE = 4;
 
-    /*!
-     Constructor
-    */
-    function eZMultiPrice( $classAttribute, $contentObjectAttribute, $storedPrice = null )
+    public function __construct( $classAttribute, $contentObjectAttribute, $storedPrice = null )
     {
-        eZSimplePrice::eZSimplePrice( $classAttribute, $contentObjectAttribute, $storedPrice );
+        parent::__construct( $classAttribute, $contentObjectAttribute, $storedPrice );
 
         $isVatIncluded = ( $classAttribute->attribute( eZMultiPriceType::INCLUDE_VAT_FIELD ) == 1 );
         $VATID = $classAttribute->attribute( eZMultiPriceType::VAT_ID_FIELD );
@@ -97,13 +71,7 @@ class eZMultiPrice extends eZSimplePrice
     */
     function hasAttribute( $attr )
     {
-        $hasAttribute = in_array( $attr, $this->attributes() );
-        if ( !$hasAttribute )
-        {
-            $hasAttribute = eZSimplePrice::attributes( $attr );
-        }
-
-        return $hasAttribute;
+        return in_array( $attr, $this->attributes() );
     }
 
     /*!
@@ -382,7 +350,7 @@ class eZMultiPrice extends eZSimplePrice
         if ( !$this->updatePrice( $currencyCode, $value, $type ) &&
              !$this->addPrice( $currencyCode, $value, $type ) )
         {
-            eZDebug::writeWarning( "Unable to set price in '$currencyCode'", 'eZMultiPrice::setPrice' );
+            eZDebug::writeWarning( "Unable to set price in '$currencyCode'", __METHOD__ );
             return false;
         }
 

@@ -1,4 +1,12 @@
 <?php
+/**
+ * File containing the eZImageManagerTest class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package tests
+ */
 
 class eZImageManagerTest extends ezpTestCase
 {
@@ -10,8 +18,20 @@ class eZImageManagerTest extends ezpTestCase
     public static function imageMagickIsEnabled()
     {
         $imageIni = eZINI::instance( 'image.ini' );
-        return ( in_array( 'ImageMagick', $imageIni->variable( 'ImageConverterSettings', 'ImageConverters' ) ) and
-                 $imageIni->variable( 'ImageMagick', 'IsEnabled' ) == 'true' );
+        if (
+            !(
+                in_array(
+                    'ImageMagick',
+                    $imageIni->variable( 'ImageConverterSettings', 'ImageConverters' )
+                )
+                && $imageIni->variable( 'ImageMagick', 'IsEnabled' ) == 'true'
+            )
+        )
+            return false;
+
+        // Check furthen that the executable can be run
+        exec( $imageIni->variable( "ImageMagick", "Executable" ) . " -version 2>&1", $output, $returnValue );
+        return $returnValue === 0;
     }
 
     public function setUp()
@@ -19,6 +39,17 @@ class eZImageManagerTest extends ezpTestCase
         parent::setUp();
 
         $this->imageIni = eZINI::instance( 'image.ini' );
+    }
+
+    public function tearDown()
+    {
+        $filename = 'tests/tests/lib/ezimage/data/andernach_multihandler.jpg';
+        if ( is_file( $filename ) )
+        {
+            unlink( $filename );
+        }
+
+        parent::tearDown();
     }
 
     /**
@@ -41,8 +72,8 @@ class eZImageManagerTest extends ezpTestCase
      */
     public function testMultiHandlerAlias()
     {
-        if ( !self::gdIsEnabled() or !self::imageMagickIsEnabled() )
-            $this->markTestSkipped( 'GD and/or ImageMagick are not enabled' );
+        if ( !self::gdIsEnabled() && !self::imageMagickIsEnabled() )
+            $this->markTestSkipped( 'Neither GD nor ImageMagick are enabled' );
 
         $aliasList = $this->imageIni->variable( 'AliasSettings', 'AliasList' );
         array_push( $aliasList, 'multihandler' );

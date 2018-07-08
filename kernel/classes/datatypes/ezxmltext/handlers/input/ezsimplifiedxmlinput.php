@@ -1,38 +1,18 @@
 <?php
-//
-// Definition of eZSimplifiedXMLInput class
-//
-// Created on: <28-Jan-2003 13:28:39 bf>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * File containing the eZSimplifiedXMLInput class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 class eZSimplifiedXMLInput extends eZXMLInputHandler
 {
-    function eZSimplifiedXMLInput( &$xmlData, $aliasedType, $contentObjectAttribute )
+    public function __construct( $xmlData, $aliasedType, $contentObjectAttribute )
     {
-        $this->eZXMLInputHandler( $xmlData, $aliasedType, $contentObjectAttribute );
+        parent::__construct( $xmlData, $aliasedType, $contentObjectAttribute );
 
         $this->IsInputValid = true;
         $this->ContentObjectAttribute = $contentObjectAttribute;
@@ -48,6 +28,15 @@ class eZSimplifiedXMLInput extends eZXMLInputHandler
         $objectAttributeID = $contentObjectAttribute->attribute( 'id' );
         $objectAttributeVersion = $contentObjectAttribute->attribute('version');
 
+        // Ensure links that have been removed from the attribute version are removed from the object link table
+        $linkObjectLinkList = eZURLObjectLink::fetchLinkObjectList( $objectAttributeID, $objectAttributeVersion );
+        foreach ( $linkObjectLinkList as $linkObjectLink ) {
+            if ( !in_array( $linkObjectLink->attribute( 'url_id' ), $urlIDArray ) ) {
+                $linkObjectLink->remove();
+            }
+        }
+
+        // Ensure links that have been added to the attribute version are added to the object link table
         foreach( $urlIDArray as $urlID )
         {
             $linkObjectLink = eZURLObjectLink::fetch( $urlID, $objectAttributeID, $objectAttributeVersion );

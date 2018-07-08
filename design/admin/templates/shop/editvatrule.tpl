@@ -13,7 +13,7 @@
 
 <div class="context-block">
 
-{* DESIGN: Header START *}<div class="box-header"><div class="box-tc"><div class="box-ml"><div class="box-mr"><div class="box-tl"><div class="box-tr">
+{* DESIGN: Header START *}<div class="box-header"><div class="box-ml">
 
 <h1 class="context-title">
 {if is_set( $rule )}
@@ -25,7 +25,7 @@
 
 {* DESIGN: Mainline *}<div class="header-mainline"></div>
 
-{* DESIGN: Header END *}</div></div></div></div></div></div>
+{* DESIGN: Header END *}</div></div>
 
 {* DESIGN: Content START *}<div class="box-ml"><div class="box-mr"><div class="box-content">
 
@@ -51,7 +51,7 @@
     <select name="Categories[]" size="{$categories_list_size}" multiple="multiple">
         <option {if $category_ids|count|eq(0)}selected="selected"{/if} value="*">{'Any'|i18n( 'design/admin/shop/editvatrule' )}</option>
     {foreach $all_product_categories as $current_cat}
-        <option {if $category_ids|contains( $current_cat.id )}selected="selected"{/if} value="{$current_cat.id}">{$current_cat.name}</option>
+        <option {if $category_ids|contains( $current_cat.id )}selected="selected"{/if} value="{$current_cat.id}">{$current_cat.name|wash}</option>
         {/foreach}
     </select>
     </td>
@@ -64,7 +64,7 @@
     <td>
     <select name="VatType" size="1">
     {foreach $all_vat_types as $current_vat_type}
-        <option {if eq( $vat_type_id, $current_vat_type.id )}selected="selected"{/if} value="{$current_vat_type.id}">{$current_vat_type.name} ({$current_vat_type.percentage}%)</option>
+        <option {if eq( $vat_type_id, $current_vat_type.id )}selected="selected"{/if} value="{$current_vat_type.id}">{$current_vat_type.name|wash} ({$current_vat_type.percentage}%)</option>
         {/foreach}
     </select>
     </td>
@@ -79,7 +79,7 @@
 {* Button bar for remove and add currency. *}
 <div class="controlbar">
 
-{* DESIGN: Control bar START *}<div class="box-bc"><div class="box-ml"><div class="box-mr"><div class="box-tc"><div class="box-bl"><div class="box-br">
+{* DESIGN: Control bar START *}<div class="box-bc"><div class="box-ml">
 
 <div class="block">
     <div class="left">
@@ -96,7 +96,7 @@
 
     <div class="break"></div>
 </div>
-{* DESIGN: Control bar END *}</div></div></div></div></div></div>
+{* DESIGN: Control bar END *}</div></div>
 
 </div>
 

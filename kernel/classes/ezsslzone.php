@@ -1,33 +1,12 @@
 <?php
-//
-// Definition of eZSSLZone class
-//
-// Created on: <12-Jul-2005 13:01:07 vs>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
-
+/**
+ * File containing the eZSSLZone class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 /*!
  \class eZSSLZone ezsslzone.php
@@ -133,20 +112,20 @@ class eZSSLZone
                     $elements = eZURLAliasML::fetchByPath( $uri );
                     if ( count( $elements ) == 0 )
                     {
-                        eZDebug::writeError( "Cannot fetch URI '$uri'", 'eZSSLZone::getSSLZones' );
+                        eZDebug::writeError( "Cannot fetch URI '$uri'", __METHOD__ );
                         continue;
                     }
                     $action = $elements[0]->attribute( 'action' );
                     if ( !preg_match( "#^eznode:(.+)#", $action, $matches ) )
                     {
-                        eZDebug::writeError( "Cannot decode action '$action' for URI '$uri'", 'eZSSLZone::getSSLZones' );
+                        eZDebug::writeError( "Cannot decode action '$action' for URI '$uri'", __METHOD__ );
                         continue;
                     }
                     $nodeID = (int)$matches[1];
                     $node = eZContentObjectTreeNode::fetch( $nodeID );
                     if ( !$node instanceof eZContentObjectTreeNode )
                     {
-                        eZDebug::writeError( "cannot fetch node by URI '$uri'", 'eZSSLZone::getSSLZones' );
+                        eZDebug::writeError( "cannot fetch node by URI '$uri'", __METHOD__ );
                         continue;
                     }
                     $pathStringsArray[$uri] = $node->attribute( 'path_string' );
@@ -244,11 +223,18 @@ class eZSSLZone
         if ( !isset( $inSSL ) )
             return;
 
+        // Disable any further redirection/usage of SSLZones, see EZP-22204
+        // Prevents inner modules from redirecting to SSL if requested
+        $GLOBALS['eZSSLZoneEnabled'] = false;
+
         // $nowSSl is true if current access mode is HTTPS.
         $nowSSL = eZSys::isSSLNow();
 
         $requestURI = eZSys::requestURI();
         $indexDir = eZSys::indexDir( false );
+
+        // If there are any $_GET parameters, those should be passed into the new URI
+        $getString = eZSys::queryString();
 
         $sslZoneRedirectionURL = false;
         if ( $nowSSL && !$inSSL )
@@ -256,7 +242,12 @@ class eZSSLZone
             // switch to plain HTTP
             $ini = eZINI::instance();
             $host = $ini->variable( 'SiteSettings', 'SiteURL' );
-            $sslZoneRedirectionURL = "http://" . $host . $indexDir . $requestURI;
+            $port = parse_url( "http://$host", PHP_URL_PORT );
+            $host = eZSys::serverVariable( 'HTTP_HOST' );
+            $host = preg_replace( '/:\d+$/', '', $host );
+            if ( $port && $port != 80 )
+                $host .= ":$port";
+            $sslZoneRedirectionURL = "http://" . $host . $indexDir . $requestURI . $getString;
         }
         elseif ( !$nowSSL && $inSSL )
         {
@@ -267,7 +258,7 @@ class eZSSLZone
             $ini = eZINI::instance();
             $sslPort = $ini->variable( 'SiteSettings', 'SSLPort' );
             $sslPortString = ( $sslPort == eZSSLZone::DEFAULT_SSL_PORT ) ? '' : ":$sslPort";
-            $sslZoneRedirectionURL = "https://" . $host  . $sslPortString . $indexDir . $requestURI;
+            $sslZoneRedirectionURL = "https://" . $host  . $sslPortString . $indexDir . $requestURI . $getString;
         }
 
         if ( $sslZoneRedirectionURL ) // if a redirection URL is found
@@ -311,7 +302,7 @@ class eZSSLZone
 
         if ( !$pathStrings )
         {
-            eZDebug::writeError( "Node #$nodeID not found", "eZSSLZone::checkNodeID" );
+            eZDebug::writeError( "Node #$nodeID not found", __METHOD__ );
             return;
         }
 
@@ -332,7 +323,7 @@ class eZSSLZone
          * i.e. it cannot choose access mode itself,
          * then do nothing.
          */
-        if ( !$redirect && !eZSSLZone::isKeepModeView( $module, $view ) )
+        if ( !eZSSLZone::isKeepModeView( $module, $view ) )
             return;
 
         $pathString = $node->attribute( 'path_string' );

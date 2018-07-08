@@ -1,32 +1,12 @@
 <?php
-//
-// Definition of eZSOAPRequest class
-//
-// Created on: <19-Feb-2002 15:42:03 bf>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * File containing the eZSOAPRequest class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package lib
+ */
 
 /*!
   \class eZSOAPRequest ezsoaprequest.php
@@ -37,21 +17,18 @@
 
 class eZSOAPRequest extends eZSOAPEnvelope
 {
-    /*!
-     Constructs a new eZSOAPRequest object. You have to provide the request name
-     and the target namespace for the request.
-
-     \param name
-     \param namespace
-     \param parameters, assosiative array, example: array( 'param1' => 'value1, 'param2' => 'value2' )
-    */
-    function eZSOAPRequest( $name="", $namespace="", $parameters = array() )
+    /**
+     * Constructs a new eZSOAPRequest object. You have to provide the request name and the target namespace for the request.
+     * @param string $name
+     * @param string $namespace
+     * @param array $parameters
+     */
+    public function __construct( $name="", $namespace="", $parameters = array() )
     {
         $this->Name = $name;
         $this->Namespace = $namespace;
 
-        // call the parents constructor
-        $this->eZSOAPEnvelope();
+        parent::__construct();
 
         foreach( $parameters as $name => $value )
         {
@@ -133,7 +110,7 @@ class eZSOAPRequest extends eZSOAPEnvelope
 
             if ( $param == false )
             {
-                eZDebug::writeError( "Error encoding data for payload: " . $parameter->name(), "eZSOAPRequest::payload()" );
+                eZDebug::writeError( "Error encoding data for payload: " . $parameter->name(), __METHOD__ );
                 continue;
             }
             $request->appendChild( $param );

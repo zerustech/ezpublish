@@ -1,35 +1,12 @@
 <?php
-//
-// Definition of eZPDFExport class
-//
-// Created on: <21-Nov-2003 15:59:56 kk>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
-
-/*! \file
-*/
+/**
+ * File containing the eZPDFExport class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 /*!
   \class eZPDFExport ezpdfexport.php
@@ -45,14 +22,6 @@ class eZPDFExport extends eZPersistentObject
 
     const CREATE_ONCE = 1;
     const CREATE_ONFLY = 2;
-
-    /*!
-     Initializes a new eZPDFExport.
-    */
-    function eZPDFExport( $row )
-    {
-        $this->eZPersistentObject( $row );
-    }
 
     static function definition()
     {
@@ -186,7 +155,7 @@ class eZPDFExport extends eZPersistentObject
 
         $db = eZDB::instance();
         $db->begin();
-        eZPersistentObject::store();
+        parent::store();
         if ( $publish )
         {
             $this->setAttribute( 'version', eZPDFExport::VERSION_DRAFT );
@@ -228,7 +197,7 @@ class eZPDFExport extends eZPersistentObject
                 unlink( $filename );
             }
         }
-        eZPersistentObject::remove( $conditions, $extraConditions);
+        parent::remove( $conditions, $extraConditions);
     }
 
     /*!
@@ -274,7 +243,7 @@ class eZPDFExport extends eZPersistentObject
 
     function exportClassesArray()
     {
-        return explode( ':',  eZPersistentObject::attribute( 'export_classes' ) );
+        return explode( ':',  $this->attribute( 'export_classes' ) );
     }
 
     function countGeneratingOnceExports( $filename = '' )

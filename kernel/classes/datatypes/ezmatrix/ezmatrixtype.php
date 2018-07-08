@@ -1,35 +1,12 @@
 <?php
-//
-// Definition of eZMatrixType class
-//
-// Created on: <30-May-2003 14:18:35 sp>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
-
-/*! \file
-*/
+/**
+ * File containing the eZMatrixType class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 /*!
   \class eZMatrixType ezmatrixtype.php
@@ -47,12 +24,9 @@ class eZMatrixType extends eZDataType
     const CELL_VARIABLE = '_ezmatrix_cell_';
     const DATA_TYPE_STRING = 'ezmatrix';
 
-    /*!
-     Constructor
-    */
-    function eZMatrixType()
+    public function __construct()
     {
-        $this->eZDataType( self::DATA_TYPE_STRING, ezpI18n::tr( 'kernel/classes/datatypes', 'Matrix', 'Datatype name' ),
+        parent::__construct( self::DATA_TYPE_STRING, ezpI18n::tr( 'kernel/classes/datatypes', 'Matrix', 'Datatype name' ),
                            array( 'serialize_supported' => true ) );
     }
 
@@ -429,30 +403,30 @@ class eZMatrixType extends eZDataType
 
     function fromString( $contentObjectAttribute, $string )
     {
+        $matrix = $contentObjectAttribute->attribute( 'content' );
+        $matrix->Cells = array();
+        $matrix->Matrix['rows']['sequential'] = array();
+        $matrix->NumRows = 0;
+
         if ( $string != '' )
         {
-            $matrix = $contentObjectAttribute->attribute( 'content' );
             $matrixRowsList = eZStringUtils::explodeStr( $string, "&" );
-            $cells = array();
-            $matrix->Matrix['rows']['sequential'] = array();
-            $matrix->NumRows = 0;
 
             foreach( $matrixRowsList as $key => $value )
             {
                 $newCells = eZStringUtils::explodeStr( $value, '|' );
                 $matrixArray[] = $newCells;
-                $cells = array_merge( $cells, $newCells );
+                $matrix->Cells = array_merge( $matrix->Cells, $newCells );
 
                 $newRow['columns'] = $newCells;
-                $newRow['identifier'] =  'row_' . ( $numRows + 1 );
-                $newRow['name'] = 'Row_' . ( $numRows + 1 );
+                $newRow['identifier'] =  'row_' . ( $matrix->NumRows + 1 );
+                $newRow['name'] = 'Row_' . ( $matrix->NumRows + 1 );
                 $matrix->NumRows++;
-
 
                 $matrix->Matrix['rows']['sequential'][] = $newRow;
             }
-            $matrix->Cells = $cells;
         }
+
         return true;
     }
 

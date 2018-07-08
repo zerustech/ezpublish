@@ -1,32 +1,10 @@
 <?php
-//
-// eZSetup
-//
-// Created on: <08-Nov-2002 11:00:54 kd>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 // This file holds the test functions that are used by step 1
 
@@ -50,6 +28,8 @@ function eZSetupTestTable()
                   'zlib_extension' => array( 'eZSetupTestExtension' ),
                   'dom_extension' => array( 'eZSetupTestExtension' ),
                   'iconv_extension' => array( 'eZSetupTestExtension' ),
+                  'intl_extension' => array( 'eZSetupTestExtension' ),
+                  'xsl_extension' => array( 'eZSetupTestExtension' ),
                   'file_upload' => array( 'eZSetupTestFileUpload' ),
                   'open_basedir' => array( 'eZSetupTestOpenBasedir' ),
                   'safe_mode' => array( 'eZSetupTestSafeMode' ),
@@ -60,7 +40,6 @@ function eZSetupTestTable()
                   'memory_limit' => array( 'eZSetupTestMemLimit' ),
                   'execution_time' => array( 'eZSetupTestExecutionTime' ),
                   'allow_url_fopen' => array( 'eZSetupTestAllowURLFOpen' ),
-                  'accept_path_info' => array( 'eZSetupTestAcceptPathInfo' ),
                   'timezone' => array( 'eZSetupTestTimeZone' ),
                   'ezcversion' => array( 'eZSetupTestComponentsVersion' ) );
 }
@@ -68,19 +47,19 @@ function eZSetupTestTable()
 function eZSetupConfigVariable( $type, $name )
 {
     $config = eZINI::instance( 'setup.ini' );
-    return $config->variable( $type, $name );
+    return ( $config->hasVariable( $type, $name ) ) ? $config->variable( $type, $name ) : false;
 }
 
 function eZSetupImageConfigVariableArray( $type, $name )
 {
     $config = eZINI::instance( 'image.ini' );
-    return $config->variableArray( $type, $name );
+    return ( $config->hasVariable( $type, $name ) ) ? $config->variableArray( $type, $name ) : false;
 }
 
 function eZSetupConfigVariableArray( $type, $name )
 {
     $config = eZINI::instance( 'setup.ini' );
-    return $config->variableArray( $type, $name );
+    return ( $config->hasVariable( $type, $name ) ) ? $config->variableArray( $type, $name ) : false;
 }
 
 function eZSetupRunTests( $testList, $client, &$givenPersistentList )
@@ -141,6 +120,7 @@ function eZSetupRunTests( $testList, $client, &$givenPersistentList )
 
 function eZSetupCheckTestFunctions( $type )
 {
+    $extensionList = eZSetupConfigVariableArray( $type, 'Extensions' );
     $testList = eZSetupConfigVariableArray( $type, 'TestList' );
     $requireType = eZSetupConfigVariable( $type, 'Require' );
 
@@ -157,8 +137,11 @@ function eZSetupCheckTestFunctions( $type )
         if ( $successCount == 0 )
             $result = false;
     }
-    else if ( $successCount < count( $extensionList ) )
+    else if ( is_array( $extensionList ) && $successCount < count( $extensionList ) )
+    {
         $result = false;
+    }
+
     return array( 'result' => $result,
                   'persistence_list' => $persistenceData,
                   'test_results' => $testResults );
@@ -382,29 +365,6 @@ function eZSetupTestAllowURLFOpen( $type )
     $allowFOpen = ini_get( 'allow_url_fopen' ) != 0;
     return array( 'result' => $allowFOpen,
                   'persistent_data' => array( 'result' => array( 'value' => $allowFOpen ) ) );
-}
-
-/*!
-  Test if Apache setting for AcceptPathInfo is enabled
-*/
-function eZSetupTestAcceptPathInfo( $type )
-{
-    // rl: this one works only if 'allow_url_fopen' is On
-    // $allowFOpen = ini_get( 'allow_url_fopen' ) != 0;
-    // todo: additional check for case of 'allow_url_fopen' is Off
-
-    $testPath = $_SERVER['HTTP_HOST'] . $_SERVER['SCRIPT_NAME'] . '/eZ_accept_path_info_test';
-    $protocol = 'http';
-    /* We attempt to use the https protocol when the https port is used */
-    if ( $_SERVER['SERVER_PORT'] == 443 )
-    {
-        $protocol = 'https';
-    }
-    $testPath = "{$protocol}://" . str_replace( '//', '/', $testPath );
-    $fp = @fopen( $testPath, 'r' );
-
-    return array( 'result' => ( $fp !== false ),
-                  'persistent_data' => array( 'result' => array( 'value' => ( $fp !== false ) ) ) );
 }
 
 function eZSetupTestFunctionExists( $type )

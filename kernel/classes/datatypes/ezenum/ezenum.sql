@@ -19,15 +19,14 @@ CREATE TABLE ezenumobjectvalue (
   enumelement varchar(255) NOT NULL default '',
   enumid int(11) NOT NULL default '0',
   enumvalue varchar(255) NOT NULL default '',
-  PRIMARY KEY  (contentobject_attribute_id,contentobject_attribute_version,enumid),
-  KEY ezenumobjectvalue_co_attr_id_co_attr_ver (contentobject_attribute_id,contentobject_attribute_version)
+  PRIMARY KEY  (contentobject_attribute_id,contentobject_attribute_version,enumid)
 );
 
 #####################################################################################
 # sql script for PostgreSql
 
-drop SEQUENCE ezenumvalue_s ;
-CREATE SEQUENCE ezenumvalue_s;
+drop SEQUENCE ezenumvalue_id_seq ;
+CREATE SEQUENCE ezenumvalue_id_seq;
 
 drop table ezenumvalue;
 CREATE TABLE ezenumvalue (
@@ -35,7 +34,7 @@ CREATE TABLE ezenumvalue (
     contentclass_attribute_version integer DEFAULT 0 NOT NULL,
     enumelement character varying(255) DEFAULT ''::character varying NOT NULL,
     enumvalue character varying(255) DEFAULT ''::character varying NOT NULL,
-    id integer DEFAULT nextval('ezenumvalue_s'::text) NOT NULL,
+    id integer DEFAULT nextval('ezenumvalue_id_seq'::text) NOT NULL,
     placement integer DEFAULT 0 NOT NULL
 );
 

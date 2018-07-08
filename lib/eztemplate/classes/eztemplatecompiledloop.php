@@ -1,33 +1,12 @@
 <?php
-//
-// Definition of eZTemplateCompiledLoop class
-//
-// Created on: <17-Mar-2005 11:26:59 vs>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
-
+/**
+ * File containing the eZTemplateCompiledLoop class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package lib
+ */
 
 /*!
   \class eZTemplateCompiledLoop eztemplatecompiledloop.php
@@ -36,8 +15,19 @@
 */
 class eZTemplateCompiledLoop
 {
-    function eZTemplateCompiledLoop( $name, &$newNodes, $parameters, $nodePlacement, $uniqid,
-                                     $node, $tpl, $privateData )
+    /**
+     * Constructor
+     *
+     * @param string $name
+     * @param array $newNodes
+     * @param array $parameters
+     * @param $nodePlacement
+     * @param string $uniqid
+     * @param mixed $node
+     * @param eZTemplate $tpl
+     * @param array $privateData
+     */
+    public function __construct( $name, &$newNodes, $parameters, $nodePlacement, $uniqid, $node, $tpl, $privateData )
     {
         $this->Name          = $name;
         $this->Parameters    = $parameters;
@@ -217,9 +207,9 @@ class eZTemplateCompiledLoop
                         // Get unique index
                         $currentIndex = "\$fe_i_$this->UniqID";
 
-                        if ( eZTemplateNodeTool::isStaticElement( $delimiterModulo ) )
+                        if ( eZTemplateNodeTool::isConstantElement( $delimiterModulo ) )
                         {
-                            $moduloValue = (int)eZTemplateNodeTool::elementStaticValue( $delimiterModulo );
+                            $moduloValue = (int)eZTemplateNodeTool::elementConstantValue( $delimiterModulo );
                             $matchCode = "( ( $currentIndex ) % $moduloValue ) == 0";
                         }
                         else

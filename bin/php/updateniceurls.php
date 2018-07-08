@@ -1,40 +1,17 @@
 #!/usr/bin/env php
 <?php
-//
-// Definition of Updateniceurls class
-//
-// Created on: <03-Apr-2003 16:05:43 sp>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
-
-/*! \file
-*/
+/**
+ * File containing the updateniceurls.php bin script
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 set_time_limit ( 0 );
 
-require 'autoload.php';
+require_once 'autoload.php';
 $cli = eZCLI::instance();
 $script = eZScript::instance( array( 'description' => ( "eZ Publish url-alias imported and updater.\n\n" .
                                                          "Will import urls from the older (3.9) system into the new, controlled by the --import* options.\n" .
@@ -97,21 +74,18 @@ if ( $siteAccess )
 
 function changeSiteAccessSetting( $siteAccess )
 {
-    global $isQuiet;
     $cli = eZCLI::instance();
-    if ( file_exists( 'settings/siteaccess/' . $siteAccess) )
+    if ( in_array( $siteAccess, eZINI::instance()->variable( 'SiteAccessSettings', 'AvailableSiteAccessList' ) ) )
     {
-        if ( !$isQuiet )
-            $cli->notice( "Using siteaccess $siteAccess for nice url update" );
+        $cli->output( "Using siteaccess $siteAccess for nice url update" );
     }
     else
     {
-        if ( !$isQuiet )
-            $cli->notice( "Siteaccess $siteAccess does not exist, using default siteaccess" );
+        $cli->notice( "Siteaccess $siteAccess does not exist, using default siteaccess" );
     }
 }
 
-$db = eZDb::instance();
+$db = eZDB::instance();
 
 if ( $dbHost or $dbName or $dbUser or $dbImpl )
 {
@@ -232,11 +206,8 @@ if ( $options['update-nodes'] )
     $updateNodeAlias = true;
 }
 
-function displayProgress( $statusCharacter, $startTime, $currentCount, $totalCount, $currentColumn )
+$displayProgressClosure = function ( $statusCharacter, $startTime, $currentCount, $totalCount, $currentColumn ) use ( $maxColumn, $cli )
 {
-    global $maxColumn;
-    global $cli;
-
     if ( $statusCharacter !== false )
         $cli->output( $statusCharacter, false );
 
@@ -262,7 +233,7 @@ function displayProgress( $statusCharacter, $startTime, $currentCount, $totalCou
     ++$currentCount;
     flush();
     return array( $currentColumn, $currentCount );
-}
+};
 
 function formatTime( $totalTime )
 {
@@ -337,9 +308,8 @@ function logError( $msg )
     }
 }
 
-function logStore( $res, $func, $args )
+$logStoreClosure = function ( $res, $func, $args ) use ( $options )
 {
-    global $options;
     if ( !isset( $options['debug'] ) )
         return;
 
@@ -351,11 +321,11 @@ function logStore( $res, $func, $args )
         fwrite( $logFile, $logMessage );
         fclose( $logFile );
     }
-}
+};
 
 function resetLogFile( $file )
 {
-    global $cli;
+    $cli = eZCLI::instance();
     if ( file_exists( $file ) )
     {
         $s = stat( $file );
@@ -576,20 +546,8 @@ function logStoreError( $res, $func, $args )
     logError( $errmsg );
 }
 
-function verifyData( &$result, $url, $id )
+$verifyDataInternalClosure = function ( &$result, $error ) use ( $interactive, $performVerification, $cli )
 {
-    return verifyDataInternal( $result, "Importing the URL " . var_export( $url, true ) . " with ID $id");
-}
-
-function verifyNodeData( &$result, $node )
-{
-    return verifyDataInternal( $result, "Updating the node " . $node->attribute( 'node_id' ) );
-}
-
-function verifyDataInternal( &$result, $error )
-{
-    global $interactive, $performVerification;
-    global $cli;
     if ( !$performVerification )
         return;
 
@@ -618,11 +576,20 @@ function verifyDataInternal( &$result, $error )
             fgets(STDIN);
         }
     }
-}
+};
 
-function backupTables( $stage )
+$verifyDataClosure = function ( &$result, $url, $id ) use ( $verifyDataInternalClosure )
 {
-    global $backupTables, $backupTableSuffix, $cli;
+    return $verifyDataInternalClosure( $result, "Importing the URL " . var_export( $url, true ) . " with ID $id");
+};
+
+$verifyNodeDataClosure = function ( &$result, $node ) use ( $verifyDataInternalClosure )
+{
+    return $verifyDataInternalClosure( $result, "Updating the node " . $node->attribute( 'node_id' ) );
+};
+
+$backupTablesClosure = function ( $stage ) use ( $backupTables, $backupTableSuffix, $cli )
+{
     if ( !$backupTables )
         return;
 
@@ -638,11 +605,11 @@ function backupTables( $stage )
         $db->query( "CREATE TABLE $newTable LIKE $table" );
         $db->query( "INSERT INTO $newTable SELECT * FROM $table" );
     }
-}
+};
 
 
-$cli->notice( "Note: any errors encountered will be logged to urlalias_error.log" );
-$cli->notice( "Using fetch limit: $fetchLimit" );
+$cli->output( "Note: any errors encountered will be logged to urlalias_error.log" );
+$cli->output( "Using fetch limit: $fetchLimit" );
 
 resetErrorLog();
 resetStorageLog();
@@ -682,7 +649,7 @@ if ( $urlCount > 0 )
                 if ( $nodeID == 1 )
                     continue; // Skip the root node
                 $pathIdentificationString = $row['path_identification_string'];
-                $pathIdentificationString = eZURLAliasML::sanitizeURL( $pathIdentificationString, true );
+                $pathIdentificationString = eZURLAliasML::sanitizeURL( $pathIdentificationString );
                 $languageMask = $row['language_mask'];
                 $alwaysAvailable = $languageMask & 1;
                 $action = 'eznode:' . $nodeID;
@@ -690,7 +657,7 @@ if ( $urlCount > 0 )
                 if ( $aliases && $aliases[0]->attribute( 'action' ) != 'nop:' )
                 {
                     // It is already present, skip it
-                    list( $column, $counter ) = displayProgress( 's', $urlImportStartTime, $counter, $urlCount, $column );
+                    list( $column, $counter ) = $displayProgressClosure( 's', $urlImportStartTime, $counter, $urlCount, $column );
                     continue;
                 }
                 $res = eZURLAliasML::storePath( $pathIdentificationString, $action,
@@ -699,17 +666,17 @@ if ( $urlCount > 0 )
                 if ( !$res || $res['status'] !== true )
                 {
                     logStoreError( $res, "eZURLAliasML::storePath", array( $pathIdentificationString, $action, false, false, $alwaysAvailable, false, false ) );
-                    list( $column, $counter ) = displayProgress( 'E', $urlImportStartTime, $counter, $urlCount, $column );
+                    list( $column, $counter ) = $displayProgressClosure( 'E', $urlImportStartTime, $counter, $urlCount, $column );
                     continue;
                 }
-                logStore( $res, "eZURLAliasML::storePath", array( $pathIdentificationString, $action, false, false, $alwaysAvailable, false, false ) );
-                list( $column, $counter ) = displayProgress( '.', $urlImportStartTime, $counter, $urlCount, $column );
+                $logStoreClosure( $res, "eZURLAliasML::storePath", array( $pathIdentificationString, $action, false, false, $alwaysAvailable, false, false ) );
+                list( $column, $counter ) = $displayProgressClosure( '.', $urlImportStartTime, $counter, $urlCount, $column );
             }
         } while ( $count > 0 );
         flush();
         if ( $column > 0 )
             $cli->output();
-        backupTables( 'impnode' );
+        $backupTablesClosure( 'impnode' );
     }
 
     if ( $importOldAlias )
@@ -735,7 +702,7 @@ if ( $urlCount > 0 )
             {
                 $source = $row['source_url'];
                 $linkID = false;
-                $source = eZURLAliasML::sanitizeURL( $source, true );
+                $source = eZURLAliasML::sanitizeURL( $source );
                 $destination = $row['destination_url'];
                 $aliasRedirects = true;
 
@@ -755,13 +722,13 @@ if ( $urlCount > 0 )
                     if ( count( $tmprows ) == 0 )
                     {
                         logError( "Found the alias " . var_export( $source, true ) . " with ID {$row['id']} which points to " . var_export( $action, true ) . " but that content-object/node does not exist in the database" );
-                        list( $column, $counter ) = displayProgress( 's', $urlImportStartTime, $counter, $urlCount, $column );
+                        list( $column, $counter ) = $displayProgressClosure( 's', $urlImportStartTime, $counter, $urlCount, $column );
                         continue;
                     }
                     if ( $tmprows[0]['status'] != eZContentObject::STATUS_PUBLISHED )
                     {
                         logError( "Found the alias " . var_export( $source, true ) . " with ID {$row['id']} which points to " . var_export( $action, true ) . " but that content-object/node is not currently published (status is {$tmprows[0]['status']})" );
-                        list( $column, $counter ) = displayProgress( 's', $urlImportStartTime, $counter, $urlCount, $column );
+                        list( $column, $counter ) = $displayProgressClosure( 's', $urlImportStartTime, $counter, $urlCount, $column );
                         continue;
                     }
                     $linkID = false;
@@ -781,11 +748,11 @@ if ( $urlCount > 0 )
                     if ( $aliases[0]->attribute( 'action' ) != $action )
                     {
                         logError( "Found the alias " . var_export( $source, true ) . " with ID {$row['id']} which points to " . var_export( $action, true ) . " but that URL already exists, however the existing URL has the action " . var_export( $aliases[0]->attribute( 'action' ), true ) );
-                        list( $column, $counter ) = displayProgress( 'E', $urlImportStartTime, $counter, $urlCount, $column );
+                        list( $column, $counter ) = $displayProgressClosure( 'E', $urlImportStartTime, $counter, $urlCount, $column );
                         continue;
                     }
                     // The path already exists, do not import
-                    list( $column, $counter ) = displayProgress( 's', $urlImportStartTime, $counter, $urlCount, $column );
+                    list( $column, $counter ) = $displayProgressClosure( 's', $urlImportStartTime, $counter, $urlCount, $column );
                     continue;
                 }
                 $res = eZURLAliasML::storePath( $source, $action,
@@ -794,20 +761,20 @@ if ( $urlCount > 0 )
                 if ( !$res || $res['status'] !== true )
                 {
                     logStoreError( $res, "eZURLAliasML::storePath", array( $source, $action, false, $linkID, $alwaysAvailable, false, false, false, true, $aliasRedirects ) );
-                    list( $column, $counter ) = displayProgress( 'E', $urlImportStartTime, $counter, $urlCount, $column );
+                    list( $column, $counter ) = $displayProgressClosure( 'E', $urlImportStartTime, $counter, $urlCount, $column );
                     continue;
                 }
-                logStore( $res, "eZURLAliasML::storePath", array( $source, $action, false, $linkID, $alwaysAvailable, false, false, false, true, $aliasRedirects ) );
+                $logStoreClosure( $res, "eZURLAliasML::storePath", array( $source, $action, false, $linkID, $alwaysAvailable, false, false, false, true, $aliasRedirects ) );
                 $result = '.';
-                verifyData( $result, $source, $row['id'] );
-                list( $column, $counter ) = displayProgress( $result, $urlImportStartTime, $counter, $urlCount, $column );
+                $verifyDataClosure( $result, $source, $row['id'] );
+                list( $column, $counter ) = $displayProgressClosure( $result, $urlImportStartTime, $counter, $urlCount, $column );
             }
             markAsImported( $rows );
         } while ( $count > 0 );
         flush();
         if ( $column > 0 )
             $cli->output();
-        backupTables( 'impalias' );
+        $backupTablesClosure( 'impalias' );
     }
 
     if ( $importOldAliasRedirections )
@@ -828,7 +795,7 @@ if ( $urlCount > 0 )
             foreach ( $rows as $key => $row )
             {
                 $forwardFromURL = $row['source_url'];
-                $forwardFromURL = eZURLAliasML::sanitizeURL( $forwardFromURL, true );
+                $forwardFromURL = eZURLAliasML::sanitizeURL( $forwardFromURL );
                 $forwardToID = (int)$row['forward_to_id'];
                 $redirectedSource = false;
                 $linkID = false;
@@ -839,7 +806,7 @@ if ( $urlCount > 0 )
                 if ( count( $rows2 ) != 0 )
                 {
                     $redirectedSource = $rows2[0]['source_url'];
-                    $redirectedSource = eZURLAliasML::sanitizeURL( $redirectedSource, true );
+                    $redirectedSource = eZURLAliasML::sanitizeURL( $redirectedSource );
                 }
                 if ( $redirectedSource === false )
                 {
@@ -858,7 +825,7 @@ if ( $urlCount > 0 )
                     {
                         // Did not find forwarded item, mark as error
                         logError( "Could not find urlalias entry with ID $forwardToID which was referenced by '{$forwardFromURL}' with ID " . $row['id'] );
-                        list( $column, $counter ) = displayProgress( 'F', $urlImportStartTime, $counter, $urlCount, $column );
+                        list( $column, $counter ) = $displayProgressClosure( 'F', $urlImportStartTime, $counter, $urlCount, $column );
                         continue;
                     }
                     $redirectedSource = $rows2[0]['source_url'];
@@ -884,7 +851,7 @@ if ( $urlCount > 0 )
                 {
                     // Referenced url does not exist
                     logError( "The referenced path '$redirectedSource' can not be found among the new URL alias entries, old url entry is '{$forwardFromURL}' with ID " . $row['id'] );
-                    list( $column, $counter ) = displayProgress( 'E', $urlImportStartTime, $counter, $urlCount, $column );
+                    list( $column, $counter ) = $displayProgressClosure( 'E', $urlImportStartTime, $counter, $urlCount, $column );
                     continue;
                 }
 
@@ -898,20 +865,20 @@ if ( $urlCount > 0 )
                 if ( !$res || $res['status'] !== true )
                 {
                     logStoreError( $res, "eZURLAliasML::storePath", array( $source, $action, false, $linkID, $alwaysAvailable, false, true, true ) );
-                    list( $column, $counter ) = displayProgress( 'E', $urlImportStartTime, $counter, $urlCount, $column );
+                    list( $column, $counter ) = $displayProgressClosure( 'E', $urlImportStartTime, $counter, $urlCount, $column );
                     continue;
                 }
-                logStore( $res, "eZURLAliasML::storePath", array( $source, $action, false, $linkID, $alwaysAvailable, false, true, true ) );
+                $logStoreClosure( $res, "eZURLAliasML::storePath", array( $source, $action, false, $linkID, $alwaysAvailable, false, true, true ) );
                 $result = '.';
-                verifyData( $result, $source, $row['id'] );
-                list( $column, $counter ) = displayProgress( $result, $urlImportStartTime, $counter, $urlCount, $column );
+                $verifyDataClosure( $result, $source, $row['id'] );
+                list( $column, $counter ) = $displayProgressClosure( $result, $urlImportStartTime, $counter, $urlCount, $column );
             }
             markAsImported( $rows );
         } while ( $count > 0 );
         flush();
         if ( $column > 0 )
             $cli->output();
-        backupTables( 'impredir' );
+        $backupTablesClosure( 'impredir' );
     }
 
     if ( $importOldAliasWildcard )
@@ -933,9 +900,9 @@ if ( $urlCount > 0 )
             {
                 $wildcardType        = (int)$row['is_wildcard']; // 1 is forward, 2 is direct (alias) for now they are both treated as forwarding/redirect
                 $sourceWildcard      = $row['source_url'];
-                $sourceWildcard = eZURLAliasML::sanitizeURL( $sourceWildcard, true );
+                $sourceWildcard = eZURLAliasML::sanitizeURL( $sourceWildcard );
                 $destinationWildcard = $row['destination_url'];
-                $destinationWildcard = eZURLAliasML::sanitizeURL( $destinationWildcard, true );
+                $destinationWildcard = eZURLAliasML::sanitizeURL( $destinationWildcard );
                 if ( $row['is_wildcard'] && $row['is_internal'] != 1 )
                 {
                     // If the wildcard is made by a user we import using the new wildcard system.
@@ -943,7 +910,7 @@ if ( $urlCount > 0 )
 
                     $wildcard = new eZURLWildcard( $row );
                     $wildcard->store();
-                    list( $column, $counter ) = displayProgress( '.', $urlImportStartTime, $counter, $urlCount, $column );
+                    list( $column, $counter ) = $displayProgressClosure( '.', $urlImportStartTime, $counter, $urlCount, $column );
                     continue;
                 }
 
@@ -953,19 +920,19 @@ if ( $urlCount > 0 )
                     if ( !preg_match( "#^(.*)\*$#", $sourceWildcard, $matches ) )
                     {
                         logError( "Invalid source wildcard '$sourceWildcard', item is skipped, URL entry ID is " . $row['id'] );
-                        list( $column, $counter ) = displayProgress( 'E', $urlImportStartTime, $counter, $urlCount, $column );
+                        list( $column, $counter ) = $displayProgressClosure( 'E', $urlImportStartTime, $counter, $urlCount, $column );
                         continue 2;
                     }
                     $fromPath = $matches[1];
-                    $fromPath = eZURLAliasML::sanitizeURL( $fromPath, true );
+                    $fromPath = eZURLAliasML::sanitizeURL( $fromPath );
                     if ( !preg_match( "#^(.*)\{1\}$#", $destinationWildcard, $matches ) )
                     {
                         logError( "Invalid destination wildcard '$destinationWildcard', item is skipped, URL entry ID is " . $row['id'] );
-                        list( $column, $counter ) = displayProgress( 'E', $urlImportStartTime, $counter, $urlCount, $column );
+                        list( $column, $counter ) = $displayProgressClosure( 'E', $urlImportStartTime, $counter, $urlCount, $column );
                         continue 2;
                     }
                     $toPath = $matches[1];
-                    $toPath = eZURLAliasML::sanitizeURL( $toPath, true );
+                    $toPath = eZURLAliasML::sanitizeURL( $toPath );
 
                     $newWildcard = $toPath . '/*';
                     $newWildcardSQL = $db->escapeString( $newWildcard );
@@ -980,7 +947,7 @@ if ( $urlCount > 0 )
                     if ( !preg_match( "#^(.*)\{1\}$#", $newSourceWildcard, $matches ) )
                     {
                         logError( "Invalid destination wildcard '$destinationWildcard', item is skipped, URL entry ID is " . $rowsw[0]['id'] );
-                        list( $column, $counter ) = displayProgress( 'E', $urlImportStartTime, $counter, $urlCount, $column );
+                        list( $column, $counter ) = $displayProgressClosure( 'E', $urlImportStartTime, $counter, $urlCount, $column );
                         continue 2;
                     }
                     $newSourceWildcard = $matches[1];
@@ -1006,7 +973,7 @@ if ( $urlCount > 0 )
                 {
                     // Referenced url does not exist
                     logError( "The referenced path '$toPath' can not be found among the new URL alias entries, url entry ID is " . $row['id'] );
-                    list( $column, $counter ) = displayProgress( 'E', $urlImportStartTime, $counter, $urlCount, $column );
+                    list( $column, $counter ) = $displayProgressClosure( 'E', $urlImportStartTime, $counter, $urlCount, $column );
                     continue;
                 }
                 // Fetch the ID of the element to redirect to.
@@ -1016,7 +983,7 @@ if ( $urlCount > 0 )
                 {
                     // Cannot redirect to nops
                     logError( "The referenced path '$toPath' with ID " . $elements[0]->attribute( 'id' ) . " is a 'nop:' entry and cannot be used" );
-                    list( $column, $counter ) = displayProgress( 'E', $urlImportStartTime, $counter, $urlCount, $column );
+                    list( $column, $counter ) = $displayProgressClosure( 'E', $urlImportStartTime, $counter, $urlCount, $column );
                     continue;
                 }
                 $alwaysAvailable = ($elements[0]->attribute( 'lang_mask' ) & 1);
@@ -1025,26 +992,26 @@ if ( $urlCount > 0 )
                 if ( !$res || $res['status'] == 3 )
                 {
                     logError( "The wildcard url " . var_export( $fromPath, true ) . " cannot be created since the path already exists" );
-                    list( $column, $counter ) = displayProgress( 's', $urlImportStartTime, $counter, $urlCount, $column );
+                    list( $column, $counter ) = $displayProgressClosure( 's', $urlImportStartTime, $counter, $urlCount, $column );
                     continue;
                 }
                 if ( !$res || $res['status'] !== true )
                 {
                     logStoreError( $res, "eZURLAliasML::storePath", array( $fromPath, $action, false, $linkID, $alwaysAvailable ) );
-                    list( $column, $counter ) = displayProgress( 'E', $urlImportStartTime, $counter, $urlCount, $column );
+                    list( $column, $counter ) = $displayProgressClosure( 'E', $urlImportStartTime, $counter, $urlCount, $column );
                     continue;
                 }
-                logStore( $res, "eZURLAliasML::storePath", array( $fromPath, $action, false, $linkID, $alwaysAvailable ) );
+                $logStoreClosure( $res, "eZURLAliasML::storePath", array( $fromPath, $action, false, $linkID, $alwaysAvailable ) );
                 $result = '.';
-                verifyData( $result, $source, $row['id'] );
-                list( $column, $counter ) = displayProgress( $result, $urlImportStartTime, $counter, $urlCount, $column );
+                $verifyDataClosure( $result, $source, $row['id'] );
+                list( $column, $counter ) = $displayProgressClosure( $result, $urlImportStartTime, $counter, $urlCount, $column );
             }
             markAsImported( $rows );
         } while ( $count > 0 );
         flush();
         if ( $column > 0 )
             $cli->output();
-        backupTables( 'impwcard' );
+        $backupTablesClosure( 'impwcard' );
     }
 
 //    $cli->output( "Removing urlalias data which have been imported" );
@@ -1110,8 +1077,8 @@ if ( $updateNodeAlias )
                 $changeCharacter = '.';
                 if ( isset( $changeCharacters[$hasChanged] ) )
                     $changeCharacter = $changeCharacters[$hasChanged];
-                verifyNodeData( $changeCharacter, $node );
-                list( $column, $counter ) = displayProgress( $changeCharacter, $nodeStartTime, $counter, $nodeCount, $column );
+                $verifyNodeDataClosure( $changeCharacter, $node );
+                list( $column, $counter ) = $displayProgressClosure( $changeCharacter, $nodeStartTime, $counter, $nodeCount, $column );
             }
             if ( count( $nodeList ) == 0 )
                 $done = true;
@@ -1124,7 +1091,7 @@ if ( $updateNodeAlias )
             $cli->output();
         $cli->output( "Updated " . $cli->stylize( 'emphasize', "$changedNodes/$nodeCount" ) . " for " . $cli->stylize( 'mark', $rootNode->attribute( 'name' ) ) );
         $cli->output();
-        backupTables( 'node_' . strtolower( $rootNode->attribute( 'name' ) ) );
+        $backupTablesClosure( 'node_' . strtolower( $rootNode->attribute( 'name' ) ) );
     }
 
     $cli->output();

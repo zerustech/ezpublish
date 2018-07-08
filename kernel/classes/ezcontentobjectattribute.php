@@ -1,32 +1,12 @@
 <?php
-//
-// Definition of eZContentObjectAttribute class
-//
-// Created on: <22-Apr-2002 09:31:57 bf>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * File containing the eZContentObjectAttribute class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 /*!
   \class eZContentObjectAttribute ezcontentobjectattribute.php
@@ -38,7 +18,7 @@
 
 class eZContentObjectAttribute extends eZPersistentObject
 {
-    function eZContentObjectAttribute( $row )
+    public function __construct( $row )
     {
         $this->Content = null;
         $this->DisplayInfo = null;
@@ -50,7 +30,8 @@ class eZContentObjectAttribute extends eZPersistentObject
         $this->InputParameters = false;
         $this->HasValidationError = false;
         $this->DataTypeCustom = null;
-        $this->eZPersistentObject( $row );
+        $this->DataTypeString = null;
+        parent::__construct( $row );
     }
 
     static function definition()
@@ -208,15 +189,19 @@ class eZContentObjectAttribute extends eZPersistentObject
                                                 $asObject );
     }
 
-    /*!
-     Fetches all contentobject attributes which relates to the contentclass attribute \a $contentClassAttributeID.
-     \return An array with contentobject attributes.
-     \param $contentClassAttributeID The ID of the contentclass attribute
-     \param $asObject If \c true objects will be returned, otherwise associative arrays are returned.
-     \param $version The version the of contentobject attributes to fetch or all version if \c false.
-     \param $contentObjectID The ID the of contentobject to fetch or all objects if \c false.
-    */
-    static function fetchSameClassAttributeIDList( $contentClassAttributeID, $asObject = true, $version = false, $contentObjectID = false )
+    /**
+     * Fetches all contentobject attributes which relate to the contentclass attribute $contentClassAttributeID.
+     *
+     * @param int $contentClassAttributeID  The ID of the contentclass attribute
+     * @param bool $asObject                If true objects will be returned, otherwise associative arrays are returned.
+     * @param int|bool $version             The version the of contentobject attributes to fetch, or all versions if false.
+     * @param int|bool $contentObjectID     The ID the of contentobject to fetch, or all objects if false.
+     * @param array|null $limit             An associative array with limitiations, can contain
+     *                                      - 'offset': Numerical value defining the start offset for the fetch
+     *                                      - 'length': Numerical value defining the max number of items to return
+     * @return eZContentObjectAttribute[]|array|null    An array with contentobject attributes.
+     */
+    static function fetchSameClassAttributeIDList( $contentClassAttributeID, $asObject = true, $version = false, $contentObjectID = false, $limit = null )
     {
         $conditions = array( "contentclassattribute_id" => $contentClassAttributeID );
         if ( $version !== false )
@@ -227,7 +212,7 @@ class eZContentObjectAttribute extends eZPersistentObject
                                                     null,
                                                     $conditions,
                                                     null,
-                                                    null,
+                                                    $limit,
                                                     $asObject);
     }
 
@@ -294,7 +279,7 @@ class eZContentObjectAttribute extends eZPersistentObject
             // store the content data for this attribute
             $dataType->storeObjectAttribute( $this );
 
-            eZPersistentObject::store( $fieldFilters );
+            parent::store( $fieldFilters );
             $dataType->postStore( $this );
             $db->commit();
         }
@@ -321,7 +306,7 @@ class eZContentObjectAttribute extends eZPersistentObject
         $this->setAttribute( 'data_type_string', $classAttribute->attribute( 'data_type_string' ) );
         $this->updateSortKey( false );
 
-        eZPersistentObject::store();
+        parent::store();
     }
 
     /*!
@@ -358,7 +343,7 @@ class eZContentObjectAttribute extends eZPersistentObject
             if ( $storeData )
             {
                 $dataType->storeObjectAttribute( $this );
-                $return = eZPersistentObject::store();
+                $return = parent::store();
             }
         }
 
@@ -372,7 +357,7 @@ class eZContentObjectAttribute extends eZPersistentObject
     */
     function storeNewRow()
     {
-        return eZPersistentObject::store();
+        return parent::store();
     }
 
     /*!
@@ -880,7 +865,7 @@ class eZContentObjectAttribute extends eZPersistentObject
      *        Optional eZContentObjectAttribute the content will be initialized
      *        from
      * @return void
-     **/
+     */
     function initialize( $currentVersion = null, $originalContentObjectAttribute = null )
     {
         if ( $originalContentObjectAttribute === null )
@@ -904,11 +889,11 @@ class eZContentObjectAttribute extends eZPersistentObject
             $dataType->postInitializeObjectAttribute( $this, $currentVersion, $originalContentObjectAttribute );
     }
 
-    /*!
-     Remove the attribute by using the datatype.
-     \note Transaction unsafe. If you call several transaction unsafe methods you must enclose
-     the calls within a db transaction; thus within db->begin and db->commit.
-    */
+    /**
+     * Remove the attribute $id by using the datatype.
+     * @param int $id
+     * @param int $currentVersion Version number to remove the attribute for. If null, all versions are removed.
+     */
     function removeThis( $id, $currentVersion = null )
     {
         $dataType = $this->dataType();
@@ -941,7 +926,7 @@ class eZContentObjectAttribute extends eZPersistentObject
      * @return eZContentObjectAttribute The cloned attribute
      *
      * @todo Deprecate this in favor of a real __clone
-     **/
+     */
     function cloneContentObjectAttribute( $newVersionNumber, $currentVersionNumber, $contentObjectID = false, $newLanguageCode = false )
     {
         $tmp = clone $this;
@@ -1046,9 +1031,10 @@ class eZContentObjectAttribute extends eZPersistentObject
         return $tmp;
     }
 
-    /*!
-     Returns the data type class for the current attribute.
-    */
+    /**
+     * Returns the data type class for the current attribute.
+     * @return eZDataType
+     */
     function dataType()
     {
         $dataType = null;
@@ -1182,7 +1168,7 @@ class eZContentObjectAttribute extends eZPersistentObject
      Goes trough all attributes and fetches metadata for the ones that is searchable.
      \return an array with metadata information.
     */
-    static function metaDataArray( &$attributes )
+    static function metaDataArray( &$attributes, $skipRelationAttributes = false )
     {
         $metaDataArray = array();
         if ( !is_array( $attributes ) )
@@ -1190,18 +1176,26 @@ class eZContentObjectAttribute extends eZPersistentObject
         foreach( $attributes as $attribute )
         {
             $classAttribute = $attribute->contentClassAttribute();
-            if ( $classAttribute->attribute( 'is_searchable' ) )
+            if ( !$classAttribute->attribute( 'is_searchable' ) )
             {
-                $attributeMetaData = $attribute->metaData();
-                if ( $attributeMetaData !== false )
+                continue;
+            }
+
+            $datatype = $attribute->dataType();
+            if ( $skipRelationAttributes && $datatype->isRelationType() )
+            {
+                continue;
+            }
+
+            $attributeMetaData = $datatype->metaData($attribute);
+            if ( $attributeMetaData !== false )
+            {
+                if ( !is_array( $attributeMetaData ) )
                 {
-                    if ( !is_array( $attributeMetaData ) )
-                    {
-                        $attributeMetaData = array( array( 'id' => '',
-                                                           'text' => $attributeMetaData ) );
-                    }
-                    $metaDataArray = array_merge( $metaDataArray, $attributeMetaData );
+                    $attributeMetaData = array( array( 'id' => '',
+                                                       'text' => $attributeMetaData ) );
                 }
+                $metaDataArray = array_merge( $metaDataArray, $attributeMetaData );
             }
         }
         return $metaDataArray;
@@ -1268,7 +1262,7 @@ class eZContentObjectAttribute extends eZPersistentObject
         $numargs = func_num_args();
         if ( $numargs < 1 )
         {
-            trigger_error( 'Function must take at least one parameter', WARNING );
+            trigger_error( 'Function must take at least one parameter', E_USER_WARNING );
             return;
         }
         $argList = func_get_args();
@@ -1466,6 +1460,17 @@ class eZContentObjectAttribute extends eZPersistentObject
         return false;
     }
 
+    /**
+     * Removes all links for a given Class Attribute Id.
+     * @param int $attributeId
+     */
+    public static function removeRelationsByContentClassAttributeId( $attributeId )
+    {
+        $id = (int)$attributeId;
+        $db = eZDB::instance();
+        $db->query( "DELETE FROM ezcontentobject_link WHERE contentclassattribute_id=$id" );
+    }
+
     /// Contains the value(s) submitted in HTTP form
     public $HTTPValue;
 
@@ -1492,6 +1497,8 @@ class eZContentObjectAttribute extends eZPersistentObject
     public $ContentClassAttributeName;
     public $ContentClassAttributeIsInformationCollector;
     public $ContentClassAttributeIsRequired;
+
+    public $ValidationParameters = array();
 }
 
 ?>

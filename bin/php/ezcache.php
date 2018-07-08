@@ -1,57 +1,44 @@
 #!/usr/bin/env php
 <?php
-//
-// Created on: <19-Jul-2004 10:51:17 amos>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * File containing the ezcache.php script.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
-require 'autoload.php';
+require_once 'autoload.php';
 
-$cli = eZCLI::instance();
-$script = eZScript::instance( array( 'description' => ( "eZ Publish Cache Handler\n" .
-                                                        "Allows for easy clearing of Cache files\n" .
-                                                        "\n" .
-                                                        "./bin/php/ezcache.php --clear-tag=content" ),
-                                     'use-session' => false,
-                                     'use-modules' => false,
-                                     'use-extensions' => true ) );
+$helper = new eZCacheHelper(
+    $cli = eZCLI::instance(),
+    $script = eZScript::instance(
+        array(
+            'description' => "eZ Publish Cache Handler\n" .
+                             "Allows for easy clearing of Cache files\n" .
+                             "\n" .
+                             "./bin/php/ezcache.php --clear-tag=content",
+            'use-session' => false,
+            'use-modules' => false,
+            'use-extensions' => true
+        )
+    )
+);
 
 $script->startup();
 
 $options = $script->getOptions( "[clear-tag:][clear-id:][clear-all]" . /*[purge-tag:][purge-id:][purge-all]*/ "[iteration-sleep:][iteration-max:][expiry:][list-tags][list-ids][purge]",
                                 "",
-                                array( 'clear-tag' => 'Clears all caches related to a given tag',
+                                array( 'clear-tag' => 'Clears all caches related to a given tag, separate multiple tags with a comma',
                                        'clear-id' => 'Clears all caches related to a given id, separate multiple ids with a comma',
                                        'clear-all' => 'Clears all caches',
                                        'purge' => 'Enforces purging of cache items which ensures that specified entries are physically removed (Useful for saving diskspace). Used together with the clear-* options.',
                                        'iteration-sleep' => 'Amount of seconds to sleep between each iteration when performing a purge operation, can be a float.',
                                        'iteration-max' => 'Amount of items to remove in each iteration when performing a purge operation.',
-                                       'expiry' => 'Date or relative time which specifies when cache items are to be considered expired, e.g \'now\', \'-2 days\' or \'last monday\'',
+                                       'expiry' => 'Date or relative time which specifies when cache items are to be considered expired, e.g \'now\', \'-2 days\' or \'last monday\'. Can only be used together with --purge.',
                                        'list-tags' => 'Lists all available tags',
                                        'list-ids' => 'Lists all available ids' ) );
-$sys = eZSys::instance();
 
 $script->initialize();
 
@@ -68,6 +55,11 @@ if ( $options['iteration-max'] )
 $purgeExpiry = false;
 if ( $options['expiry'] )
 {
+    if ( !$options['purge'] )
+    {
+        $cli->error( "--expiry can only be used together with --purge" );
+        $script->shutdown( 1 );
+    }
     $expiryText = trim( $options['expiry'] );
     $purgeExpiry = strtotime( $expiryText );
     if ( $purgeExpiry == -1 || $purgeExpiry === false )
@@ -149,153 +141,19 @@ if ( $options['list-ids'] )
     }
     else
     {
-        $idList = eZCache::fetchIDList( $cacheList );
         $cli->output( "The following ids are defined: (use --verbose for more details)" );
-        $cli->output( $cli->stylize( 'emphasize', implode( ', ', $idList ) ) );
+        $cli->output( $cli->stylize( 'emphasize', implode( ', ', eZCache::fetchIDList( $cacheList ) ) ) );
     }
     $script->shutdown( 0 );
-}
-
-function clearItems( $cacheEntries, $cli, $name )
-{
-    if ( !$name )
-        $name = 'All cache';
-    $name = $cli->stylize( 'emphasize', $name );
-    $cli->output( 'Clearing ' . $name . ': ' );
-
-    checkPaths( $cacheEntries, false );
-
-    $i = 0;
-    foreach ( $cacheEntries as $cacheEntry )
-    {
-        if ( $i > 0 )
-            $cli->output( ', ', false );
-        $cli->output( $cli->stylize( 'emphasize', $cacheEntry['name'] ), false );
-        eZCache::clearItem( $cacheEntry );
-        ++$i;
-    }
-    $cli->output();
-}
-
-function purgeItems( $cacheEntries, $cli, $name )
-{
-    global $purgeSleep, $purgeMax, $purgeExpiry;
-    if ( !$name )
-        $name = 'All cache';
-    $name = $cli->stylize( 'emphasize', $name );
-    $cli->output( 'Purging ' . $name . ': ' );
-
-    checkPaths( $cacheEntries, true );
-
-    $i = 0;
-    foreach ( $cacheEntries as $cacheEntry )
-    {
-        if ( $i > 0 )
-            $cli->output( ', ', false );
-        $cli->output( $cli->stylize( 'emphasize', $cacheEntry['name'] ), false );
-        eZCache::clearItem( $cacheEntry, true, 'reportProgress', $purgeSleep, $purgeMax, $purgeExpiry );
-        ++$i;
-    }
-    $cli->output();
-}
-
-function checkPaths( $cacheEntries, $purge )
-{
-    global $cli, $script;
-
-    $warnPaths = array();
-    foreach ( $cacheEntries as $cacheEntry )
-    {
-        $absPath = realpath( eZSys::cacheDirectory() . DIRECTORY_SEPARATOR . $cacheEntry['path'] );
-        $absPathElementCount = count( explode( DIRECTORY_SEPARATOR, rtrim( $absPath, DIRECTORY_SEPARATOR ) ) );
-        // Refuse to delete root directory ('/' or 'C:\')
-        if ( $absPath &&
-             $absPathElementCount < 2 ) // 2, since one path element ('/foo') produces two exploded elements
-        {
-            $cli->error( 'Refusing to delete root directory! Please check your cache settings. Path: ' . $absPath );
-            $script->shutdown( 1 );
-            exit();
-        }
-
-        // Warn if the cache entry is not function based, and the path is outside ezp root, and the path has less than 2 elements
-        if ( $absPath &&
-             ( !$purge || !isset( $cacheEntry['purge-function'] ) ) &&
-             !isset( $cacheEntry['function'] ) &&
-             $absPathElementCount < 3 && /* 3, since two path elements ('/foo/bar') produce three exploded elements */
-             strpos( dirname( $absPath ) . DIRECTORY_SEPARATOR, realpath( eZSys::rootDir() ) . DIRECTORY_SEPARATOR ) === false )
-        {
-            $warnPaths[] = $absPath;
-        }
-    }
-
-    if ( count( $warnPaths ) > 0 )
-    {
-        $cli->warning( 'The following cache paths are outside of the eZ Publish root directory, and have less than 2 path elements. ' .
-                       'Are you sure you want to ' . ( $purge ? 'purge' : 'clear' ) . ' them?' );
-        foreach ( $warnPaths as $warnPath )
-        {
-            $cli->output( $warnPath );
-        }
-        $input = getUserInput( ( $purge ? 'Purge' : 'Clear' ) . '? yes/no:', array( 'yes', 'no' ) );
-
-        if ( $input == 'no' )
-        {
-            $script->shutdown();
-            exit();
-        }
-    }
-}
-
-if ( !function_exists( 'readline' ) )
-{
-    function readline( $prompt = '' )
-        {
-            echo $prompt . ' ';
-            return trim( fgets( STDIN ) );
-        }
-}
-
-if ( !function_exists( 'getUserInput' ) )
-{
-    function getUserInput( $query, $acceptValues )
-    {
-        $validInput = false;
-        while( !$validInput )
-        {
-            $input = readline( $query );
-            if ( $acceptValues === false ||
-                 in_array( $input, $acceptValues ) )
-            {
-                $validInput = true;
-            }
-        }
-        return $input;
-    }
-}
-
-function reportProgress( $filename, $count )
-{
-    global $cli;
-    static $progress = array( '|', '/', '-', '\\' );
-    if ( $count == 0 )
-    {
-        $cli->output( $cli->storePosition() . " " . $cli->restorePosition(), false );
-    }
-    else
-    {
-        $text = array_shift( $progress );
-        $cli->output( $cli->storePosition() . $text . $cli->restorePosition(), false );
-        $progress[] = $text;
-    }
 }
 
 if ( $options['clear-all'] )
 {
     $noAction = false;
     if ( $purge )
-        purgeItems( $cacheList, $cli, false );
+        $helper->purgeItems( $cacheList, false, $purgeSleep, $purgeMax, $purgeExpiry );
     else
-        clearItems( $cacheList, $cli, false );
+        $helper->clearItems( $cacheList, false );
     $script->shutdown( 0 );
 }
 
@@ -305,24 +163,18 @@ if ( $options['clear-tag'] )
     $tagName = $options['clear-tag'];
     $cacheEntries = eZCache::fetchByTag( $tagName, $cacheList );
     if ( $purge )
-        purgeItems( $cacheEntries, $cli, $tagName );
+        $helper->purgeItems( $cacheEntries, $tagName, $purgeSleep, $purgeMax, $purgeExpiry );
     else
-        clearItems( $cacheEntries, $cli, $tagName );
+        $helper->clearItems( $cacheEntries, $tagName );
 }
 
-$idName = false;
 if ( $options['clear-id'] )
 {
     $noAction = false;
     $idName = $options['clear-id'];
-}
-
-if ( $idName )
-{
-    $idList = explode( ',', $idName );
     $missingIDList = array();
     $cacheEntries = array();
-    foreach ( $idList as $id )
+    foreach ( explode( ',', $idName ) as $id )
     {
         $cacheEntry = eZCache::fetchByID( $id, $cacheList );
         if ( $cacheEntry )
@@ -342,9 +194,9 @@ if ( $idName )
     if ( $options['clear-id'] )
     {
         if ( $purge )
-            purgeItems( $cacheEntries, $cli, $idName );
+            $helper->purgeItems( $cacheEntries, $idName, $purgeSleep, $purgeMax, $purgeExpiry );
         else
-            clearItems( $cacheEntries, $cli, $idName );
+            $helper->clearItems( $cacheEntries, $idName );
     }
     else
     {
@@ -358,5 +210,3 @@ if ( $noAction )
 }
 
 $script->shutdown();
-
-?>

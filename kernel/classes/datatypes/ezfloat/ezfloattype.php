@@ -1,32 +1,12 @@
 <?php
-//
-// Definition of eZFloatType class
-//
-// Created on: <26-Apr-2002 16:54:35 bf>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * File containing the eZFloatType class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 /*!
   \class eZFloatType ezfloattype.php
@@ -50,9 +30,9 @@ class eZFloatType extends eZDataType
     const HAS_MAX_VALUE = 2;
     const HAS_MIN_MAX_VALUE = 3;
 
-    function eZFloatType()
+    public function __construct()
     {
-        $this->eZDataType( self::DATA_TYPE_STRING, ezpI18n::tr( 'kernel/classes/datatypes', "Float", 'Datatype name' ),
+        parent::__construct( self::DATA_TYPE_STRING, ezpI18n::tr( 'kernel/classes/datatypes', "Float", 'Datatype name' ),
                            array( 'serialize_supported' => true,
                                   'object_serialize_map' => array( 'data_float' => 'value' ) ) );
         $this->FloatValidator = new eZFloatValidator();
@@ -103,6 +83,96 @@ class eZFloatType extends eZDataType
         return false;
     }
 
+    /**
+     * Validates $data with the constraints defined on the class attribute
+     *
+     * @param $data
+     * @param eZContentObjectAttribute $contentObjectAttribute
+     * @param eZContentClassAttribute $classAttribute
+     *
+     * @return int
+     */
+    function validateFloatHTTPInput( $data, $contentObjectAttribute, $classAttribute )
+    {
+        $min = $classAttribute->attribute( self::MIN_FIELD );
+        $max = $classAttribute->attribute( self::MAX_FIELD );
+        $inputState = $classAttribute->attribute( self::INPUT_STATE_FIELD );
+        switch( $inputState )
+        {
+            case self::NO_MIN_MAX_VALUE:
+                $state = $this->FloatValidator->validate( $data );
+                if ( $state === eZInputValidator::STATE_ACCEPTED )
+                {
+                    return eZInputValidator::STATE_ACCEPTED;
+                }
+                else
+                {
+                    $contentObjectAttribute->setValidationError(
+                        ezpI18n::tr(
+                            'kernel/classes/datatypes',
+                            'The given input is not a floating point number.'
+                        )
+                    );
+                }
+                break;
+            case self::HAS_MIN_VALUE:
+                $this->FloatValidator->setRange( $min, false );
+                $state = $this->FloatValidator->validate( $data );
+                if ( $state === eZInputValidator::STATE_ACCEPTED )
+                {
+                    return eZInputValidator::STATE_ACCEPTED;
+                }
+                else
+                {
+                    $contentObjectAttribute->setValidationError(
+                        ezpI18n::tr(
+                            'kernel/classes/datatypes',
+                            'The input must be greater than %1'
+                        ),
+                        $min
+                    );
+                }
+                break;
+            case self::HAS_MAX_VALUE:
+                $this->FloatValidator->setRange( false, $max );
+                $state = $this->FloatValidator->validate( $data );
+                if ( $state === eZInputValidator::STATE_ACCEPTED )
+                {
+                    return eZInputValidator::STATE_ACCEPTED;
+                }
+                else
+                {
+                    $contentObjectAttribute->setValidationError(
+                        ezpI18n::tr(
+                            'kernel/classes/datatypes',
+                            'The input must be less than %1'
+                        ),
+                        $max
+                    );
+                }
+                break;
+            case self::HAS_MIN_MAX_VALUE:
+                $this->FloatValidator->setRange( $min, $max );
+                $state = $this->FloatValidator->validate( $data );
+                if ( $state === eZInputValidator::STATE_ACCEPTED )
+                {
+                    return eZInputValidator::STATE_ACCEPTED;
+                }
+                else
+                {
+                    $contentObjectAttribute->setValidationError(
+                        ezpI18n::tr(
+                            'kernel/classes/datatypes',
+                            'The input is not in defined range %1 - %2'
+                        ),
+                        $min, $max
+                    );
+                }
+                break;
+        }
+        return eZInputValidator::STATE_INVALID;
+    }
+
     /*!
      Validates the input and returns true if the input was
      valid for this datatype.
@@ -113,10 +183,6 @@ class eZFloatType extends eZDataType
         {
             $data = $http->postVariable( $base . "_data_float_" . $contentObjectAttribute->attribute( "id" ) );
             $data = str_replace(" ", "", $data );
-            $classAttribute = $contentObjectAttribute->contentClassAttribute();
-            $min = $classAttribute->attribute( self::MIN_FIELD );
-            $max = $classAttribute->attribute( self::MAX_FIELD );
-            $input_state = $classAttribute->attribute( self::INPUT_STATE_FIELD );
 
             if ( !$contentObjectAttribute->validateIsRequired() &&  ( $data == "" ) )
             {
@@ -126,51 +192,10 @@ class eZFloatType extends eZDataType
             $locale = eZLocale::instance();
             $data = $locale->internalNumber( $data );
 
-            switch( $input_state )
-            {
-                case self::NO_MIN_MAX_VALUE:
-                {
-                    $state = $this->FloatValidator->validate( $data );
-                    if( $state===1 )
-                        return eZInputValidator::STATE_ACCEPTED;
-                    else
-                        $contentObjectAttribute->setValidationError( ezpI18n::tr( 'kernel/classes/datatypes',
-                                                                             'The given input is not a floating point number.' ) );
-                } break;
-                case self::HAS_MIN_VALUE:
-                {
-                    $this->FloatValidator->setRange( $min, false );
-                    $state = $this->FloatValidator->validate( $data );
-                    if( $state===1 )
-                        return eZInputValidator::STATE_ACCEPTED;
-                    else
-                        $contentObjectAttribute->setValidationError( ezpI18n::tr( 'kernel/classes/datatypes',
-                                                                             'The input must be greater than %1' ),
-                                                                     $min );
-                } break;
-                case self::HAS_MAX_VALUE:
-                {
-                    $this->FloatValidator->setRange( false, $max );
-                    $state = $this->FloatValidator->validate( $data );
-                    if( $state===1 )
-                        return eZInputValidator::STATE_ACCEPTED;
-                    else
-                        $contentObjectAttribute->setValidationError( ezpI18n::tr( 'kernel/classes/datatypes',
-                                                                             'The input must be less than %1' ),
-                                                                     $max );
-                } break;
-                case self::HAS_MIN_MAX_VALUE:
-                {
-                    $this->FloatValidator->setRange( $min, $max );
-                    $state = $this->FloatValidator->validate( $data );
-                    if( $state===1 )
-                        return eZInputValidator::STATE_ACCEPTED;
-                    else
-                        $contentObjectAttribute->setValidationError( ezpI18n::tr( 'kernel/classes/datatypes',
-                                                                             'The input is not in defined range %1 - %2' ),
-                                                                     $min, $max );
-                } break;
-            }
+            return $this->validateFloatHTTPInput(
+                $data, $contentObjectAttribute,
+                $contentObjectAttribute->contentClassAttribute()
+            );
         }
         return eZInputValidator::STATE_INVALID;
     }
@@ -325,7 +350,7 @@ class eZFloatType extends eZDataType
 
     function metaData( $contentObjectAttribute )
     {
-        return $contentObjectAttribute->attribute( "data_float" );
+        return (float)$contentObjectAttribute->attribute( "data_float" );
     }
 
     /*!

@@ -1,30 +1,12 @@
 <?php
-//
-// Definition of eZCodePage class
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * File containing the eZCodePage class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package lib
+ */
 
 /*!
   \class eZCodePage ezcodepage.php
@@ -36,11 +18,14 @@
 class eZCodePage
 {
     const CACHE_CODE_DATE = 1028204478;
-
-    /*!
-     Initializes the codepage with the charset code $charset_code, and then loads it.
-    */
-    function eZCodePage( $charset_code, $use_cache = true )
+    
+    /**
+     * Initializes the codepage with the charset code $charset_code, and then loads it.
+     *
+     * @param string $charset_code
+     * @param bool $use_cache
+     */
+    public function __construct( $charset_code, $use_cache = true )
     {
         $this->RequestedCharsetCode = $charset_code;
         $this->CharsetCode = eZCharsetInfo::realCharsetCode( $charset_code );
@@ -720,8 +705,8 @@ class eZCodePage
      * Returns a shared instance of the eZCodePage pr the
      * $charset_code param.
      *
-     * @param $charset_code string
-     * @param $use_cache bool
+     * @param string $charset_code
+     * @param bool $use_cache
      * @return eZCodePage
      */
     static function instance( $charset_code, $use_cache = true )

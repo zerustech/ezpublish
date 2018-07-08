@@ -1,4 +1,12 @@
 <?php
+/**
+ * File containing the eZSOAPClientTest class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package tests
+ */
 
 class eZSOAPClientTest extends ezpTestCase
 {
@@ -42,6 +50,32 @@ class eZSOAPClientTest extends ezpTestCase
     {
         $client = new eZSOAPClient( 'soap.example.com', '/', $port );
         $this->assertEquals( $this->readAttribute( $client, 'Port' ), $expectedPortResult );
+    }
+
+    /**
+     * Provider for testSoapClientSend
+     *
+     * NB: This relies on network connection to soap.critmon1.ez.no
+     */
+    public static function providerTestSoapClientSend()
+    {
+        return array(
+            array( 'bb4a091369e40cbf682a278cfd35f04a', 'soap.critmon1.ez.no', '/', 80, 'hostID', 'network_namespace' ),
+            array( 'bb4a091369e40cbf682a278cfd35f04a', 'soap.critmon1.ez.no', '/', 443, 'hostID', 'network_namespace' ),
+        );
+    }
+
+    /**
+     * @dataProvider providerTestSoapClientSend
+     */
+    public function testSoapClientSend( $expectedSendResult, $server, $path, $port, $name, $namespace, $parameters = array() )
+    {
+        self::markTestSkipped( "Test disabled as critmon has been shut down. Needs a different server or way of doing this." );
+
+        $client = new eZSOAPClient( $server, $path, $port );
+        $request = new eZSOAPRequest( $name, $namespace, $parameters );
+        $response = $client->send( $request );
+        $this->assertEquals( $response->value(), $expectedSendResult );
     }
 }
 

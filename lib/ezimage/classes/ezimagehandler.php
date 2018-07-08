@@ -1,35 +1,12 @@
 <?php
-//
-// Definition of eZImageHandler class
-//
-// Created on: <16-Oct-2003 13:58:34 amos>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
-
-/*! \file
-*/
+/**
+ * File containing the eZImageHandler class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package lib
+ */
 
 /*!
   \class eZImageHandler ezimagehandler.php
@@ -44,18 +21,19 @@ class eZImageHandler
     const REPLACE_SUFFIX = 2;
     const PREPEND_TAG_REPLACE_SUFFIX = 3;
 
-    /*!
-     Initializes the image handler with data sent from the inheriting class.
-     \param $handlerName The name of the current handler
-     \param $isEnabled A boolean which tells whether the handler can be used or not
-     \param $outputRewriteType Defines how output filenames are rewritten
-     \param $supportedInputMIMETypes A list of MIME-Types the handler supports as input or \c false if no type as defined
-     \param $supportedOutputMIMETypes A list of MIME-Types the handler supports as output or \c false if no type as defined
-     \param $conversionRules A list of conversion rules specific for this handler, is combined with the global rules
-     \param $filters A list of filters this handler supports
-     \param $mimeTagMap A mapping table which maps from a MIME-Type to a specific tag, this tag can be used when rewriting the filename.
-    */
-    function eZImageHandler( $handlerName, $isEnabled = true, $outputRewriteType = self::REPLACE_SUFFIX,
+    /**
+     * Initializes the image handler with data sent from the inheriting class.
+     *
+     * @param string $handlerName The name of the current handler
+     * @param bool $isEnabled  A boolean which tells whether the handler can be used or not
+     * @param int $outputRewriteType Defines how output filenames are rewritten
+     * @param array|bool $supportedInputMIMETypes A list of MIME-Types the handler supports as input or \c false if no type as defined
+     * @param array|$supportedOutputMIMETypes A list of MIME-Types the handler supports as output or \c false if no type as defined
+     * @param array|bool $conversionRules A list of conversion rules specific for this handler, is combined with the global rules
+     * @param array|bool $filters A list of filters this handler supports
+     * @param array|bool $mimeTagMap A mapping table which maps from a MIME-Type to a specific tag, this tag can be used when rewriting the filename.
+     */
+    public function __construct( $handlerName, $isEnabled = true, $outputRewriteType = self::REPLACE_SUFFIX,
                              $supportedInputMIMETypes = false, $supportedOutputMIMETypes,
                              $conversionRules = false, $filters = false, $mimeTagMap = false )
     {
@@ -192,7 +170,7 @@ class eZImageHandler
      - self::PREPEND_TAG_REPLACE_SUFFIX - Prepends the tag name and replaces the suffix of the url
      The new url is placed in the \a $destinationMimeData.
     */
-    static function rewriteURL( $originalMimeData, &$destinationMimeData, $rewriteType, $aliasName = false )
+    function rewriteURL( $originalMimeData, &$destinationMimeData, $rewriteType, $aliasName = false )
     {
         $extraText = false;
         if ( $aliasName and
@@ -272,8 +250,7 @@ class eZImageHandler
         $success = false;
         $oldmask = umask( 0 );
         if ( !chmod( $filepath, octdec( $perm ) ) )
-            eZDebug::writeError( "Chmod $perm $filepath failed",
-                                 'eZImageHandler::changeFilePermissions' );
+            eZDebug::writeError( "Chmod $perm $filepath failed", __METHOD__ );
         else
             $success = true;
         umask( $oldmask );
@@ -442,7 +419,7 @@ class eZImageHandler
         if ( $mimeType )
         {
             $mimeData = eZMimeType::findByName( $mimeType );
-            eZImageHandler::rewriteURL( $currentMimeData, $mimeData, $this->outputRewriteType(), $aliasName );
+            $this->rewriteURL( $currentMimeData, $mimeData, $this->outputRewriteType(), $aliasName );
         }
         return $mimeData;
     }

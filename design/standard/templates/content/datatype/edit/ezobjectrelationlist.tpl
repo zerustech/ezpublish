@@ -225,7 +225,10 @@
                     <tr class="{$:sequence}">
                     {if $:item.is_modified}
                         {* Remove. *}
-                        <td><input id="ezcoa-{if ne( $attribute_base, 'ContentObjectAttribute' )}{$attribute_base}-{/if}{$attribute.contentclassattribute_id}_{$attribute.contentclass_attribute_identifier}_remove_{$Relation:index}" class="ezcc-{$attribute.object.content_class.identifier} ezcca-{$attribute.object.content_class.identifier}_{$attribute.contentclass_attribute_identifier}" type="checkbox" name="{$attribute_base}_selection[{$attribute.id}][]" value="{$:item.contentobject_id}" /></td>
+                        <td>
+                          <input id="ezcoa-{if ne( $attribute_base, 'ContentObjectAttribute' )}{$attribute_base}-{/if}{$attribute.contentclassattribute_id}_{$attribute.contentclass_attribute_identifier}_remove_{$Relation:index}" class="ezcc-{$attribute.object.content_class.identifier} ezcca-{$attribute.object.content_class.identifier}_{$attribute.contentclass_attribute_identifier}" type="checkbox" name="{$attribute_base}_selection[{$attribute.id}][]" value="{$:item.contentobject_id}" />
+                          <input type="hidden" name="{$attribute_base}_data_object_relation_list_{$attribute.id}[]" value="{$:item.contentobject_id}" />
+                        </td>
                         <td colspan="4">
 
                         {let object=fetch( content, object, hash( object_id, $:item.contentobject_id, object_version, $:item.contentobject_version ) )
@@ -255,7 +258,10 @@
                     {else}
                         {let object=fetch( content, object, hash( object_id, $:item.contentobject_id, object_version, $:item.contentobject_version ) )}
                         {* Remove. *}
-                        <td><input id="ezcoa-{if ne( $attribute_base, 'ContentObjectAttribute' )}{$attribute_base}-{/if}{$attribute.contentclassattribute_id}_{$attribute.contentclass_attribute_identifier}_remove_{$Relation:index}" class="ezcc-{$attribute.object.content_class.identifier} ezcca-{$attribute.object.content_class.identifier}_{$attribute.contentclass_attribute_identifier}" type="checkbox" name="{$attribute_base}_selection[{$attribute.id}][]" value="{$:item.contentobject_id}" /></td>
+                        <td>
+                          <input id="ezcoa-{if ne( $attribute_base, 'ContentObjectAttribute' )}{$attribute_base}-{/if}{$attribute.contentclassattribute_id}_{$attribute.contentclass_attribute_identifier}_remove_{$Relation:index}" class="ezcc-{$attribute.object.content_class.identifier} ezcca-{$attribute.object.content_class.identifier}_{$attribute.contentclass_attribute_identifier}" type="checkbox" name="{$attribute_base}_selection[{$attribute.id}][]" value="{$:item.contentobject_id}" />
+                          <input type="hidden" name="{$attribute_base}_data_object_relation_list_{$attribute.id}[]" value="{$:item.contentobject_id}" />
+                        </td>
 
                         {* Name *}
                         <td>{$Relation:object.name|wash()}</td>
@@ -276,7 +282,7 @@
                                 {def $languages=$Relation:object.languages}
                                 <select name="{$attribute_base}_translation_source_{$attribute.id}_{$Relation:object.id}" title="{'This object is not translated, please select the language the new translation will be based on.'|i18n( 'design/standard/content/datatype' )}">
                                     {foreach $languages as $language}
-                                        <option value="{$language.locale}" {if $language.locale|eq( $Relation:object.initial_language_code )}selected="selected"{/if}>{$language.name}</option>
+                                        <option value="{$language.locale|wash}" {if $language.locale|eq( $Relation:object.initial_language_code )}selected="selected"{/if}>{$language.name|wash}</option>
                                     {/foreach}
                                     <option value="">{'None'|i18n( 'design/standard/content/datatype' )}</option>
                                 </select>
@@ -329,7 +335,7 @@
     {* Simple interface. *}
     {else}
 
-        
+        <h4>{'Objects in the relation'|i18n( 'design/standard/content/datatype' )}</h4>
         <table class="list{if $attribute.content.relation_list|not} hide{/if}" cellspacing="0">
         <thead>
         <tr>
@@ -390,14 +396,15 @@
             <p class="ezobject-relation-no-relation">{'There are no related objects.'|i18n( 'design/standard/content/datatype' )}</p>
         {/if}
 
-        <div class="block inline-block ezobject-relation-browse">
-        <div class="left">
+        <div class="block inline-block">
 	        {if $attribute.content.relation_list}
-	            <input class="button ezobject-relation-remove-button" type="submit" name="CustomActionButton[{$attribute.id}_remove_objects]" value="{'Remove selected'|i18n( 'design/standard/content/datatype' )}" />&nbsp;
+	            <input class="button ezobject-relation-remove-button" type="submit" name="CustomActionButton[{$attribute.id}_remove_objects]" value="{'Remove selected'|i18n( 'design/standard/content/datatype' )}" title="{'Remove selected elements from the relation'|i18n( 'design/standard/content/datatype' )}" />
 	        {else}
-	            <input class="button-disabled ezobject-relation-remove-button" type="submit" name="CustomActionButton[{$attribute.id}_remove_objects]" value="{'Remove selected'|i18n( 'design/standard/content/datatype' )}" disabled="disabled" />&nbsp;
+	            <input class="button-disabled ezobject-relation-remove-button" type="submit" name="CustomActionButton[{$attribute.id}_remove_objects]" value="{'Remove selected'|i18n( 'design/standard/content/datatype' )}" disabled="disabled" />
 	        {/if}
-
+        </div>
+        <h4>{'Add objects in the relation'|i18n( 'design/standard/content/datatype' )}</h4>
+        <div class="left">
 	        {if $browse_object_start_node}
 	            <input type="hidden" name="{$attribute_base}_browse_for_object_start_node[{$attribute.id}]" value="{$browse_object_start_node|wash}" />
 	        {/if}
@@ -406,7 +413,9 @@
                 <input type="hidden" name="{$attribute_base}_browse_for_object_class_constraint_list[{$attribute.id}]" value="{$attribute.class_content.class_constraint_list|implode(',')}" />
             {/if}
 
-	        <input class="button" type="submit" name="CustomActionButton[{$attribute.id}_browse_objects]" value="{'Add objects'|i18n( 'design/standard/content/datatype' )}" />
+	        <input class="button" type="submit" name="CustomActionButton[{$attribute.id}_browse_objects]" value="{'Add existing objects'|i18n( 'design/standard/content/datatype' )}" title="{'Browse to add existing objects in this relation'|i18n( 'design/standard/content/datatype' )}" />
+            {include uri='design:content/datatype/edit/ezobjectrelationlist_ajaxuploader.tpl'}
+
         </div>
         <div class="right">
             <input type="text" class="halfbox hide ezobject-relation-search-text" />
@@ -414,7 +423,7 @@
         </div>
         <div class="break"></div>
         <div class="block inline-block ezobject-relation-search-browse hide"></div>
-        </div>
+
         {include uri='design:content/datatype/edit/ezobjectrelation_ajax_search.tpl'}
 	{/if}
     </div><!-- /div class="block" id="ezobjectrelationlist_browse_{$attribute.id}" -->

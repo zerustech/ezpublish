@@ -1,35 +1,12 @@
 <?php
-//
-// Definition of eZCollaborationViewHandler class
-//
-// Created on: <23-Jan-2003 11:59:34 amos>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
-
-/*! \file
-*/
+/**
+ * File containing the eZCollaborationViewHandler class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 /*!
   \class eZCollaborationViewHandler ezcollaborationviewhandler.php
@@ -42,10 +19,13 @@ class eZCollaborationViewHandler
     const TYPE_STANDARD = 1;
     const TYPE_GROUP = 2;
 
-    /*!
-     Initializes the view mode.
-    */
-    function eZCollaborationViewHandler( $viewMode, $viewType )
+    /**
+     * Initializes the view mode.
+     *
+     * @param string $viewMode
+     * @param int $viewType
+     */
+    public function __construct( $viewMode, $viewType )
     {
         $this->ViewMode = $viewMode;
         $this->ViewType = $viewType;
@@ -128,8 +108,8 @@ class eZCollaborationViewHandler
      * pr the two input params.
      *
      *
-     * @param $viewMode string
-     * @param $type int Is self::TYPE_STANDARD by default
+     * @param string $viewMode
+     * @param int $type Is self::TYPE_STANDARD by default
      * @return eZCollaborationViewHandler
      */
     static function instance( $viewMode, $type = self::TYPE_STANDARD )

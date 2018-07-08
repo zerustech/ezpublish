@@ -1,34 +1,22 @@
 <?php
-//
-// Created on: <17-Apr-2002 11:05:08 amos>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 define( 'EZ_ABOUT_CONTRIBUTORS_DIR', 'var/storage/contributors' );
 define( 'EZ_ABOUT_THIRDPARTY_SOFTWARE_FILE', 'var/storage/third_party_software.php' );
 
+
+/*!
+  Returns contents of LICENSE file in ezp legacy root directory, or false on failure.
+*/
+function getLicense()
+{
+    return file_get_contents( 'LICENSE' );
+}
 
 /*!
   Returns list of contributors;
@@ -123,38 +111,25 @@ function strReplaceByArray( $searches = array(), $subjects = array() )
 
 $ezinfo = eZPublishSDK::version( true );
 
-$whatIsEzPublish = 'eZ Publish is a professional PHP application framework with advanced
-CMS (content management system) functionality. As a CMS its most notable
-featureis its revolutionary, fully customizable and extendable content
-model. Thisis also what makes eZ Publish suitable as a platform for
-general PHP  development,allowing you to rapidly create professional
-web-based applications.
+$whatIsEzPublish = '<p>eZ Publish is a professional PHP application framework with advanced
+CMS (content management system) functionality. As a CMS, its most notable
+feature is its revolutionary, fully customizable and extendable content
+model. This is also what makes eZ Publish suitable as a platform for
+general PHP development, allowing you to rapidly create professional
+web-based applications.</p>
 
-Standard CMS functionality (such as news publishing, e-commerce and
+<p>Standard CMS functionality (such as news publishing, e-commerce and
 forums) are already implemented and ready to use. Standalone libraries
 can be used for cross-platform database-independent browser-neutral
-PHP projects. Because eZ Publish 4 is a web-based application, it can
-be accessed from anywhere you have an internet connection.';
+PHP projects. Because eZ Publish is a web-based application, it can
+be accessed from anywhere you have an internet connection.</p>';
 
-$license =
-## BEGIN LICENSE INFO ##
-'This copy of eZ Publish is distributed under the terms and conditions of
-the GNU General Public License (GPL). Briefly summarized, the GPL gives
-you the right to use, modify and share this copy of eZ Publish. If you
-choose to share eZ Publish, you may only share it under the terms and
-conditions of the GPL. If you share a modified version of eZ Publish,
-these modifications must also be placed under the GPL. Read the
-complete legal terms and conditions of the GPL at
-http://www.gnu.org/licenses/gpl.txt or see the file named LICENSE in
-the root directory of this eZ Publish distribution.';
-## END LICENSE INFO ##
-
+$license = getLicense();
 $contributors = getContributors( EZ_ABOUT_CONTRIBUTORS_DIR );
 $thirdPartySoftware = getThirdPartySoftware( EZ_ABOUT_THIRDPARTY_SOFTWARE_FILE );
 $extensions = getExtensionsInfo();
 
 list( $whatIsEzPublish,
-      $license,
       $contributors,
       $thirdPartySoftware,
       $extensions ) = strReplaceByArray( array( 'eZ Systems AS' => '<a href="http://ez.no/">eZ Systems AS</a>',
@@ -163,7 +138,7 @@ list( $whatIsEzPublish,
                                                 'eZ systems as' => '<a href="http://ez.no/">eZ Systems AS</a>',
                                                 'eZ Publish' => '<a href="http://ez.no/ezpublish">eZ Publish</a>',
                                                 'eZ publish' => '<a href="http://ez.no/ezpublish">eZ Publish</a>' ),
-                                         array( $whatIsEzPublish, $license, $contributors, $thirdPartySoftware, $extensions ) );
+                                         array( $whatIsEzPublish, $contributors, $thirdPartySoftware, $extensions ) );
 
 $tpl = eZTemplate::factory();
 $tpl->setVariable( 'ezinfo', $ezinfo );

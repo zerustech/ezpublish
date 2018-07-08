@@ -1,32 +1,12 @@
 <?php
-//
-// Definition of eZTime class
-//
-// Created on: <01-Mar-2002 13:48:40 amos>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * File containing the eZTime class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package lib
+ */
 
 /*!
   \class eZTime eztime.php
@@ -57,8 +37,6 @@
 
 Example:
 \code
-//include_once( 'lib/ezlocale/classes/ezlocale.php' );
-//include_once( 'lib/ezlocale/classes/eztime.php' );
 
 $us_locale = eZLocale::instance( 'us' );
 
@@ -94,11 +72,12 @@ class eZTime
     */
     const SECONDS_A_DAY = 86400; // 24*60*60
 
-    /*!
-     Creates a new time object with default locale, if $time is not supplied
-     the current time is used.
-    */
-    function eZTime( $timestamp = false )
+    /**
+     * Creates a new time object with default locale, if $time is not supplied the current time is used.
+     *
+     * @param int|bool $timestamp
+     */
+    public function __construct( $timestamp = false )
     {
         if ( $timestamp === false )
         {
@@ -145,7 +124,7 @@ class eZTime
         else if ( $name == 'is_valid'  )
             return $this->isValid();
 
-        eZDebug::writeError( "Attribute '$name' does not exist", 'eZTime::attribute' );
+        eZDebug::writeError( "Attribute '$name' does not exist", __METHOD__ );
         return false;
     }
 

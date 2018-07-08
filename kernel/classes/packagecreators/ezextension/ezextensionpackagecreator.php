@@ -1,35 +1,12 @@
 <?php
-//
-// Definition of eZStylePackageCreator class
-//
-// Created on: <14-Dec-2005 12:39:59 ks>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
-
-/*! \file
-*/
+/**
+ * File containing the eZStylePackageCreator class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 /*!
   \ingroup package
@@ -40,10 +17,7 @@
 
 class eZExtensionPackageCreator extends eZPackageCreationHandler
 {
-    /*!
-     Constructor
-    */
-    function eZExtensionPackageCreator( $id )
+    public function __construct( $id )
     {
         $steps = array();
         $steps[] = array( 'id' => 'extensionlist',
@@ -56,9 +30,7 @@ class eZExtensionPackageCreator extends eZPackageCreationHandler
         $steps[] = $this->packageInformationStep();
         $steps[] = $this->packageMaintainerStep();
         $steps[] = $this->packageChangelogStep();
-        $this->eZPackageCreationHandler( $id,
-                                         ezpI18n::tr( 'kernel/package', 'Extension export' ),
-                                         $steps );
+        parent::__construct( $id, ezpI18n::tr( 'kernel/package', 'Extension export' ), $steps );
     }
 
     function finalize( &$package, $http, &$persistentData )
@@ -107,9 +79,7 @@ class eZExtensionPackageCreator extends eZPackageCreationHandler
 
     function loadExtensionName( $package, $http, $step, &$persistentData, $tpl )
     {
-        $siteINI = eZINI::instance();
-        $extensionDir = $siteINI->variable( 'ExtensionSettings', 'ExtensionDirectory' );
-        $extensionList = eZDir::findSubItems( $extensionDir );
+        $extensionList = eZDir::findSubItems( eZExtension::baseDirectory(), 'dl' );
         $tpl->setVariable( 'extension_list', $extensionList );
     }
 

@@ -1,35 +1,12 @@
 <?php
-//
-// Definition of eZXMLOutputHandler class
-//
-// Created on: <06-Nov-2002 15:10:02 wy>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
-
-/*! \file
-*/
+/**
+ * File containing the eZXMLOutputHandler class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 /*!
   \class eZXMLOutputHandler ezxmloutputhandler
@@ -41,10 +18,14 @@
 // if ( !class_exists( 'eZXMLSchema' ) )
 class eZXMLOutputHandler
 {
-    /*!
-     Constructor
-    */
-    function eZXMLOutputHandler( $xmlData, $aliasedType, $contentObjectAttribute = null )
+    /**
+     * Constructor
+     *
+     * @param string $xmlData
+     * @param string $aliasedType
+     * @param eZContentObjectAttribute|null $contentObjectAttribute
+     */
+    public function __construct( $xmlData, $aliasedType, $contentObjectAttribute = null )
     {
         $this->XMLData = $xmlData;
         $this->AliasedHandler = null;
@@ -109,7 +90,7 @@ class eZXMLOutputHandler
             } break;
             case 'aliased_handler':
             {
-                if ( $this->AliasHandler === null )
+                if ( $this->AliasedHandler === null )
                 {
                     $this->AliasedHandler = eZXMLText::inputHandler( $this->XMLData,
                                                                       $this->AliasedType,
@@ -120,7 +101,7 @@ class eZXMLOutputHandler
             } break;
             default:
             {
-                eZDebug::writeError( "Attribute '$name' does not exist", 'eZXMLOutputHandler::attribute' );
+                eZDebug::writeError( "Attribute '$name' does not exist", __METHOD__ );
                 return null;
             } break;
         }
@@ -132,7 +113,8 @@ class eZXMLOutputHandler
     function &viewTemplateName()
     {
         $name = 'ezxmltext';
-        $suffix = $this->viewTemplateSuffix();
+        $contentobjectAttribute = false;
+        $suffix = $this->viewTemplateSuffix( $contentobjectAttribute );
         if ( $suffix !== false )
         {
             $name .= '_' . $suffix;
@@ -264,7 +246,17 @@ class eZXMLOutputHandler
 
         if ( count( $relatedObjectIDArray ) > 0 )
         {
-            $this->ObjectArray = eZContentObject::fetchIDArray( $relatedObjectIDArray );
+            if ( $this->ContentObjectAttribute instanceof eZContentObjectAttribute )
+            {
+                $this->ObjectArray = eZContentObject::fetchIDArray(
+                    $relatedObjectIDArray, true,
+                    $this->ContentObjectAttribute->attribute( 'language_code' )
+                );
+            }
+            else
+            {
+                $this->ObjectArray = eZContentObject::fetchIDArray( $relatedObjectIDArray );
+            }
         }
 
         $nodeIDArray = array_merge(
@@ -283,14 +275,14 @@ class eZXMLOutputHandler
                 foreach( $nodes as $node )
                 {
                     $nodeID = $node->attribute( 'node_id' );
-                    $this->NodeArray["$nodeID"] = $node;
+                    $this->NodeArray[$nodeID] = $node;
                 }
             }
             elseif ( $nodes )
             {
                 $node = $nodes;
                 $nodeID = $node->attribute( 'node_id' );
-                $this->NodeArray["$nodeID"] = $node;
+                $this->NodeArray[$nodeID] = $node;
             }
         }
     }
@@ -548,6 +540,8 @@ class eZXMLOutputHandler
                 }
             }
         }
+
+        $this->callTagInitHandler( 'leavingHandler', $element, $attributes, $siblingParams, $parentParams );
 
         return $output;
     }

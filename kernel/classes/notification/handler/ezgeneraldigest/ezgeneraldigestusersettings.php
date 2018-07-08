@@ -1,35 +1,12 @@
 <?php
-//
-// Definition of eZGeneralDigestUserSettings class
-//
-// Created on: <16-May-2003 13:06:24 sp>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
-
-/*! \file
-*/
+/**
+ * File containing the eZGeneralDigestUserSettings class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 /*!
   \class eZGeneralDigestUserSettings ezgeneraldigestusersettings.php
@@ -44,23 +21,15 @@ class eZGeneralDigestUserSettings extends eZPersistentObject
     const TYPE_MONTHLY = 2;
     const TYPE_DAILY = 3;
 
-    /*!
-     Constructor
-    */
-    function eZGeneralDigestUserSettings( $row )
-    {
-        $this->eZPersistentObject( $row );
-    }
-
     static function definition()
     {
         return array( "fields" => array( "id" => array( 'name' => 'ID',
                                                         'datatype' => 'integer',
                                                         'default' => 0,
                                                         'required' => true ),
-                                         "address" => array( 'name' => "Address",
-                                                             'datatype' => 'string',
-                                                             'default' => '',
+                                         "user_id" => array( 'name' => "UserID",
+                                                             'datatype' => 'integer',
+                                                             'default' => 0,
                                                              'required' => true ),
                                          "receive_digest" => array( 'name' => "ReceiveDigest",
                                                                     'datatype' => 'integer',
@@ -79,34 +48,105 @@ class eZGeneralDigestUserSettings extends eZPersistentObject
                                                           'default' => '',
                                                           'required' => true ) ),
                       "keys" => array( "id" ),
+                      "function_attributes" => array(
+                          "address" => "address"
+                      ),
                       "increment_key" => "id",
                       "sort" => array( "id" => "asc" ),
                       "class_name" => "eZGeneralDigestUserSettings",
                       "name" => "ezgeneral_digest_user_settings" );
     }
 
-
-    static function create( $address, $receiveDigest = 0, $digestType = self::TYPE_NONE, $day = '', $time = '' )
+    /**
+     * Returns the email address of the user associated with the digest
+     * settings.
+     *
+     * @return string
+     */
+    protected function address()
     {
-        return new eZGeneralDigestUserSettings( array( 'address' => $address,
+        $user = eZUser::fetch( $this->UserID );
+        if ( $user instanceof eZUser )
+        {
+            return $user->attribute( 'email' );
+        }
+        return '';
+    }
+
+
+    static function create( $userID, $receiveDigest = 0, $digestType = self::TYPE_NONE, $day = '', $time = '' )
+    {
+        return new eZGeneralDigestUserSettings( array( 'user_id' => $userID,
                                                        'receive_digest' => $receiveDigest,
                                                        'digest_type' => $digestType,
                                                        'day' => $day,
                                                        'time' => $time ) );
     }
 
+    /**
+     * @deprecated Since 5.0, please use fetchByUserId()
+     * @param $address
+     * @param bool $asObject
+     *
+     * @return array|eZPersistentObject|null
+     */
     static function fetchForUser( $address, $asObject = true )
     {
-        return eZPersistentObject::fetchObject( eZGeneralDigestUserSettings::definition(),
-                                                null,
-                                                array( 'address' => $address ),
-                                                $asObject );
+        eZDebug::writeStrict(
+            'Method ' . __METHOD__ . ' has been deprecated in 5.0',
+            'Deprecation'
+        );
+        $user = eZUser::fetchByEmail( $address );
+        if ( $user instanceof eZUser )
+        {
+            return self::fetchByUserId( $user->attribute( 'contentobject_id' ), $asObject );
+        }
+        return null;
     }
 
+    /**
+     * Returns the digest settings object for the user
+     *
+     * @since 5.0
+     * @param int $userId the user id
+     * @param bool $asObject
+     * @return eZGeneralDigestUserSettings
+     */
+    static function fetchByUserId( $userId, $asObject = true )
+    {
+        return eZPersistentObject::fetchObject(
+            self::definition(), null,
+            array( 'user_id' => $userId ), $asObject
+        );
+    }
+
+    /**
+     * @deprecated Since 5.0, please use removeByUserID()
+     * @param string $address
+     */
     static function removeByAddress( $address )
     {
+        eZDebug::writeStrict(
+            'Method ' . __METHOD__ . ' has been deprecated in 5.0',
+            'Deprecation'
+        );
+        $user = eZUser::fetchByEmail( $address );
+        if ( $user instanceof eZUser )
+        {
+            self::removeByUserID( $user->attribute( 'contentobject_id' ) );
+        }
+    }
+
+    /**
+     * Removes the digest settings for a user
+     *
+     * @since 5.0
+     * @param int $id the user id
+     */
+    static function removeByUserId( $id )
+    {
         $db = eZDB::instance();
-        $db->query( "DELETE FROM ezgeneral_digest_user_settings WHERE address='" . $db->escapeString( $address ) . "'" );
+        $db->query( "DELETE FROM ezgeneral_digest_user_settings WHERE user_id=" . (int)$id );
     }
 
     /*!

@@ -1,35 +1,12 @@
 <?php
-//
-// Definition of eZURLAliasFilter class
-//
-// Created on: <28-Jun-2007 19:50:27 amos>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
-
-/*! \file
-*/
+/**
+ * File containing the eZURLAliasFilter class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 /*!
   \class eZURLAliasQuery ezurlaliasquery.php
@@ -118,15 +95,9 @@ class eZURLAliasQuery
      */
     public $items;
 
-    function eZURLAliasQuery()
-    {
-    }
-
     function hasAttribute( $name )
     {
-        return in_array( $name,
-                         array_diff( get_object_vars( $this ),
-                                     array( 'query' ) ) );
+        return $name !== "query" && array_key_exists( $name, get_object_vars( $this ) );
     }
 
     function attribute( $name )
@@ -340,11 +311,12 @@ class eZURLAliasQuery
         if ( !is_array( $rows ) || count( $rows ) == 0 )
             return array();
         $list = array();
+        $maxNumberOfLanguages = eZContentLanguage::maxCount();
         foreach ( $rows as $row )
         {
             $row['always_available'] = $row['lang_mask'] % 2;
             $mask = $row['lang_mask'] & ~1;
-            for ( $i = 1; $i < 30; ++$i )
+            for ( $i = 1; $i < $maxNumberOfLanguages; ++$i )
             {
                 $newMask = (1 << $i);
                 if ( ($newMask & $mask) > 0 )

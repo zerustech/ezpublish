@@ -1,35 +1,12 @@
 <?php
-//
-// Definition of eZStepCreateSites class
-//
-// Created on: <13-Aug-2003 19:54:38 kk>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
-
-/*! \file
-*/
+/**
+ * File containing the eZStepCreateSites class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 /*!
   Error codes:
@@ -69,13 +46,17 @@
 
 class eZStepCreateSites extends eZStepInstaller
 {
-    /*!
-     Constructor
-    */
-    function eZStepCreateSites( $tpl, $http, $ini, &$persistenceList )
+    /**
+     * Constructor
+     *
+     * @param eZTemplate $tpl
+     * @param eZHTTPTool $http
+     * @param eZINI $ini
+     * @param array $persistenceList
+     */
+    public function __construct( $tpl, $http, $ini, &$persistenceList )
     {
-        $this->eZStepInstaller( $tpl, $http, $ini, $persistenceList,
-                                'create_sites', 'Create sites' );
+        parent::__construct( $tpl, $http, $ini, $persistenceList, 'create_sites', 'Create sites' );
     }
 
     function processPostData()
@@ -515,10 +496,15 @@ class eZStepCreateSites extends eZStepInstaller
 
                         if ( $db->databaseName() == 'mysql' )
                         {
-                            // We try to use InnoDB table type if it is available, else we use the default type.
-                            $innoDBAvail = $db->arrayQuery( "SHOW VARIABLES LIKE 'have_innodb';" );
-                            if ( $innoDBAvail[0]['Value'] == 'YES' )
-                                $params['table_type'] = 'innodb';
+                            $engines = $db->arrayQuery( 'SHOW ENGINES' );
+                            foreach( $engines as $engine )
+                            {
+                                if ( $engine['Engine'] == 'InnoDB' && in_array( $engine['Support'], array( 'YES', 'DEFAULT' ) ) )
+                                {
+                                    $params['table_type'] = 'innodb';
+                                    break;
+                                }
+                            }
                         }
 
                         if ( !$dbSchema->insertSchema( $params ) )
@@ -661,7 +647,7 @@ class eZStepCreateSites extends eZStepInstaller
 
         // Call user function for additional setup tasks.
         if ( function_exists( 'eZSitePreInstall' ) )
-            eZSitePreInstall();
+            eZSitePreInstall( $siteType );
 
 
         // Make sure objects use the selected main language instead of eng-GB
@@ -678,13 +664,13 @@ id=$engLanguageID";
             $db->query( $updateSql );
             eZContentLanguage::expireCache();
             $primaryLanguageObj = eZContentLanguage::fetchByLocale( $primaryLanguageLocaleCode );
-            /*
+
             // Add it if it is missing (most likely)
             if ( !$primaryLanguageObj )
             {
                 $primaryLanguageObj = eZContentLanguage::addLanguage( $primaryLanguageLocaleCode, $primaryLanguageName );
             }
-            */
+
             $primaryLanguageID = (int)$primaryLanguageObj->attribute( 'id' );
 
             // Find objects which are always available
@@ -805,9 +791,9 @@ WHERE
 language_locale='eng-GB'";
             $db->query( $updateSql );
 
-            // use high-level api, becuase it's impossible to update serialized names with direct sqls.
+            // use high-level api, because it's impossible to update serialized names with direct sqls.
             // use direct access to 'NameList' to avoid unnecessary sql-requests and because
-            // we do 'replacement' of existing languge(with some 'id') with another language code.
+            // we do 'replacement' of existing language(with some 'id') with another language code.
             $contentClassList = eZContentClass::fetchList();
             foreach( $contentClassList as $contentClass )
             {
@@ -1038,8 +1024,13 @@ language_locale='eng-GB'";
         // Enable OE and ODF extensions by default
         $extensionsToEnable = array();
         // Included in "fat" install, needs to override $extraCommonSettings extensions
-        $extensionsPrepended = array( /*@EZP_BUILD_EXTENSION_ACTIVATE@*/ 'ezjscore' );
-        foreach ( array( 'ezie', 'ezoe', 'ezodf' ) as $extension )
+        $extensionsPrepended = array( 'ezjscore', /*@EZP_BUILD_EXTENSION_ACTIVATE@*/ 'ezoe', 'ezformtoken' );
+        foreach (
+            array(
+                'ezie', 'ezodf', 'ezprestapiprovider', 'ezmultiupload', 'eztags',
+                'ezautosave', 'ez_network', 'ez_network_demo'
+            ) as $extension
+        )
         {
             if ( file_exists( "extension/$extension" ) )
             {
@@ -1137,12 +1128,21 @@ language_locale='eng-GB'";
                     {
                         $templateLookObject = current( $objectList );
                         $dataMap = $templateLookObject->fetchDataMap();
-                        $dataMap[ 'title' ]->setAttribute( 'data_text', $siteINIChanges['SiteSettings']['SiteName'] );
-                        $dataMap[ 'title' ]->store();
-                        $dataMap[ 'siteurl' ]->setAttribute( 'data_text', $siteINIChanges['SiteSettings']['SiteURL'] );
-                        $dataMap[ 'siteurl' ]->store();
-                        $dataMap[ 'email' ]->setAttribute( 'data_text', $siteINIChanges['MailSettings']['AdminEmail'] );
-                        $dataMap[ 'email' ]->store();
+                        if ( isset( $dataMap[ 'title' ] ) )
+                        {
+                            $dataMap[ 'title' ]->setAttribute( 'data_text', $siteINIChanges['SiteSettings']['SiteName'] );
+                            $dataMap[ 'title' ]->store();
+                        }
+                        if ( isset( $dataMap[ 'siteurl' ] ) )
+                        {
+                            $dataMap[ 'siteurl' ]->setAttribute( 'data_text', $siteINIChanges['SiteSettings']['SiteURL'] );
+                            $dataMap[ 'siteurl' ]->store();
+                        }
+                        if ( isset( $dataMap[ 'email' ] ) )
+                        {
+                            $dataMap[ 'email' ]->setAttribute( 'data_text', $siteINIChanges['MailSettings']['AdminEmail'] );
+                            $dataMap[ 'email' ]->store();
+                        }
                         $objectName = $templateLookClass->contentObjectName( $templateLookObject );
                         $templateLookObject->setName( $objectName );
                         $templateLookObject->store();
@@ -1339,22 +1339,34 @@ language_locale='eng-GB'";
             return false;
         }
 
+        $newUserObject = $userObject->createNewVersion( false, false );
+        if ( !is_object( $newUserObject ) )
+        {
+            $resultArray['errors'][] = array( 'code' => 'EZSW-022',
+                'text' => "Could not create new version of administrator content object" );
+            return false;
+        }
+        $dataMap = $newUserObject->attribute( 'data_map' );
+        $error = false;
+
         if ( trim( $admin['email'] ) )
         {
+            if ( !isset( $dataMap['user_account'] ) )
+            {
+                $resultArray['errors'][] = array( 'code' => 'EZSW-023',
+                    'text' => "Administrator content object does not have a 'user_account' attribute" );
+                return false;
+            }
+
             $userAccount->setInformation( 14, 'admin', $admin['email'], $admin['password'], $admin['password'] );
+            $dataMap['user_account']->setContent( $userAccount );
+            $dataMap['user_account']->store();
+            $publishAdmin = true;
+            $userAccount->store();
         }
 
         if ( trim( $admin['first_name'] ) or trim( $admin['last_name'] ) )
         {
-            $newUserObject = $userObject->createNewVersion( false, false );
-            if ( !is_object( $newUserObject ) )
-            {
-                $resultArray['errors'][] = array( 'code' => 'EZSW-022',
-                                                  'text' => "Could not create new version of administrator content object" );
-                return false;
-            }
-            $dataMap = $newUserObject->attribute( 'data_map' );
-            $error = false;
             if ( !isset( $dataMap['first_name'] ) )
             {
                 $resultArray['errors'][] = array( 'code' => 'EZSW-023',
@@ -1378,7 +1390,6 @@ language_locale='eng-GB'";
             $newUserObject->store();
             $publishAdmin = true;
         }
-        $userAccount->store();
 
         if ( $publishAdmin )
         {
@@ -1404,7 +1415,7 @@ language_locale='eng-GB'";
         // Adding override for 'tiny_image' view for 'multi-option2' datatype
         foreach ( $relatedSiteAccessList as $siteAccess )
         {
-            $tmpOverrideINI = eZINI::instance( 'override.ini' . '.append.php', "settings/siteaccess/$siteAccess", null, null, null, true, true );
+            $tmpOverrideINI = new eZINI( 'override.ini' . '.append.php', "settings/siteaccess/$siteAccess", null, null, null, true, true );
 
             $tmpOverrideINI->setVariable( 'tiny_image', 'Source'    , 'content/view/tiny.tpl' );
             $tmpOverrideINI->setVariable( 'tiny_image', 'MatchFile' , 'tiny_image.tpl' );

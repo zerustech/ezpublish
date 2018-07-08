@@ -1,31 +1,12 @@
 <?php
-//
-// Definition of eZDateTimeType class
-//
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * File containing the eZDateTimeType class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 /*!
   \class eZDateTimeType ezdatetimetype.php
@@ -50,9 +31,9 @@ class eZDateTimeType extends eZDataType
 
     const DEFAULT_ADJUSTMENT = 2;
 
-    function eZDateTimeType()
+    public function __construct()
     {
-        $this->eZDataType( self::DATA_TYPE_STRING, ezpI18n::tr( 'kernel/classes/datatypes', "Date and time", 'Datatype name' ),
+        parent::__construct( self::DATA_TYPE_STRING, ezpI18n::tr( 'kernel/classes/datatypes', "Date and time", 'Datatype name' ),
                            array( 'serialize_supported' => true ) );
     }
 
@@ -162,20 +143,20 @@ class eZDateTimeType extends eZDataType
             $minute = $http->postVariable( $base . '_datetime_minute_' . $contentObjectAttribute->attribute( 'id' ) );
             $second = $useSeconds ? $http->postVariable( $base . '_datetime_second_' . $contentObjectAttribute->attribute( 'id' ) ) : 0;
 
-            $dateTime = new eZDateTime();
-
             if ( ( $year == '' and $month == '' and $day == '' and
                    $hour == '' and $minute == '' and ( !$useSeconds or $second == '' ) ) or
-                 !checkdate( $month, $day, $year ) or $year < 1970 )
+                 !checkdate( $month, $day, $year ) )
             {
-                    $dateTime->setTimeStamp( 0 );
+                    $stamp = null;
             }
             else
             {
+                $dateTime = new eZDateTime();
                 $dateTime->setMDYHMS( $month, $day, $year, $hour, $minute, $second );
+                $stamp = $dateTime->timeStamp();
             }
 
-            $contentObjectAttribute->setAttribute( 'data_int', $dateTime->timeStamp() );
+            $contentObjectAttribute->setAttribute( 'data_int', $stamp );
             return true;
         }
         return false;
@@ -254,20 +235,21 @@ class eZDateTimeType extends eZDataType
             $minute = $http->postVariable( $base . '_datetime_minute_' . $contentObjectAttribute->attribute( 'id' ) );
             $second = $useSeconds ? $http->postVariable( $base . '_datetime_second_' . $contentObjectAttribute->attribute( 'id' ) ) : 0;
 
-            $dateTime = new eZDateTime();
             $contentClassAttribute = $contentObjectAttribute->contentClassAttribute();
             if ( ( $year == '' and $month == ''and $day == '' and
                    $hour == '' and $minute == '' and ( !$useSeconds or $second == '' ) ) or
-                 !checkdate( $month, $day, $year ) or $year < 1970 )
+                 !checkdate( $month, $day, $year ) )
             {
-                    $dateTime->setTimeStamp( 0 );
+                    $stamp = null;
             }
             else
             {
+                $dateTime = new eZDateTime();
                 $dateTime->setMDYHMS( $month, $day, $year, $hour, $minute, $second );
+                $stamp = $dateTime->timeStamp();
             }
 
-            $collectionAttribute->setAttribute( 'data_int', $dateTime->timeStamp() );
+            $collectionAttribute->setAttribute( 'data_int', $stamp );
             return true;
         }
         return false;
@@ -299,7 +281,7 @@ class eZDateTimeType extends eZDataType
     */
     function metaData( $contentObjectAttribute )
     {
-        return $contentObjectAttribute->attribute( 'data_int' );
+        return (int)$contentObjectAttribute->attribute( 'data_int' );
     }
     /*!
      \return string representation of an contentobjectattribute data for simplified export
@@ -307,11 +289,17 @@ class eZDateTimeType extends eZDataType
     */
     function toString( $contentObjectAttribute )
     {
-        return $contentObjectAttribute->attribute( 'data_int' );
+        $stamp = $contentObjectAttribute->attribute( 'data_int' );
+        return $stamp === null ? '' : $stamp;
     }
 
     function fromString( $contentObjectAttribute, $string )
     {
+        if ( empty( $string ) )
+        {
+            $string = null;
+        }
+
         return $contentObjectAttribute->setAttribute( 'data_int', $string );
     }
 
@@ -412,7 +400,7 @@ class eZDateTimeType extends eZDataType
                 $contentObjectAttribute->setAttribute( "data_int", $value->timeStamp() );
             }
             else
-                $contentObjectAttribute->setAttribute( "data_int", 0 );
+                $contentObjectAttribute->setAttribute( "data_int", null );
         }
     }
 
@@ -465,13 +453,13 @@ class eZDateTimeType extends eZDataType
     function title( $contentObjectAttribute, $name = null )
     {
         $locale = eZLocale::instance();
-        $retVal = $contentObjectAttribute->attribute( "data_int" ) == 0 ? '' : $locale->formatDateTime( $contentObjectAttribute->attribute( "data_int" ) );
+        $retVal = $contentObjectAttribute->attribute( "data_int" ) === null ? '' : $locale->formatDateTime( $contentObjectAttribute->attribute( "data_int" ) );
         return $retVal;
     }
 
     function hasObjectAttributeContent( $contentObjectAttribute )
     {
-        return $contentObjectAttribute->attribute( "data_int" ) != 0;
+        return $contentObjectAttribute->attribute( "data_int" ) !== null;
     }
 
     function sortKey( $contentObjectAttribute )
@@ -521,8 +509,7 @@ class eZDateTimeType extends eZDataType
             } break;
             default:
             {
-                eZDebug::writeError( 'Unknown type of DateTime default value. Empty type used instead.',
-                                    'eZDateTimeType::serializeContentClassAttribute()' );
+                eZDebug::writeError( 'Unknown type of DateTime default value. Empty type used instead.', __METHOD__ );
                 $defaultValueNode->setAttribute( 'type', 'empty' );
             } break;
         }
@@ -569,8 +556,7 @@ class eZDateTimeType extends eZDataType
             } break;
             default:
             {
-                eZDebug::writeError( 'Type of DateTime default value is not set. Empty type used as default.',
-                                    'eZDateTimeType::unserializeContentClassAttribute()' );
+                eZDebug::writeError( 'Type of DateTime default value is not set. Empty type used as default.', __METHOD__ );
                 $classAttribute->setAttribute( self::DEFAULT_FIELD, self::DEFAULT_EMTPY );
             } break;
         }
@@ -639,7 +625,7 @@ class eZDateTimeType extends eZDataType
 
             default:
             {
-                $default = 0;
+                return array();
             }
         }
 

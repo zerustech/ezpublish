@@ -1,35 +1,12 @@
 <?php
-//
-// Definition of eZURLObjectLink class
-//
-// Created on: <04-Jul-2003 13:14:41 wy>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
-
-/*! \file
-*/
+/**
+ * File containing the eZURLObjectLink class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 /*!
   \class eZURLObjectLink ezurlobjectlink.php
@@ -40,14 +17,6 @@
 
 class eZURLObjectLink extends eZPersistentObject
 {
-    /*!
-     Constructor
-    */
-    function eZURLObjectLink( $row )
-    {
-        $this->eZPersistentObject( $row );
-    }
-
     static function definition()
     {
         static $definition = array( 'fields' => array( 'url_id' => array( 'name' => 'URLID',
@@ -190,15 +159,9 @@ class eZURLObjectLink extends eZPersistentObject
     static function fetchLinkList( $contentObjectAttributeID, $contentObjectAttributeVersion, $asObject = true )
     {
         $linkList = array();
-        $conditions = array( 'contentobject_attribute_id' => $contentObjectAttributeID );
-        if ( $contentObjectAttributeVersion !== false )
-            $conditions['contentobject_attribute_version'] = $contentObjectAttributeVersion;
-        $urlObjectLinkList = eZPersistentObject::fetchObjectList( eZURLObjectLink::definition(),
-                                                                   null,
-                                                                   $conditions,
-                                                                   null,
-                                                                   null,
-                                                                   $asObject );
+
+        $urlObjectLinkList = self::fetchLinkObjectList( $contentObjectAttributeID, $contentObjectAttributeVersion, $asObject );
+
         foreach ( $urlObjectLinkList as $urlObjectLink )
         {
             if ( $asObject )
@@ -213,6 +176,34 @@ class eZURLObjectLink extends eZPersistentObject
             }
         }
         return $linkList;
+    }
+
+    /**
+     * Fetches an array of eZURLObjectLink
+     *
+     * @param $contentObjectAttributeID
+     * @param $contentObjectAttributeVersion : if all links object for all versions are returned
+     * @param bool $asObject
+     *
+     * @return array|eZURLObjectLink[]|null
+     */
+    static public function fetchLinkObjectList( $contentObjectAttributeID, $contentObjectAttributeVersion, $asObject = true )
+    {
+        $conditions = array( 'contentobject_attribute_id' => $contentObjectAttributeID );
+
+        if ( $contentObjectAttributeVersion !== false )
+        {
+            $conditions['contentobject_attribute_version'] = $contentObjectAttributeVersion;
+        }
+
+        return eZPersistentObject::fetchObjectList(
+            eZURLObjectLink::definition(),
+            null,
+            $conditions,
+            null,
+            null,
+            $asObject
+        );
     }
 
     /*!

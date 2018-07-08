@@ -1,32 +1,12 @@
 <?php
-//
-// Definition of eZTemplateTypeOperator class
-//
-// Created on: <18-Apr-2002 12:15:07 amos>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * File containing the eZTemplateTypeOperator class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package lib
+ */
 
 /*!
   \class eZTemplateTypeOperator eztemplatetypeoperator.php
@@ -53,10 +33,24 @@ $var|get_class or get_class( $var )
 
 class eZTemplateTypeOperator
 {
-    /*!
-     Initializes the operator class with the various operator names.
-    */
-    function eZTemplateTypeOperator(  /*! The name array */
+    /**
+     * Initializes the operator class with the various operator names.
+     *
+     * @param string $isArrayName
+     * @param string $isBooleanName
+     * @param string $isIntegerName
+     * @param string $isFloatName
+     * @param string $isNumericName
+     * @param string $isStringName
+     * @param string $isObjectName
+     * @param string $isClassName
+     * @param string $isNullName
+     * @param string $isSetName
+     * @param string $isUnsetName
+     * @param string $getTypeName
+     * @param string $getClassName
+     */
+    public function __construct(  /*! The name array */
                                       $isArrayName = "is_array",
                                       $isBooleanName = "is_boolean",
                                       $isIntegerName = "is_integer",
@@ -429,6 +423,6 @@ class eZTemplateTypeOperator
     public $Operators;
     /// The "less than" name
     public $IsArrayName;
-};
+}
 
 ?>

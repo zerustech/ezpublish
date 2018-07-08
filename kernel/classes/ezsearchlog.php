@@ -1,32 +1,12 @@
 <?php
-//
-// Definition of eZSearchLog class
-//
-// Created on: <08-Aug-2002 10:27:21 bf>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * File containing the eZSearchLog class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 /*!
   \class eZSearchLog ezsearchlog.php
@@ -43,10 +23,16 @@ class eZSearchLog
     {
         $db = eZDB::instance();
         $db->begin();
+        $db->lock( "ezsearch_search_phrase" );
 
         $trans = eZCharTransform::instance();
-        $phrase = $trans->transformByGroup( trim( $phrase ), 'lowercase' );
+        $phrase = $trans->transformByGroup( trim( $phrase ), 'search' );
 
+        // 250 is the numbers of characters accepted by the DB table, so shorten to fit
+        if ( strlen( $phrase ) > 250 )
+        {
+            $phrase = substr( $phrase , 0 , 247 ) . "...";
+        }
         $phrase = $db->escapeString( $phrase );
 
         // find or store the phrase
@@ -65,21 +51,8 @@ class eZSearchLog
             $db->query( "INSERT INTO
                               ezsearch_search_phrase ( phrase, phrase_count, result_count )
                          VALUES ( '$phrase', 1, $returnCount )" );
-
-            /* when breaking BC: delete next line */
-            $phraseID = $db->lastSerialID( 'ezsearch_search_phrase', 'id' );
         }
-
-        /* when breaking BC: delete next lines */
-        /* ezsearch_return_count is not used any more by eZ Publish
-           but perhaps someone else added some functionality... */
-        $time = time();
-        // store the search result
-        $db->query( "INSERT INTO
-                           ezsearch_return_count ( phrase_id, count, time )
-                     VALUES ( '$phraseID', '$returnCount', '$time' )" );
-        /* end of BC breaking delete*/
-
+        $db->unlock();
         $db->commit();
     }
 
@@ -105,9 +78,6 @@ class eZSearchLog
     {
         $db = eZDB::instance();
         $query = "DELETE FROM ezsearch_search_phrase";
-        $db->query( $query );
-        /* when breaking BC: delete those two lines */
-        $query = "DELETE FROM ezsearch_return_count";
         $db->query( $query );
     }
 }

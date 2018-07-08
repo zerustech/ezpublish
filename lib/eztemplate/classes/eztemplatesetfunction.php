@@ -1,32 +1,12 @@
 <?php
-//
-// Definition of eZTemplateSetFunction class
-//
-// Created on: <05-Mar-2002 13:55:25 amos>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * File containing the eZTemplateSetFunction class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package lib
+ */
 
 /*!
   \class eZTemplateSetFunction eztemplatesetfunction.php
@@ -59,10 +39,14 @@ class eZTemplateSetFunction
     const SCOPE_ROOT = 2;
     const SCOPE_GLOBAL = 3;
 
-    /*!
-     Initializes the function with the function names $setName and $letName.
-    */
-    function eZTemplateSetFunction( $setName = 'set', $letName = 'let', $defaultName = 'default' )
+    /**
+     * Initializes the function with the function names $setName and $letName.
+     *
+     * @param string $setName
+     * @param string $letName
+     * @param string $defaultName
+     */
+    public function __construct( $setName = 'set', $letName = 'let', $defaultName = 'default' )
     {
         $this->SetName = $setName;
         $this->LetName = $letName;
@@ -76,75 +60,6 @@ class eZTemplateSetFunction
     {
         return array( $this->SetName, $this->LetName, $this->DefaultName );
     }
-
-    function functionTemplateStatistics( $functionName, &$node, $tpl, $resourceData, $namespace, &$stats )
-    {
-        $newNamespace = $namespace;
-        $parameters = eZTemplateNodeTool::extractFunctionNodeParameters( $node );
-        if ( $functionName == $this->SetName or
-             $functionName == $this->LetName or
-             $functionName == $this->DefaultName )
-        {
-            if ( isset( $parameters['-name'] ) )
-            {
-                $nameData = $parameters['-name'];
-                $nameDataInspection = eZTemplateCompiler::inspectVariableData( $tpl,
-                                                                               $nameData, false,
-                                                                               $resourceData );
-                if ( $nameDataInspection['is-constant'] and
-                     !$nameDataInspection['has-operators'] and
-                     !$nameDataInspection['has-attributes'] )
-                {
-                    $parameterNamespace = $nameDataInspection['new-data'][0][1];
-                    $newNamespace = $tpl->mergeNamespace( $namespace, $parameterNamespace );
-                }
-            }
-        }
-        if ( $functionName == $this->SetName )
-        {
-            foreach ( array_keys( $parameters ) as $name )
-            {
-                if ( $name == '-name' )
-                    continue;
-                $parameter =& $parameters[$name];
-                eZTemplateCompiler::setVariableStatistics( $stats, $newNamespace, $name, array( 'is_modified' => true ) );
-                eZTemplateCompiler::calculateVariableNodeStatistics( $tpl, $parameter, false, $resourceData, $namespace, $stats );
-            }
-        }
-        else if ( $functionName == $this->LetName )
-        {
-            foreach ( array_keys( $parameters ) as $name )
-            {
-                if ( $name == '-name' )
-                    continue;
-                $parameter =& $parameters[$name];
-                eZTemplateCompiler::setVariableStatistics( $stats, $newNamespace, $name, array( 'is_created' => true,
-                                                                                             'is_removed' => true ) );
-                eZTemplateCompiler::calculateVariableNodeStatistics( $tpl, $parameter, false, $resourceData, $namespace, $stats );
-            }
-        }
-        else if ( $functionName == $this->DefaultName )
-        {
-            foreach ( array_keys( $parameters ) as $name )
-            {
-                if ( $name == '-name' )
-                    continue;
-                $parameter =& $parameters[$name];
-                eZTemplateCompiler::setVariableStatistics( $stats, $newNamespace, $name, array( ) );
-                eZTemplateCompiler::calculateVariableNodeStatistics( $tpl, $parameter, false, $resourceData, $namespace, $stats );
-            }
-        }
-        if ( $functionName == $this->LetName or
-             $functionName == $this->DefaultName )
-        {
-            $functionChildren = eZTemplateNodeTool::extractFunctionNodeChildren( $node );
-            if ( is_array( $functionChildren ) )
-            {
-                eZTemplateCompiler::calculateVariableStatisticsChildren( $tpl, $functionChildren, $resourceData, $newNamespace, $stats );
-            }
-        }
-    }
-
 
     function functionTemplateHints()
     {
@@ -177,9 +92,9 @@ class eZTemplateSetFunction
                 $scope = eZTemplate::NAMESPACE_SCOPE_RELATIVE;
                 if ( isset( $parameters['-scope'] ) )
                 {
-                    if ( !eZTemplateNodeTool::isStaticElement( $parameters['-scope'] ) )
+                    if ( !eZTemplateNodeTool::isConstantElement( $parameters['-scope'] ) )
                         return false;
-                    $scopeText = eZTemplateNodeTool::elementStaticValue( $parameters['-scope'] );
+                    $scopeText = eZTemplateNodeTool::elementConstantValue( $parameters['-scope'] );
                     if ( $scopeText == 'relative' )
                         $scope = eZTemplate::NAMESPACE_SCOPE_RELATIVE;
                     else if ( $scopeText == 'root' )
@@ -192,12 +107,12 @@ class eZTemplateSetFunction
                 $namespaceValue = false;
                 if ( isset( $parameters['-name'] ) )
                 {
-                    if ( !eZTemplateNodeTool::isStaticElement( $parameters['-name'] ) )
+                    if ( !eZTemplateNodeTool::isConstantElement( $parameters['-name'] ) )
                     {
                         return false;
                     }
 
-                    $namespaceValue = eZTemplateNodeTool::elementStaticValue( $parameters['-name'] );
+                    $namespaceValue = eZTemplateNodeTool::elementConstantValue( $parameters['-name'] );
                 }
 
                 $variableList = array();

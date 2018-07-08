@@ -1,35 +1,12 @@
 <?php
-//
-// Definition of eZStepPackageLanguageOptions class
-//
-// Created on: <21-Feb-2007 17:27:57 dl>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
-
-/*! \file
-*/
+/**
+ * File containing the eZStepPackageLanguageOptions class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 /*!
   \class eZStepPackageLanguageOptions ezstep_package_language_options.php
@@ -39,13 +16,17 @@
 
 class eZStepPackageLanguageOptions extends eZStepInstaller
 {
-    /*!
-     Constructor
-    */
-    function eZStepPackageLanguageOptions( $tpl, $http, $ini, &$persistenceList )
+    /**
+     * Constructor
+     *
+     * @param eZTemplate $tpl
+     * @param eZHTTPTool $http
+     * @param eZINI $ini
+     * @param array $persistenceList
+     */
+    public function __construct( $tpl, $http, $ini, &$persistenceList )
     {
-        $this->eZStepInstaller( $tpl, $http, $ini, $persistenceList,
-                                'package_language_options', 'Package language options' );
+        parent::__construct( $tpl, $http, $ini, $persistenceList, 'package_language_options', 'Package language options' );
     }
 
     function processPostData()
@@ -114,7 +95,7 @@ class eZStepPackageLanguageOptions extends eZStepInstaller
         if( !in_array( 'eng-GB', $packageLanguageLocaleList ) )
             $packageLanguageLocaleList[] = 'eng-GB';
         //
-        // Exclude languages which exist both in packges and site.
+        // Exclude languages which exist both in packages and site.
         //
         $packageLanguageLocaleList = array_diff( $packageLanguageLocaleList, $siteLanguageLocaleList );
 

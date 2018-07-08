@@ -1,32 +1,12 @@
 <?php
-//
-// Definition of eZTemplateSequenceFunction class
-//
-// Created on: <05-Mar-2002 13:55:25 amos>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * File containing the eZTemplateSequenceFunction class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package lib
+ */
 
 /*!
   \class eZTemplateSequenceFunction eztemplatesectionfunction.php
@@ -52,10 +32,7 @@
 
 class eZTemplateSequenceFunction
 {
-    /*!
-     Initializes the function with the function name $inc_name.
-    */
-    function eZTemplateSequenceFunction()
+    public function __construct()
     {
         $this->SequenceName = 'sequence';
     }
@@ -63,7 +40,7 @@ class eZTemplateSequenceFunction
     /*!
      Returns an array of the function names, required for eZTemplate::registerFunctions.
     */
-    function &functionList()
+    function functionList()
     {
         $functionList = array( $this->SequenceName );
         return $functionList;
@@ -117,11 +94,11 @@ class eZTemplateSequenceFunction
 
         if ( !isset( $parameters['name'] ) )
             return false;
-        if ( !eZTemplateNodeTool::isStaticElement( $parameters['name'] ) )
+        if ( !eZTemplateNodeTool::isConstantElement( $parameters['name'] ) )
             return false;
 
         $nameData = $parameters['name'];
-        $nameValue = eZTemplateNodeTool::elementStaticValue( $nameData );
+        $nameValue = eZTemplateNodeTool::elementConstantValue( $nameData );
 
         $nameSpaceNode = eZTemplateNodeTool::createCodePieceNode( "\$namespace = \$rootNamespace;
 if ( \$namespace == '' )
@@ -132,9 +109,9 @@ else
         if ( isset( $parameters['loop'] ) )
         {
             $loopData = $parameters['loop'];
-            if ( !eZTemplateNodeTool::isStaticElement( $loopData ) )
+            if ( !eZTemplateNodeTool::isConstantElement( $loopData ) )
                 return false;
-            $loopValue = eZTemplateNodeTool::elementStaticValue( $loopData );
+            $loopValue = eZTemplateNodeTool::elementConstantValue( $loopData );
 
             $newNodes = $this->templateNodeSequenceCreate( $node, $tpl, $parameters, $nameValue, $loopValue );
         }

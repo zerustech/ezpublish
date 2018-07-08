@@ -2,8 +2,9 @@
 /**
  * File containing the eZContentObjectTest2 class
  *
- * @copyright Copyright (C) 1999-2010 eZ Systems AS. All rights reserved.
- * @license http://ez.no/licenses/gnu_gpl GNU GPLv2
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
  * @package tests
  */
 
@@ -35,8 +36,8 @@ class eZContentObjectTest2 extends ezpDatabaseTestCase
     {
         $versions = $this->article->object->versions();
         $this->assertEquals( 2, count( $versions ) );
-        $this->assertType( 'eZContentObjectVersion' , $versions[0] );
-        $this->assertType( 'eZContentObjectVersion' , $versions[1] );
+        $this->assertInstanceOf( 'eZContentObjectVersion' , $versions[0] );
+        $this->assertInstanceOf( 'eZContentObjectVersion' , $versions[1] );
     }
 
     /**
@@ -46,8 +47,8 @@ class eZContentObjectTest2 extends ezpDatabaseTestCase
     {
         $versions = $this->article->object->versions( false );
         $this->assertEquals( 2, count( $versions ) );
-        $this->assertType( 'array' , $versions[0] );
-        $this->assertType( 'array' , $versions[1] );
+        $this->assertInternalType( 'array' , $versions[0] );
+        $this->assertInternalType( 'array' , $versions[1] );
     }
 
     /**
@@ -107,7 +108,7 @@ class eZContentObjectTest2 extends ezpDatabaseTestCase
             )
         );
         $this->assertSame( 1, count( $objects ) );
-        $this->assertType( 'eZContentObject' , $objects[0] );
+        $this->assertInstanceOf( 'eZContentObject' , $objects[0] );
         $this->assertEquals( $this->article->id, $objects[0]->attribute( 'id' )  );
     }
 
@@ -124,7 +125,7 @@ class eZContentObjectTest2 extends ezpDatabaseTestCase
             )
         );
         $this->assertSame( 1, count( $objects ) );
-        $this->assertType( 'array' , $objects[0] );
+        $this->assertInternalType( 'array' , $objects[0] );
         $this->assertEquals( $this->article->id, $objects[0]['id'] );
     }
 
@@ -142,7 +143,7 @@ class eZContentObjectTest2 extends ezpDatabaseTestCase
             )
         );
         $this->assertSame( 1, count( $objects ) );
-        $this->assertType( 'eZContentObject' , $objects[0] );
+        $this->assertInstanceOf( 'eZContentObject' , $objects[0] );
         $this->assertEquals( $this->article->id, $objects[0]->attribute( 'id' )  );
     }
 

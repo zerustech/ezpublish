@@ -1,34 +1,12 @@
 <?php
-
-//
-// Created on: <01-Sep-2003 13:23:32 kk>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
-
-/*! \file
-*/
+/**
+ * File containing the eZPDFTable class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package lib
+ */
 
 /*!
   \class eZPDFTable class.ezpdftable.php
@@ -48,11 +26,16 @@ class eZPDFTable extends Cezpdf
     const HEADER_LEVEL_INDEX = '#indexLevel';
 
     /**
-     Constructor. This class is only used to encapsulate a table.
-    */
+     * Constructor
+     *
+     * This class is only used to encapsulate a table.
+     *
+     * @param string $paper
+     * @param string $orientation
+     */
     function eZPDFTable($paper='a4',$orientation='portrait')
     {
-        $this->Cezpdf($paper, $orientation);
+        parent::__construct( $paper, $orientation );
         $this->TOC = array();
         $this->KeywordArray = array();
         $this->PageCounter = array();
@@ -183,7 +166,8 @@ class eZPDFTable extends Cezpdf
         if (!is_array($cols)){
             // take the columns from the first row of the data set
             reset($data);
-            list($k,$v)=each($data);
+            $k=key($data);
+            $v=current($data);
             if (!is_array($v)){
                 return;
             }
@@ -219,7 +203,6 @@ class eZPDFTable extends Cezpdf
             'shadeCol2' => eZMath::rgbToCMYK2( 0.7, 0.7, 0.7 ),
             'repeatTableHeader' => 0,
             'fontSize' => 10,
-            'titleFontSize' => 12,
             'titleGap' => 5,
             'lineCol' => array( 0, 0, 0 ),
             'gap' => 5,
@@ -1309,7 +1292,7 @@ class eZPDFTable extends Cezpdf
 
             default:
             {
-                eZDebug::writeError( 'Unsupported image file type, '. $mimetype['name'], 'eZPDFTable::callImage' );
+                eZDebug::writeError( 'Unsupported image file type, '. $mimetype['name'], __METHOD__ );
                 $this->transaction( 'abort' );
                 return;
             } break;

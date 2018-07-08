@@ -1,33 +1,12 @@
 <?php
-//
-// Created on: <17-Apr-2007 11:07:06 bjorn>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
-
-/*! \file
-*/
+/**
+ * File containing the eZISBN13 class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 /*!
   \class eZISBN13 ezisbn13.php
@@ -46,13 +25,13 @@ class eZISBN13
     const PREFIX_978 = 978;
     const PREFIX_979 = 979;
 
-    /*!
-     Constructor
-     \param $isbnNr is the ISBN-13 number. example is: 978-0-11-000222-4
-     \param $separator is the hyphen used in the ISBN number to make the
-                       ISBN number more visible.
-    */
-    function eZISBN13( $isbnNr = null, $separator = '-' )
+    /**
+     * Constructor
+     *
+     * @param string|null $isbnNr The ISBN-13 number, e.g. 978-0-11-000222-4
+     * @param string $separator The hyphen used in the ISBN number to make the ISBN number more visible.
+     */
+    public function __construct( $isbnNr = null, $separator = '-' )
     {
         if ( $isbnNr !== null )
         {

@@ -1,4 +1,12 @@
 <?php
+/**
+ * File containing the eZPostgreSQLDBTest class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package tests
+ */
 
 class eZPostgreSQLDBTest extends ezpDatabaseTestCase
 {
@@ -17,7 +25,20 @@ class eZPostgreSQLDBTest extends ezpDatabaseTestCase
 
         parent::setUp();
 
+        $this->sharedFixture = ezpTestDatabaseHelper::create( ezpTestRunner::dsn() );
+
         ezpTestDatabaseHelper::clean( $this->sharedFixture );
+    }
+
+    public static function tearDownAfterClass()
+    {
+        // We need to clean up after this test case, since database will not
+        // be reset by the suite it initialisation has happened once, see pull req. #234
+        // Next: Suite which always prepares the db for you.
+
+        $db = ezpTestDatabaseHelper::create( ezpTestRunner::dsn() );
+        ezpTestDatabaseHelper::clean( $db );
+        ezpTestDatabaseHelper::insertDefaultData( $db );
     }
 
     public function testRelationCounts()
@@ -50,6 +71,7 @@ class eZPostgreSQLDBTest extends ezpDatabaseTestCase
         $db->query( "CREATE TABLE c ( name varchar(40) )" );
 
         $relationList = $db->relationList( eZDBInterface::RELATION_TABLE );
+        sort( $relationList );
         $relationArray = array( "a", "b", "c" );
         self::assertEquals( $relationArray, $relationList );
     }

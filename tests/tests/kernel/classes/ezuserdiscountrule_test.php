@@ -2,8 +2,9 @@
 /**
  * File containing the eZUserDiscountRule class
  *
- * @copyright Copyright (C) 1999-2010 eZ Systems AS. All rights reserved.
- * @license http://ez.no/licenses/gnu_gpl GNU GPLv2
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
  * @package tests
  */
 
@@ -19,7 +20,7 @@ class eZUserDiscountRuleTest extends ezpDatabaseTestCase
 
     /**
      * Unit test for eZDiscountRule::fetchByUserIDArray()
-     **/
+     */
     public function testFetchByUserIDArray()
     {
         // Create 5 few discount rules
@@ -54,13 +55,13 @@ class eZUserDiscountRuleTest extends ezpDatabaseTestCase
         // eZUserDiscountRule, and return the 5 rules, since no duplicates will
         // be returned
         $rules = eZUserDiscountRule::fetchByUserIDArray( array( 1, 2 ) );
-        $this->assertType( 'array', $rules,
+        $this->assertInternalType( 'array', $rules,
             "Return value should have been an array" );
         $this->assertEquals( 5, count( $rules ),
             "Return value should contain 5 items" );
         foreach( $rules as $rule )
         {
-            $this->assertType( 'eZDiscountRule', $rule );
+            $this->assertInstanceOf( 'eZDiscountRule', $rule );
         }
 
     }

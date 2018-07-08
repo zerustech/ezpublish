@@ -35,7 +35,7 @@
             {if eq( $#ui_context, 'browse' )}
                 <a class="nodeicon" href="#">{$:parentNode.object.class_identifier|class_icon( $:classIconsSize )}</a>
             {else}
-                <a class="nodeicon" href="#" onclick="ezpopmenu_showTopLevel( event, 'ContextMenu', ez_createAArray( new Array( '%nodeID%', {$:parentNode.node.node_id}, '%objectID%', {$:parentNode.object.id}, '%languages%', {$:parentNode.object.language_js_array}, '%classList%', {$:canCreateClasses} ) ) , '{$:parentNode.object.name|shorten(18)|wash(javascript)}', {$:parentNode.node.node_id}, {cond( eq( $:canCreateClasses, "''" ), "'menu-create-here'", '-1' )} ); return false;">{$:parentNode.object.class_identifier|class_icon( $:classIconsSize, "[%classname] Click on the icon to display a context-sensitive menu."|i18n( 'design/admin/contentstructuremenu',, hash( '%classname', $:parentNode.object.class_name ) ) )}</a>
+                <a class="nodeicon" href="#" onclick="ezpopmenu_showTopLevel( event, 'ContextMenu', ez_createAArray( new Array( '%nodeID%', {$:parentNode.node.node_id}, '%objectID%', {$:parentNode.object.id}, '%languages%', {$:parentNode.object.language_js_array|wash}, '%classList%', {$:canCreateClasses|wash} ) ) , '{$:parentNode.object.name|shorten(18)|wash(javascript)}', {$:parentNode.node.node_id}, {cond( eq( $:canCreateClasses, "''" ), "'menu-create-here'", '-1' )} ); return false;">{$:parentNode.object.class_identifier|class_icon( $:classIconsSize, "[%classname] Click on the icon to display a context-sensitive menu."|i18n( 'design/admin/contentstructuremenu',, hash( '%classname', $:parentNode.object.class_name ) ) )}</a>
             {/if}
             {* Label *}
                 {* Tooltip *}
@@ -58,15 +58,15 @@
                     {if $:csm_menu_item_click_action|eq('')}
                         {if eq( $:translation, 'enabled' )}
                             {let defaultItemClickAction = $:parentNode.node.path_identification_string|ezurl(no)}
-                                <a class="nodetext" href="{$:defaultItemClickAction}" title="{$:toolTip|wash}">
+                                <a class="image-text" href="{$:defaultItemClickAction}" title="{$:toolTip|wash}">
                             {/let}
                         {else}
                             {let defaultItemClickAction = concat('content/view/full/',$:parentNode.node.node_id)|ezurl(no)}
-                                <a class="nodetext" href="{$:defaultItemClickAction}" title="{$:toolTip|wash}">
+                                <a class="image-text" href="{$:defaultItemClickAction}" title="{$:toolTip|wash}">
                             {/let}
                         {/if}
                         {* Do not indent this line; otherwise links will contain empty space at the end! *}
-                        {else}<a class="nodetext" href="{$:csm_menu_item_click_action}/{$:parentNode.node.node_id}" title="{$:toolTip|wash}">{/if}{if $:parentNode.node.is_hidden}<span class="node-name-hidden">{$:parentNode.object.name|wash}</span>{else}{if $:parentNode.node.is_invisible}<span class="node-name-hiddenbyparent">{$:parentNode.object.name|wash}</span>{else}<span class="node-name-normal">{$:parentNode.object.name|wash}</span>{/if}{/if}{if $:parentNode.node.is_hidden}<span class="node-hidden">(Hidden)</span></a>{else}{if $:parentNode.node.is_invisible}<span class="node-hiddenbyparent">(Hidden by parent)</span></a>{else}</a>{/if}
+                        {else}<a class="image-text" href="{$:csm_menu_item_click_action}/{$:parentNode.node.node_id}" title="{$:toolTip|wash}">{/if}{if $:parentNode.node.is_hidden}<span class="node-name-hidden">{$:parentNode.object.name|wash}</span>{else}{if $:parentNode.node.is_invisible}<span class="node-name-hiddenbyparent">{$:parentNode.object.name|wash}</span>{else}<span class="node-name-normal">{$:parentNode.object.name|wash}</span>{/if}{/if}{if $:parentNode.node.is_hidden}<span class="node-hidden">(Hidden)</span></a>{else}{if $:parentNode.node.is_invisible}<span class="node-hiddenbyparent">(Hidden by parent)</span></a>{else}</a>{/if}
                     {/if}
                 {else}
                     {if $:parentNode.node.is_hidden}

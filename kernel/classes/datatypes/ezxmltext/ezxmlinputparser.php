@@ -1,32 +1,12 @@
 <?php
-//
-// Definition of eZXMLInputParser class
-//
-// Created on: <27-Mar-2006 15:28:39 ks>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * File containing the eZXMLInputParser class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 /*
     Base class for the input parser.
@@ -137,7 +117,7 @@ class eZXMLInputParser
     \param $detectErrorLevel Determines types of errors that will be detected and added to error log ($Messages).
     */
 
-    function eZXMLInputParser( $validateErrorLevel = self::ERROR_NONE, $detectErrorLevel = self::ERROR_NONE, $parseLineBreaks = false,
+    public function __construct( $validateErrorLevel = self::ERROR_NONE, $detectErrorLevel = self::ERROR_NONE, $parseLineBreaks = false,
                                $removeDefaultAttrs = false )
     {
         // Back-compatibility fixes:
@@ -237,6 +217,18 @@ class eZXMLInputParser
     {
         $text = str_replace( "\r", '', $text);
         $text = str_replace( "\t", ' ', $text);
+        // replace unicode chars that will break the XML validity
+        // see http://www.w3.org/TR/REC-xml/#charsets
+        $text = preg_replace( '/[^\x{0009}\x{000a}\x{000d}\x{0020}-\x{D7FF}\x{E000}-\x{FFFD}]+/u', ' ', $text, -1, $count );
+        if ( $count > 0 )
+        {
+            $this->Messages[] = ezpI18n::tr(
+                'kernel/classes/datatypes/ezxmltext',
+                "%count invalid character(s) have been found and replaced by a space",
+                false,
+                array( '%count' => $count )
+            );
+        }
         if ( !$this->ParseLineBreaks )
         {
             $text = str_replace( "\n", '', $text);
@@ -421,7 +413,7 @@ class eZXMLInputParser
         //  Regular tag: get tag's name and attributes.
         else
         {
-            $tagEndPos = strpos( $data, '>', $tagBeginPos );
+            $tagEndPos = $this->findEndOpeningTagPosition( $data, $tagBeginPos );
             if ( $tagEndPos === false )
             {
                 $pos = $tagBeginPos + 1;
@@ -591,40 +583,87 @@ class eZXMLInputParser
         Helper functions for pass 1
     */
 
+    /**
+     * Finds the postion of the > character which marks the end of the opening
+     * tag that starts at $tagBeginPos in $data.
+     * It's not as easy as it seems, because some '>' can also appear in attributes.
+     * So we need to iterate over the next '>' characters to find the correct one.
+     * See https://jira.ez.no/browse/EZP-26096
+     *
+     * @param string $data
+     * @param integer $tagBeginPos
+     * @param integer $offset used for recursive call when a > is found in an attribute.
+     * @return integer|false
+     */
+    private function findEndOpeningTagPosition( $data, $tagBeginPos, $offset = 0 )
+    {
+        $endPos = strpos( $data, '>', $tagBeginPos + $offset );
+        if ( $endPos === false )
+        {
+            return false;
+        }
+        $tagCode = substr( $data, $tagBeginPos, $endPos - $tagBeginPos );
+        if ( strpos( $tagCode, '=' ) === false )
+        {
+            // this tag has no attribute, so the next '>' is the right one.
+            return $endPos;
+        }
+        if ( $this->isValidXmlTag( $tagCode ) )
+        {
+            return $endPos;
+        }
+        return $this->findEndOpeningTagPosition( $data, $tagBeginPos, $endPos - $tagBeginPos + 1 );
+    }
+
+    /**
+     * Checks whether $code can be considered as a valid XML excerpt. If not,
+     * it's probably because we found a '>' in the middle of an attribute.
+     *
+     * @param string $code
+     * @return boolean
+     */
+    private function isValidXmlTag( $code )
+    {
+        if ( $code[strlen( $code ) - 1] !== '/' )
+        {
+            $code .= '/';
+        }
+        $code .= '>';
+        $code = '<' . str_replace(
+            array( '<', '&' ),
+            array( '&lt;', '&amp;' ),
+            substr( $code, 1 )
+        );
+        $errorHanding = libxml_use_internal_errors( true );
+        $simpleXml = simplexml_load_string( $code );
+        libxml_use_internal_errors( $errorHanding );
+        return ( $simpleXml !== false );
+    }
+
     function parseAttributes( $attributeString )
     {
-        // Convert single quotes to double quotes
-        $attributeString = preg_replace( "/ +([a-zA-Z0-9:-_#\-]+) *\='(.*?)'/e", "' \\1'.'=\"'.'\\2'.'\"'", ' ' . $attributeString );
-
-        // Convert no quotes to double quotes and remove extra spaces
-        $attributeString = preg_replace( "/ +([a-zA-Z0-9:-_#\-]+) *\= *([^\s'\"]+)/e", "' \\1'.'=\"'.'\\2'.'\" '", $attributeString );
-
-        // Split by quotes followed by spaces
-        $attributeArray = preg_split( "#(?<=\") +#", $attributeString );
-
         $attributes = array();
-        foreach( $attributeArray as $attrStr )
-        {
-            if ( !$attrStr || strlen( $attrStr ) < 4 )
+        // Valid characters for XML attributes
+        // @see http://www.w3.org/TR/xml/#NT-Name
+        $nameStartChar = ':A-Z_a-z\\xC0-\\xD6\\xD8-\\xF6\\xF8-\\x{2FF}\\x{370}-\\x{37D}\\x{37F}-\\x{1FFF}\\x{200C}-\\x{200D}\\x{2070}-\\x{218F}\\x{2C00}-\\x{2FEF}\\x{3001}-\\x{D7FF}\\x{F900}-\\x{FDCF}\\x{FDF0}-\\x{FFFD}\\x{10000}-\\x{EFFFF}';
+        if (
+            preg_match_all(
+                "/\s+([$nameStartChar][$nameStartChar\-.0-9\\xB7\\x{0300}-\\x{036F}\\x{203F}-\\x{2040}]*)\s*=\s*(?:(?:\"([^\"]+?)\")|(?:'([^']+?)')|(?: *([^\"'\s]+)))/u",
+                " " . $attributeString,
+                $attributeArray,
+                PREG_SET_ORDER
+            )
+        ) {
+            foreach ( $attributeArray as $attribute )
             {
-                continue;
+                // Value will always be at the last position
+                $value = trim( array_pop( $attribute ) );
+                // Value of '0' is valid ( eg. border='0' )
+                if ( $value !== '' && $value !== false && $value !== null )
+                {
+                    $attributes[$attribute[1]] = $value;
+                }
             }
-
-            list( $attrName, $attrValue ) = preg_split( "/ *= *\"/", $attrStr );
-
-            $attrName = strtolower( trim( $attrName ) );
-            if ( !$attrName )
-            {
-                continue;
-            }
-
-            $attrValue = substr( $attrValue, 0, -1 );
-            if ( $attrValue === '' || $attrValue === false )
-            {
-                continue;
-            }
-
-            $attributes[$attrName] = $attrValue;
         }
 
         return $attributes;
@@ -669,7 +708,7 @@ class eZXMLInputParser
                     if ( isset( $this->Namespaces[$prefix] ) )
                     {
                         $URI = $this->Namespaces[$prefix];
-                        $element->setAttributeNS( $URI, $qualifiedName, $value );
+                        $element->setAttributeNS( $URI, $qualifiedName, htmlspecialchars_decode( $value ) );
                     }
                     else
                     {
@@ -678,7 +717,7 @@ class eZXMLInputParser
                 }
                 else
                 {
-                    $element->setAttribute( $qualifiedName, $value );
+                    $element->setAttribute( $qualifiedName,  htmlspecialchars_decode( $value ) );
                 }
             }
         }
@@ -743,41 +782,8 @@ class eZXMLInputParser
             return $text;
         }
         // Convert other HTML entities to the current charset characters.
-        $codec = eZTextCodec::instance( 'unicode', false );
-        $pos = 0;
-        $domString = "";
-        while ( $pos < strlen( $text ) - 1 )
-        {
-            $startPos = $pos;
-            while( !( $text[$pos] == '&' && $text[$pos + 1] == '#' ) && $pos < strlen( $text ) - 1 )
-            {
-                $pos++;
-            }
-
-            $domString .= substr( $text, $startPos, $pos - $startPos );
-
-            if ( $pos < strlen( $text ) - 1 )
-            {
-                $endPos = strpos( $text, ';', $pos + 2 );
-                if ( $endPos === false )
-                {
-                    $convertedText .= '&#';
-                    $pos += 2;
-                    continue;
-                }
-
-                $code = substr( $text, $pos + 2, $endPos - ( $pos + 2 ) );
-                $char = $codec->convertString( array( $code ) );
-
-                $pos = $endPos + 1;
-                $domString .= $char;
-            }
-            else
-            {
-                $domString .= substr( $text, $pos, 2 );
-            }
-        }
-        return $domString;
+        $convmap = array( 0x0, 0x2FFFF, 0, 0xFFFF );
+        return mb_decode_numericentity( $text, $convmap, 'UTF-8' );
     }
 
     /*!

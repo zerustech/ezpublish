@@ -1,34 +1,12 @@
 <?php
-//
-// $Id$
-//
-// Definition of eZINI class
-//
-// Created on: <12-Feb-2002 14:06:45 bf>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * File containing the eZINI class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package lib
+ */
 
 /*!
   \class eZINI ezini.php
@@ -37,8 +15,6 @@
 
   The most common way of using it is.
   \code
-  // include the file
-  //include_once( "classes/ezinifile.php" );
 
   $ini = eZINI::instance( "site.ini" );
 
@@ -68,13 +44,6 @@
 class eZINI
 {
     /**
-     * Constant to signal ini debug mode for ini development
-     *
-     * @var bool
-     */
-    const DEBUG_INTERNALS = false;
-
-    /**
      * Constant path to directory for configuration cache
      *
      * @var string
@@ -88,20 +57,102 @@ class eZINI
      */
     const CONFIG_CACHE_REV = 2;
 
-    // set EZP_INI_FILEMTIME_CHECK constant to false to improve performance by
-    // not checking modified time on ini files. You can also set it to a string, the name
-    // of a ini file you still want to check modified time on, best example would be to
-    // set it to 'site.ini' to make the system still check that but not the rest.
+
+    /**
+     * Fake path of injected settings used to differentiate those from default,
+     * override, extension, ...
+     *
+     * @var string
+     */
+    const INJECTED_PATH = 'injected';
+
+    /**
+     * Set EZP_INI_FILEMTIME_CHECK constant to false to improve performance by
+     * not checking modified time on ini files. You can also set it to a string, the name
+     * of a ini file you still want to check modified time on, best example would be to
+     * set it to 'site.ini' to make the system still check that but not the rest.
+     *
+     * @var null|bool
+     */
     static protected $checkFileMtime = null;
 
-    // set EZP_INI_FILE_PERMISSION constant to the permissions you want saved
-    // ini and cache files to have.
+    /**
+     * set EZP_INI_FILE_PERMISSION constant to the permissions you want saved
+     * ini and cache files to have.
+     *
+     * @var null|int
+     */
     static protected $filePermission = null;
 
-    /*!
-      Initialization of object;
-    */
-    function eZINI( $fileName = 'site.ini', $rootDir = '', $useTextCodec = null, $useCache = null, $useLocalOverrides = null, $directAccess = false, $addArrayDefinition = false )
+    /**
+     * Array of eZINI instances
+     *
+     * @var array(eZINI)
+     */
+    static protected $instances = array();
+
+    /**
+     * Contains whether INI cache is globally enabled.
+     *
+     * @var bool
+     */
+    static protected $cacheEnabled = true;
+
+    /**
+     * Contains whether internals debugging is enabled.
+     *
+     * @var bool
+     */
+    static protected $debugEnabled = false;
+
+    /**
+     * Contains whether textcodec conversion  is enabled.
+     *
+     * @var bool
+     */
+    static protected $textCodecEnabled = true;
+
+    /**
+     * Contains injected at runtime settings that overrides
+     * any other value found in local .ini and override files.
+     * Structure:
+     * eZINI::$injectedSettings['site.ini'][Section][Variable]
+     *
+     * @see eZINI::injectSettings()
+     * @see eZINI::variable()
+     * @var array
+     */
+    static protected $injectedSettings = array();
+
+    /**
+     * Settings injected at runtime that are merged with
+     * other *array* value found in local .ini and override files.
+     * Structure:
+     * eZINI::$injectedSettings['site.ini'][Section][Variable]
+     *
+     * Applies after and on top of self::$injectedSettings
+     *
+     * @see eZINI::injectMergeSettings()
+     * @see eZINI::variable()
+     * @var array
+     */
+    static protected $injectedMergeSettings = array();
+
+    /**
+     * Initialization of eZINI object
+     *
+     * Enter description here ...
+     * @param string $fileName
+     * @param string $rootDir
+     * @param null|bool $useTextCodec
+     * @param null|bool $useCache
+     * @param null|bool $useLocalOverrides
+     * @param bool $directAccess
+     * @param bool $addArrayDefinition
+     * @param bool $load @since 4.5 Lets you disable automatic loading of ini values in
+     *                   cases where changes on instance will be done first.
+     */
+    public function __construct( $fileName = 'site.ini', $rootDir = '', $useTextCodec = null, $useCache = null, $useLocalOverrides = null, $directAccess = false, $addArrayDefinition = false, $load = true )
     {
         $this->Charset = 'utf8';
         if ( $fileName == '' )
@@ -109,13 +160,13 @@ class eZINI
         if ( $rootDir !== false && $rootDir == '' )
             $rootDir = 'settings';
         if ( $useCache === null )
-            $useCache = eZINI::isCacheEnabled();
+            $useCache = self::isCacheEnabled();
         if ( eZINI::isNoCacheAdviced() )
         {
             $useCache = false;
         }
         if ( $useTextCodec === null )
-            $useTextCodec = eZINI::isTextCodecEnabled();
+            $useTextCodec = self::isTextCodecEnabled();
 
         $this->UseTextCodec = $useTextCodec;
         $this->Codec = null;
@@ -146,13 +197,14 @@ class eZINI
 
         if ( self::$filePermission === null )
         {
-	        if ( defined( 'EZP_INI_FILE_PERMISSION' ) )
-	            self::$filePermission = EZP_INI_FILE_PERMISSION;
-	        else
-	            self::$filePermission = 0666;
+            if ( defined( 'EZP_INI_FILE_PERMISSION' ) )
+                self::$filePermission = EZP_INI_FILE_PERMISSION;
+            else
+                self::$filePermission = 0666;
         }
 
-        $this->load();
+        if ( $load )
+            $this->load();
     }
 
     /*!
@@ -163,23 +215,23 @@ class eZINI
         return $this->FileName;
     }
 
-    /*!
-     \static
-     \return true if INI cache is enabled globally, the default value is true.
-     Change this setting with setIsCacheEnabled.
-    */
+    /**
+     * Returns whether INI cache is enabled globally, by default it is true.
+     *
+     * @see setIsCacheEnabled().
+     *
+     * @return bool
+     */
     static function isCacheEnabled()
     {
-        if ( !isset( $GLOBALS['eZINICacheEnabled'] ) )
-             $GLOBALS['eZINICacheEnabled'] = true;
-         return $GLOBALS['eZINICacheEnabled'];
+         return self::$cacheEnabled;
     }
 
     /*!
      \return true if cache is not adviced to be used.
      \note The no-cache-adviced flag might not be modified in time for site.ini and some other important files to be affected.
     */
-    function isNoCacheAdviced()
+    static function isNoCacheAdviced()
     {
         if ( !isset( $GLOBALS['eZSiteBasics'] ) )
             return false;
@@ -189,58 +241,69 @@ class eZINI
         return $siteBasics['no-cache-adviced'];
     }
 
-    /*!
-     \static
-     Sets whether caching is enabled for INI files or not. This setting is global
-     and can be overriden in the instance() function.
-    */
-    static function setIsCacheEnabled( $cache )
+    /**
+     * Sets whether caching is enabled for INI files or not. This setting is global
+     * and can be overriden in the instance() function.
+     *
+     * @see isCacheEnabled().
+     *
+     * @param bool $enabled
+     */
+    static function setIsCacheEnabled( $enabled )
     {
-        $GLOBALS['eZINICacheEnabled'] = $cache;
+        self::$cacheEnabled = (bool)$enabled;
     }
 
-    /*!
-     \static
-     \return true if debugging of internals is enabled, this will display
-     which files are loaded and when cache files are created.
-      Set the option with setIsDebugEnabled().
-    */
+    /**
+     * Returns whether debugging of internals is enabled.
+     *
+     * This will display which files are loaded an when cache files are created.
+     *
+     * @see setIsDebugEnabled()
+     *
+     * @return bool
+     */
     static function isDebugEnabled()
     {
-        if ( !isset( $GLOBALS['eZINIDebugInternalsEnabled'] ) )
-             $GLOBALS['eZINIDebugInternalsEnabled'] = eZINI::DEBUG_INTERNALS;
-        return $GLOBALS['eZINIDebugInternalsEnabled'];
+        return self::$debugEnabled;
     }
 
-    /*!
-     \static
-     Sets whether internal debugging is enabled or not.
-    */
-    static function setIsDebugEnabled( $debug )
+    /**
+     * Sets whether internal debugging is enabled or not. This setting is global
+     * and can be overriden in the instance() function.
+     *
+     * @see isDebugEnabled().
+     *
+     * @param bool $enabled
+     */
+    static function setIsDebugEnabled( $enabled )
     {
-        $GLOBALS['eZINIDebugInternalsEnabled'] = $debug;
+        self::$debugEnabled = (bool)$enabled;
     }
 
-    /*!
-     \static
-     \return true if textcodecs is to be used, this will use the eZTextCodec class
-             in the eZI18N library for text conversion.
-      Set the option with setIsTextCodecEnabled().
-    */
+    /**
+     * Returns whether textcodecs is to be used, this will use the eZTextCodec
+     * class in the eZI18N library for text conversion.
+     *
+     * @see setIsTextCodecEnabled()
+     *
+     * @return bool
+     */
     static function isTextCodecEnabled()
     {
-        if ( !isset( $GLOBALS['eZINITextCodecEnabled'] ) )
-             $GLOBALS['eZINITextCodecEnabled'] = true;
-        return $GLOBALS['eZINITextCodecEnabled'];
+        return self::$textCodecEnabled;
     }
 
-    /*!
-     \static
-     Sets whether textcodec conversion is enabled or not.
-    */
-    static function setIsTextCodecEnabled( $codec )
+    /**
+     * Sets whether textcodec conversion is enabled or not.
+     *
+     * @see isTextCodecEnabled().
+     *
+     * @param bool $enabled
+     */
+    static function setIsTextCodecEnabled( $enabled )
     {
-        $GLOBALS['eZINITextCodecEnabled'] = $codec;
+        self::$textCodecEnabled = (bool)$enabled;
     }
 
     /**
@@ -273,6 +336,8 @@ class eZINI
             $fileName = "site.ini";
         if ( $rootDir == "" )
             $rootDir = "settings";
+        if ( $rootDir[0] !== "/" )
+            $rootDir = __DIR__ . "/../../../" . $rootDir;
         if ( file_exists( $rootDir . '/' . $fileName ) )
             return true;
         else if ( file_exists( $rootDir . '/' . $fileName . '.append.php' ) )
@@ -282,12 +347,13 @@ class eZINI
         return false;
     }
 
-    /*!
-     Tries to load the ini file specified in the constructor or instance() function.
-     If cache files should be used and a cache file is found it loads that instead.
-     Set \a $reset to false if you don't want to reset internal data.
-    */
-    function load( $reset = true )
+    /**
+     * Tries to load the ini file specified in the constructor or instance() function.
+     * If cache files should be used and a cache file is found it loads that instead.
+     *
+     * @param bool $reset Reset ini values on instance
+     */
+    public function load( $reset = true )
     {
         if ( $this->UseCache )
         {
@@ -299,12 +365,14 @@ class eZINI
         }
     }
 
-    /*!
-     Tries to load the ini file placement specified in the constructor or instance() function.
-     If cache files should be used and a cache file is found it loads that instead.
-     Set \a $reset to false if you don't want to reset internal data.
-    */
-    function loadPlacement( $reset = true )
+    /**
+     * Tries to load the ini file placement specified in the constructor or instance() function.
+     * If cache files should be used and a cache file is found it loads that instead.
+     *
+     * @since 5.0 takes injected settings into account
+     * @param bool $reset Reset ini values on instance
+     */
+    public function loadPlacement( $reset = true )
     {
         if ( $this->UseCache )
         {
@@ -313,6 +381,48 @@ class eZINI
         else
         {
             $this->parse( false, false, $reset, true );
+        }
+        if ( isset( self::$injectedSettings[$this->FileName] ) )
+        {
+            foreach ( self::$injectedSettings[$this->FileName] as $blockName => $variables )
+            {
+                foreach ( $variables as $varName => $varValue )
+                {
+                    if ( is_array( $varValue ) )
+                    {
+                        $this->BlockValuesPlacement[$blockName][$varName] = array_fill_keys(
+                            array_keys( $varValue ),
+                            self::INJECTED_PATH
+                        );
+                    }
+                    else
+                    {
+                        $this->BlockValuesPlacement[$blockName][$varName] = self::INJECTED_PATH;
+                    }
+                }
+            }
+        }
+
+        if ( isset( self::$injectedMergeSettings[$this->FileName] ) )
+        {
+            foreach ( self::$injectedMergeSettings[$this->FileName] as $blockName => $variables )
+            {
+                foreach ( $variables as $varName => $varValue )
+                {
+                    if ( !is_array( $varValue ) || !is_array( $this->BlockValuesPlacement[$blockName][$varName] ) )
+                    {
+                        throw new RuntimeException( "injected-merge-settings can only reference and contain array values" );
+                    }
+
+                    $this->BlockValuesPlacement[$blockName][$varName] = array_merge(
+                        $this->BlockValuesPlacement[$blockName][$varName],
+                        array_fill_keys(
+                            array_keys( $varValue ),
+                            self::INJECTED_PATH
+                        )
+                    );
+                }
+            }
         }
     }
 
@@ -324,10 +434,11 @@ class eZINI
     */
     function findInputFiles( &$inputFiles, &$iniFile )
     {
+        $iniFile = __DIR__ . "/../../../";
         if ( $this->RootDir !== false )
-            $iniFile = eZDir::path( array( $this->RootDir, $this->FileName ) );
+            $iniFile .= eZDir::path( array( $this->RootDir, $this->FileName ) );
         else
-            $iniFile = eZDir::path( array( $this->FileName ) );
+            $iniFile .= eZDir::path( array( $this->FileName ) );
 
         $inputFiles = array();
 
@@ -420,17 +531,21 @@ class eZINI
         return $filePreFix[0] . '-' . md5( $cacheFileName ) . '.php';
     }
 
-    /*!
-      \private
-      Will load a cached version of the ini file if it exists,
-      if not it will parse the original file and create the cache file.
-    */
+    /**
+     * Will load a cached version of the ini file if it exists,
+     * if not it will parse the original file and create the cache file.
+     *
+     * @access protected
+     * @internal Please use {@link eZINI::load()} or {@link eZINI::loadPlacement()}
+     * @param bool $reset Reset ini values on instance
+     * @param bool $placement Load cache for placment info, not the ini values themself.
+     */
     function loadCache( $reset = true, $placement = false )
     {
-        eZDebug::accumulatorStart( 'ini', 'ini_load', 'Load cache' );
+        eZDebug::accumulatorStart( 'ini', 'Ini load', 'Load cache' );
         if ( $reset )
             $this->reset();
-        $cachedDir = self::CONFIG_CACHE_DIR;
+        $cachedDir = __DIR__ . "/../../../" . self::CONFIG_CACHE_DIR;
 
         $fileName = $this->cacheFileName( $placement );
         $cachedFile = $cachedDir . $fileName;
@@ -446,21 +561,21 @@ class eZINI
         $data = false;// this will contain cache data if cache data is valid
         if ( file_exists( $cachedFile ) )
         {
-            if ( eZINI::isDebugEnabled() )
+            if ( self::isDebugEnabled() )
                 eZDebug::writeNotice( "Loading cache '$cachedFile' for file '" . $this->FileName . "'", __METHOD__ );
 
             include( $cachedFile );
 
             if ( !isset( $data['rev'] ) || $data['rev'] != eZINI::CONFIG_CACHE_REV )
             {
-                if ( eZINI::isDebugEnabled() )
+                if ( self::isDebugEnabled() )
                     eZDebug::writeNotice( "Old structure in cache file used, recreating '$cachedFile' to new structure", __METHOD__ );
                 $data = false;
                 $this->reset();
             }
             else if ( self::$checkFileMtime === true || self::$checkFileMtime === $this->FileName )
             {
-                eZDebug::accumulatorStart( 'ini_check_mtime', 'ini_load', 'Check MTime' );
+                eZDebug::accumulatorStart( 'ini_check_mtime', 'Ini load', 'Check MTime' );
                 $currentTime = time();
                 $cacheCreatedTime = strtotime( $data['created'] );
                 $iniFile = $data['file'];// used by findInputFiles further down
@@ -504,7 +619,7 @@ class eZINI
         {
             if ( !isset( $inputFiles ) )// use $inputFiles from cache if defined
             {
-                eZDebug::accumulatorStart( 'ini_find_files', 'ini_load', 'Find INI Files' );
+                eZDebug::accumulatorStart( 'ini_find_files', 'Ini load', 'Find INI Files' );
                 $this->findInputFiles( $inputFiles, $iniFile );
                 eZDebug::accumulatorStop( 'ini_find_files' );
                 if ( count( $inputFiles ) === 0 )
@@ -514,10 +629,10 @@ class eZINI
                 }
             }
 
-            eZDebug::accumulatorStart( 'ini_files_parse', 'ini_load', 'Parse' );
+            eZDebug::accumulatorStart( 'ini_files_parse', 'Ini load', 'Parse' );
             $this->parse( $inputFiles, $iniFile, false, $placement );
             eZDebug::accumulatorStop( 'ini_files_parse' );
-            eZDebug::accumulatorStart( 'ini_files_save', 'ini_load', 'Save Cache' );
+            eZDebug::accumulatorStart( 'ini_files_save', 'Ini load', 'Save Cache' );
             $cacheSaved = $this->saveCache( $cachedDir, $cachedFile, $placement ? $this->BlockValuesPlacement : $this->BlockValues, $inputFiles, $iniFile );
             eZDebug::accumulatorStop( 'ini_files_save' );
 
@@ -581,10 +696,17 @@ class eZINI
         fclose( $fp );
 
         // Rename cache temp file to final desitination and set permissions
-        eZFile::rename( $tmpCacheFile, $cachedFile );
-        chmod( $cachedFile, self::$filePermission );
+        if( eZFile::rename( $tmpCacheFile, $cachedFile ) )
+        {
+            chmod( $cachedFile, self::$filePermission );
+        }
 
-        if ( eZINI::isDebugEnabled() )
+        // EZP-22579: php5.5 opcache caches php files very aggressively & needs direct call on invalidation in this case
+        clearstatcache( true, $cachedFile );
+        if ( function_exists( 'opcache_invalidate' ) )
+            opcache_invalidate( $cachedFile, true );
+
+        if ( self::isDebugEnabled() )
             eZDebug::writeNotice( "Wrote cache file '$cachedFile'", __METHOD__ );
 
         return true;
@@ -600,7 +722,7 @@ class eZINI
         if ( $inputFiles === false or
              $iniFile === false )
         {
-            eZDebug::accumulatorStart( 'ini_parse_find_files', 'ini_load', 'Find INI Files2' );
+            eZDebug::accumulatorStart( 'ini_parse_find_files', 'Ini load', 'Find INI Files2' );
             $this->findInputFiles( $inputFiles, $iniFile );
             eZDebug::accumulatorStop( 'ini_parse_find_files' );
         }
@@ -623,7 +745,7 @@ class eZINI
      */
     function parseFile( $file, $placement = false )
     {
-        if ( eZINI::isDebugEnabled() )
+        if ( self::isDebugEnabled() )
             eZDebug::writeNotice( "Parsing file '$file'", __METHOD__ );
 
         $contents = file_get_contents( $file );
@@ -669,7 +791,7 @@ class eZINI
             {
                 eZDebug::accumulatorStart( 'ini_conversion', false, 'INI string conversion' );
                 $contents = $this->Codec->convertString( $contents );
-                eZDebug::accumulatorStop( 'ini_conversion', false, 'INI string conversion' );
+                eZDebug::accumulatorStop( 'ini_conversion' );
             }
         }
         else
@@ -1141,7 +1263,7 @@ class eZINI
 
         if ( !isset( $dirs[$scope] ) )
         {
-            eZDebug::writeWarning( "Undefined override dir scope: '$scope' with dir: '$dir'", __METHOD__ );
+            eZDebug::writeWarning( "Undefined override dir scope: '$scope'", __METHOD__ );
             $scope = 'extension';
         }
 
@@ -1169,7 +1291,7 @@ class eZINI
      */
     function prependOverrideDir( $dir, $globalDir = false, $identifier = false, $scope = null )
     {
-        if ( eZINI::isDebugEnabled() )
+        if ( self::isDebugEnabled() )
             eZDebug::writeNotice( "Prepending override dir '$dir'", "eZINI" );
 
         if ( $this->UseLocalOverrides == true )
@@ -1188,6 +1310,8 @@ class eZINI
         }
         else
         {
+            // array_merge() is to be used below instead of the "+" operator because the
+            // position of elements in this mixed hash/list is important!
             if ( $identifier )
                 $dirs[$scope] = array_merge( array( $identifier => array( $dir, $globalDir ) ), $dirs[$scope] );
             else
@@ -1211,7 +1335,7 @@ class eZINI
      */
     function appendOverrideDir( $dir, $globalDir = false, $identifier = false, $scope = null )
     {
-        if ( eZINI::isDebugEnabled() )
+        if ( self::isDebugEnabled() )
             eZDebug::writeNotice( "Appending override dir '$dir'", __METHOD__ );
 
         if ( $this->UseLocalOverrides == true )
@@ -1285,73 +1409,147 @@ class eZINI
         return true;
     }
 
-    /*!
-      Reads a variable from the ini file.
-      false is returned if the variable was not found.
-    */
+    /**
+     * Reads a variable from the ini file. Returns false, if the variable was
+     * not found.
+     *
+     * @since 5.0 takes injected settings into account
+     * @param string $blockName
+     * @param string $varName
+     * @return mixed
+     */
     function variable( $blockName, $varName )
     {
         if ( isset( $this->BlockValues[$blockName][$varName] ) )
-            return $this->BlockValues[$blockName][$varName];
-        else if ( !isset( $this->BlockValues[$blockName] ) )
+        {
+            $value = $this->BlockValues[$blockName][$varName];
+        }
+
+        if ( isset( self::$injectedSettings[$this->FileName][$blockName][$varName] ) )
+        {
+            $value = self::$injectedSettings[$this->FileName][$blockName][$varName];
+        }
+
+        if ( isset( $value ) && isset( self::$injectedMergeSettings[$this->FileName][$blockName][$varName] ) )
+        {
+            if ( !is_array( $value ) || !is_array( self::$injectedMergeSettings[$this->FileName][$blockName][$varName] ) )
+            {
+                throw new RuntimeException( "injected-merge-settings can only reference and contain array values" );
+            }
+            $value = array_merge( $value, self::$injectedMergeSettings[$this->FileName][$blockName][$varName] );
+        }
+
+        if ( isset( $value ) )
+            return $value;
+
+        if ( !isset( $this->BlockValues[$blockName] ) )
             eZDebug::writeError( "Undefined group: '$blockName' in " . $this->FileName, __METHOD__ );
         else
             eZDebug::writeError( "Undefined variable: '$varName' in group '$blockName' in " . $this->FileName, __METHOD__ );
         return false;
     }
 
-    /*!
-      Reads multiple variables from the ini file.
-      false is returned if the variable was not found.
-    */
+    /**
+     * Reads multiple variables from the ini file. Returns false, if the block
+     * does not exist.
+     *
+     * @since 5.0 takes injected settings into account
+     * @param string $blockName
+     * @param string $varNames
+     * @param array $signatures
+     * @return false|array
+     */
     function variableMulti( $blockName, $varNames, $signatures = array() )
     {
         $ret = array();
 
-        if ( !isset( $this->BlockValues[$blockName] ) )
+        if ( !isset( $this->BlockValues[$blockName] )
+            && !isset( self::$injectedSettings[$this->FileName][$blockName] )
+        )
         {
             eZDebug::writeError( "Undefined group: '$blockName' in " . $this->FileName, "eZINI" );
             return false;
         }
         foreach ( $varNames as $key => $varName )
         {
+            $ret[$key] = null;
+
             if ( isset( $this->BlockValues[$blockName][$varName] ) )
             {
                 $ret[$key] = $this->BlockValues[$blockName][$varName];
-
-                if ( isset( $signatures[$key] ) )
-                {
-                    switch ( $signatures[$key] )
-                    {
-                        case 'enabled':
-                            $ret[$key] = $this->BlockValues[$blockName][$varName] == 'enabled';
-                            break;
-                    }
-                }
             }
-            else
+            if ( isset( self::$injectedSettings[$this->FileName][$blockName][$varName] ) )
             {
-                $ret[] = null;
+                $ret[$key] = self::$injectedSettings[$this->FileName][$blockName][$varName];
+            }
+            if ( isset( self::$injectedMergeSettings[$this->FileName][$blockName][$varName] ) )
+            {
+                if ( !is_array( $ret[$key] ) || !is_array( self::$injectedMergeSettings[$this->FileName][$blockName][$varName] ) )
+                {
+                    throw new RuntimeException( "injected-merge-settings can only reference and contain array values" );
+                }
+                $ret[$key] = array_merge(
+                    $this->BlockValues[$blockName][$varName],
+                    self::$injectedMergeSettings[$this->FileName][$blockName][$varName]
+                );
+            }
+
+            if ( isset( $ret[$key] ) && isset( $signatures[$key] ) )
+            {
+                switch ( $signatures[$key] )
+                {
+                    case 'enabled':
+                        $ret[$key] = $this->BlockValues[$blockName][$varName] == 'enabled';
+                        break;
+                }
             }
         }
 
         return $ret;
     }
 
-    /*!
-      Checks if a variable is set. Returns true if the variable exists, false if not.
-    */
+    /**
+     * Checks if a variable is set.
+     *
+     * @since 5.0 also checks in the injected settings
+     * @param string $blockName
+     * @param string $varName
+     * @return bool
+     */
     function hasVariable( $blockName, $varName )
     {
-        return isset( $this->BlockValues[$blockName][$varName] );
+        // 1. Check if the variable is set in either injected or regular settings.
+        if (
+            !isset( self::$injectedSettings[$this->FileName][$blockName][$varName] )
+            && !isset( $this->BlockValues[$blockName][$varName] )
+        )
+        {
+            return false;
+        }
+
+        // 2. Check if injected setting isn't strictly false (false being the default value when a variable doesn't exist).
+        if (
+            isset( self::$injectedSettings[$this->FileName][$blockName][$varName] )
+            && self::$injectedSettings[$this->FileName][$blockName][$varName] === false
+        )
+        {
+            return false;
+        }
+
+        return true;
     }
 
-    /*!
-      Check if a block/section is set. Returns true if the section/block is set, false if not
-    */
+    /**
+     * Checks if the group $blockName exists
+     *
+     * @since 5.0 also checks in the injected settings
+     * @param string $blockName
+     * @return boolean
+     */
     function hasSection( $sectionName )
     {
-        return isset( $this->BlockValues[$sectionName] );
+        return ( isset( $this->BlockValues[$sectionName] )
+            || isset( self::$injectedSettings[$this->FileName][$sectionName] ) );
     }
 
     /*!
@@ -1363,16 +1561,17 @@ class eZINI
                  $this->ModifiedBlockValues[$blockName][$varName] );
     }
 
-    /*!
-      Reads a variable from the ini file. The variable
-      will be returned as an array. ; is used as delimiter.
+    /**
+     * Reads a variable from the ini file or injected settings.
+     * The variable will be returned as an array. ; is used as delimiter.
+     *
+     * @param string $blockName
+     * @param string $varName
+     * @return array
      */
     function variableArray( $blockName, $varName )
     {
-        if ( isset( $this->BlockValues[$blockName][$varName] ) )
-            $ret = $this->BlockValues[$blockName][$varName];
-        else
-            return false;
+        $ret = $this->variable( $blockName, $varName );
 
         if ( is_array( $ret ) )
         {
@@ -1391,18 +1590,26 @@ class eZINI
         return $ret;
     }
 
-    /*!
-      Checks if group $blockName is set. Returns true if the group exists, false if not.
-    */
+    /**
+     * Checks if the group $blockName exists
+     *
+     * @param string $blockName
+     * @return boolean
+     */
     function hasGroup( $blockName )
     {
-        return isSet( $this->BlockValues[$blockName] );
+        return $this->hasSection( $blockName );
     }
 
-    /*!
-      Fetches a variable group and returns it as an associative array.
+    /**
+     * Fetches a variable group and returns it as an associative array.
+     *
+     * @since 5.0 takes injected settings into account
+     * @since 5.0 does not return the array by reference anymore
+     * @param string $blockName
+     * @return array
      */
-    function &group( $blockName )
+    function group( $blockName )
     {
         if ( !isset( $this->BlockValues[$blockName] ) )
         {
@@ -1410,7 +1617,17 @@ class eZINI
             $ret = null;
             return $ret;
         }
-        $ret = $this->BlockValues[$blockName];
+        if ( isset( self::$injectedSettings[$this->FileName][$blockName] ) )
+        {
+            $ret = array_merge(
+                $this->BlockValues[$blockName],
+                self::$injectedSettings[$this->FileName][$blockName]
+            );
+        }
+        else
+        {
+            $ret = $this->BlockValues[$blockName];
+        }
 
         return $ret;
     }
@@ -1457,11 +1674,49 @@ class eZINI
             $this->removeGroup( $blockName );
     }
 
-    /*!
-     Fetches all defined groups and returns them as an associative array
-    */
-    function &groups()
+    /**
+     * Fetches all defined groups and returns them as an associative array
+     *
+     * @since 5.0 does not return the array by reference anymore
+     * @since 5.0 takes injected settings into account
+     * @return array
+     */
+    function groups()
     {
+        if ( isset( self::$injectedSettings[$this->FileName] ) || isset( self::$injectedMergeSettings[$this->FileName] ) )
+        {
+            $result = $this->BlockValues;
+            foreach ( $result as $blockName => $vars )
+            {
+                foreach ( $vars as $varName => $varValue )
+                {
+                    if ( isset( self::$injectedSettings[$this->FileName][$blockName][$varName] ) )
+                    {
+                        $result[$blockName][$varName] = self::$injectedSettings[$this->FileName][$blockName][$varName];
+                    }
+                    if ( isset( self::$injectedMergeSettings[$this->FileName][$blockName][$varName] ) )
+                    {
+                        if ( !is_array( $result[$blockName][$varName] ) || !is_array( self::$injectedMergeSettings[$this->FileName][$blockName][$varName] ) )
+                        {
+                            throw new RuntimeException( "injected-merge-settings can only reference and contain array values" );
+                        }
+
+                        $result[$blockName][$varName] = array_merge(
+                            $varValue,
+                            self::$injectedMergeSettings[$this->FileName][$blockName][$varName]
+                        );
+                    }
+                }
+            }
+            foreach ( self::$injectedSettings[$this->FileName] as $blockName => $vars )
+            {
+                if ( !isset( $result[$blockName] ) )
+                {
+                    $result[$blockName] = $vars;
+                }
+            }
+            return $result;
+        }
         return $this->BlockValues;
     }
 
@@ -1477,10 +1732,22 @@ class eZINI
         return $this->BlockValuesPlacement;
     }
 
-    function &findSettingPlacement( $path )
+    /**
+     * Gives you the location of a ini file based on it's path, format is same as used internally
+     * for $identifer for override dirs-
+     * Eg: default / ext-siteaccess:<ext> / siteaccess / extension:<ext> / override / injected
+     *
+     * @since 5.0 returns 'injected' for injected settings
+     * @param string $path
+     * @return string
+     */
+    function findSettingPlacement( $path )
     {
-        if ( is_array( $path ) && count( $path ) )
+        if ( is_array( $path ) && isset( $path[0] ) )
             $path = $path[0];
+
+        // changing $path so that it's relative the root eZ Publish (legacy)
+        $path = str_replace( __DIR__ . "/../../../", "", $path );
         $exploded = explode( '/', $path );
         $directoryCount = count( $exploded );
         switch ( $directoryCount )
@@ -1501,11 +1768,18 @@ class eZINI
             break;
             case 6:
             {
-                $placement = 'ext-siteaccess:' . $exploded[4];
+                $placement = 'ext-siteaccess:' . $exploded[1];
             }
             break;
             default:
-                $placement = 'undefined';
+                if ( $path === self::INJECTED_PATH )
+                {
+                    $placement = 'injected';
+                }
+                else
+                {
+                    $placement = 'undefined';
+                }
             break;
         }
         return $placement;
@@ -1587,23 +1861,35 @@ class eZINI
         $this->ModifiedBlockValues[$blockName][$variableName] = true;
     }
 
-    /*!
-      Returns BlockValues, which is a nicely named Array
-    */
+    /**
+     * Returns BlockValues, which is a nicely named Array
+     *
+     * @return array
+     */
     function getNamedArray()
     {
+        if ( isset( self::$injectedSettings[$this->FileName] ) )
+        {
+            return array_merge(
+                $this->BlockValues,
+                self::$injectedSettings[$this->FileName]
+            );
+        }
         return $this->BlockValues;
     }
 
-    /*!
-     \static
-     \return true if the ini file \a $fileName has been loaded yet.
-    */
+    /**
+     * Returns whether the mentioned ini file has been loaded.
+     *
+     * @param string $fileName
+     * @param string $rootDir
+     * @param null|bool $useLocalOverrides default system setting if null
+     *
+     * @return bool
+     */
     static function isLoaded( $fileName = 'site.ini', $rootDir = 'settings', $useLocalOverrides = null )
     {
-        if ( isset( $GLOBALS["eZINIGlobalInstance-$rootDir-$fileName-$useLocalOverrides"] ) )
-            return true;
-        return false;
+        return isset( self::$instances["$rootDir-$fileName-$useLocalOverrides"] );
     }
 
     /**
@@ -1614,35 +1900,38 @@ class eZINI
      * Direct access is for accessing the filename directly in the specified path. .append and .append.php is automaticly added to filename
      * note: Use create() if you need to get a unique copy which you can alter.
      *
-     * @param $fileName string
-     * @param $rootDir string
-     * @param $useTextCodec null|bool default system setting if null
-     * @param $useCache null|bool default system setting if null
-     * @param $useLocalOverrides null|bool default system setting if null
-     * @param $directAccess bool
-     * @param $addArrayDefinition bool
+     * @param string $fileName
+     * @param string $rootDir
+     * @param null|bool $useTextCodec Default system setting if null (instance not used if not null!)
+     * @param null|bool $useCache Default system setting if null (instance not used if not null!)
+     * @param null|bool $useLocalOverrides Default system setting if null
+     * @param bool $directAccess Direct access to specific file instead of values from several (instance not used if true!)
+     * @param bool $addArrayDefinition @deprecated since version 4.5, use "new eZINI()" (instance not used if true!)
      * @return eZINI
      */
     static function instance( $fileName = 'site.ini', $rootDir = 'settings', $useTextCodec = null, $useCache = null, $useLocalOverrides = null, $directAccess = false, $addArrayDefinition = false )
     {
-        $globalsKey = "eZINIGlobalInstance-$rootDir-$fileName-$useLocalOverrides-$addArrayDefinition";
-
-        if ( !isset( $GLOBALS[$globalsKey] ) ||
-             !( $GLOBALS[$globalsKey] instanceof eZINI ) )
+        if ( $addArrayDefinition !== false  || $directAccess !== false || $useTextCodec !== null || $useCache !== null )
         {
-            $GLOBALS[$globalsKey] = new eZINI( $fileName, $rootDir, $useTextCodec, $useCache, $useLocalOverrides, $directAccess, $addArrayDefinition );
+            // Could have trown strict error here but will cause issues if ini system has not been setup yet..
+            return new eZINI( $fileName, $rootDir, $useTextCodec, $useCache, $useLocalOverrides, $directAccess, $addArrayDefinition );
         }
-        return $GLOBALS[$globalsKey];
+
+        $key = "$rootDir-$fileName-$useLocalOverrides";
+        if ( !isset( self::$instances[$key] ) )
+        {
+            self::$instances[$key] = new eZINI( $fileName, $rootDir, $useTextCodec, $useCache, $useLocalOverrides, $directAccess, $addArrayDefinition );
+        }
+        return self::$instances[$key];
     }
 
     /*!
      Fetches the ini file \a $fileName and returns the INI object for it.
      \note This will not use the override system or read cache files, this is a direct fetch from one file.
     */
-    static function &fetchFromFile( $fileName, $useTextCodec = null )
+    static function fetchFromFile( $fileName, $useTextCodec = null )
     {
-        $impl = new eZINI( $fileName, false, $useTextCodec, false, false, true );
-        return $impl;
+        return new eZINI( $fileName, false, $useTextCodec, false, false, true );
     }
 
     /**
@@ -1685,31 +1974,91 @@ class eZINI
         return $this->ReadOnlySettingsCheck;
     }
 
-    /*!
-     \static
-    */
-    static function resetGlobals(  $fileName = 'site.ini', $rootDir = 'settings', $useLocalOverrides = null )
+    /**
+     * Resets a specific instance of eZINI.
+     *
+     * @deprecated since 4.5, use resetInstance() instead
+     *
+     * @param string $fileName
+     * @param string $rootDir
+     * @param null|bool $useLocalOverrides default system setting if null
+     *
+     * @see resetInstance()
+     */
+    static function resetGlobals( $fileName = 'site.ini', $rootDir = 'settings', $useLocalOverrides = null )
     {
-        unset( $GLOBALS["eZINIGlobalInstance-$rootDir-$fileName-$useLocalOverrides"] );
+        self::resetInstance( $fileName, $rootDir, $useLocalOverrides );
+    }
+
+    /**
+     * Resets a specific instance of eZINI.
+     *
+     * @since 4.5
+     *
+     * @param string $fileName
+     * @param string $rootDir
+     * @param null|bool $useLocalOverrides default system setting if null
+     */
+    static function resetInstance( $fileName = 'site.ini', $rootDir = 'settings', $useLocalOverrides = null )
+    {
+        unset( self::$instances["$rootDir-$fileName-$useLocalOverrides"] );
     }
 
     /**
      * Reset all eZINI instances as well override dirs ( optional )
      *
+     * @deprecated since 4.5, use resetAllInstances() instead
+     *
      * @param bool $resetOverrideDirs Specify if you don't want to clear override dirs
+     *
+     * @see resetAllInstances()
      */
     static function resetAllGlobals( $resetGlobalOverrideDirs = true )
     {
-        foreach ( array_keys( $GLOBALS ) as $key )
-        {
-            if ( $key && strpos( $key, 'eZINIGlobalInstance-' ) === 0 )
-            {
-                unset( $GLOBALS[$key] );
-            }
-        }
+        self::resetAllInstances( $resetGlobalOverrideDirs );
+    }
+
+    /**
+     * Reset all eZINI instances as well override dirs ( optional )
+     *
+     * @since 4.5
+     *
+     * @param bool $resetOverrideDirs Specify if you don't want to clear override dirs
+     */
+    static function resetAllInstances( $resetGlobalOverrideDirs = true )
+    {
+        self::$instances = array();
 
         if ( $resetGlobalOverrideDirs )
             self::resetGlobalOverrideDirs();
+    }
+
+    /**
+     * Injects settings at runtime so that they override the content of local
+     * .ini files and the corresponding overrides.
+     *
+     * @since 5.0
+     * @param array $settings hash of settings organized under filename, block
+     *        and variable, for instance:
+     *        $settings['site.ini']['DatabaseSettings']['Server'] = '127.0.0.1';
+     */
+    static function injectSettings( array $settings )
+    {
+        self::$injectedSettings = $settings;
+    }
+
+    /**
+     * Injects merge settings at runtime.
+     * Work like $injectedSettings, but will *merge* the values instead of overwriting them.
+     *
+     * @since 5.3
+     * @param array $settings hash of settings organized under filename, block
+     *        and variable, for instance:
+     *        $settings['site.ini']['ActiveExtensions'] = 'myownextension';
+     */
+    static function injectMergeSettings( array $settings )
+    {
+        self::$injectedMergeSettings = $settings;
     }
 
     /// \privatesection

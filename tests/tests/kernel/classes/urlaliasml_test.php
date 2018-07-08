@@ -1,13 +1,14 @@
 <?php
 /**
- * File containing the eZURLAliasMlTest class
+ * File containing the eZURLAliasMLTest class
  *
- * @copyright Copyright (C) 1999-2010 eZ Systems AS. All rights reserved.
- * @license http://ez.no/licenses/gnu_gpl GNU GPLv2
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
  * @package tests
  */
 
-class eZURLAliasMlTest extends ezpDatabaseTestCase
+class eZURLAliasMLTest extends ezpDatabaseTestCase
 {
     public function __construct()
     {
@@ -192,13 +193,16 @@ class eZURLAliasMlTest extends ezpDatabaseTestCase
 
         $action = "eznode:" . mt_rand();
         $name = __FUNCTION__ . mt_rand();
+        
+        $engGB = eZContentLanguage::fetchByLocale( 'eng-GB' );
+        $norNO = eZContentLanguage::fetchByLocale( 'nor-NO' );
 
         // Create an english entry
-        $url1 = eZURLAliasML::create( $name . " en", $action, 0, 2 );
+        $url1 = eZURLAliasML::create( $name . " en", $action, 0, $engGB->attribute( 'id' ) );
         $url1->store();
 
         // Create a norwegian entry
-        $url2 = eZURLAliasML::create( $name . " no", $action, 0, 4 );
+        $url2 = eZURLAliasML::create( $name . " no", $action, 0, $norNO->attribute( 'id' ) );
         $url2->store();
 
         // Fetch the created entries. choosePrioritizedRow() wants rows from the
@@ -217,8 +221,8 @@ class eZURLAliasMlTest extends ezpDatabaseTestCase
         eZContentLanguage::clearPrioritizedLanguages();
         $row = eZURLAliasML::choosePrioritizedRow( $rows );
 
-        // The prioritzed language should be 'eng-GB' (lang_mask = 2)
-        self::assertEquals( 2, $row["lang_mask"] );
+        // The prioritzed language should be 'eng-GB'
+        self::assertEquals( $engGB->attribute( 'id' ), $row["lang_mask"] );
         // -------------------------------------------------------------------
 
 
@@ -231,8 +235,8 @@ class eZURLAliasMlTest extends ezpDatabaseTestCase
         eZContentLanguage::clearPrioritizedLanguages();
         $row = eZURLAliasML::choosePrioritizedRow( $rows );
 
-        // The prioritzed language should be 'nor-NO' (lang_mask = 4)
-        self::assertEquals( 4, $row["lang_mask"] );
+        // The prioritzed language should be 'nor-NO'
+        self::assertEquals( $norNO->attribute( 'id' ), $row["lang_mask"] );
         // -------------------------------------------------------------------
 
 
@@ -326,7 +330,7 @@ class eZURLAliasMlTest extends ezpDatabaseTestCase
 
         // ---------------------------------------------------------------- //
         // Not safe characters, all of these should be removed.
-        $e1 = " &;/:=?%[]()+#";
+        $e1 = " &;/:=?%[]()+#\t";
         $e1Result = "_1";
 
         // Safe characters. No char should be removed.

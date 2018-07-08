@@ -1,32 +1,12 @@
 <?php
-//
-// Definition of eZDateType class
-//
-// Created on: <26-Apr-2002 16:53:04 bf>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * File containing the eZDateType class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 /*!
   \class eZDateType ezdatetype.php
@@ -45,9 +25,9 @@ class eZDateType extends eZDataType
 
     const DEFAULT_CURRENT_DATE = 1;
 
-    function eZDateType()
+    public function __construct()
     {
-        $this->eZDataType( self::DATA_TYPE_STRING, ezpI18n::tr( 'kernel/classes/datatypes', "Date", 'Datatype name' ),
+        parent::__construct( self::DATA_TYPE_STRING, ezpI18n::tr( 'kernel/classes/datatypes', "Date", 'Datatype name' ),
                            array( 'serialize_supported' => true ) );
     }
 
@@ -119,21 +99,21 @@ class eZDateType extends eZDataType
             $year  = $http->postVariable( $base . '_date_year_' . $contentObjectAttribute->attribute( 'id' ) );
             $month = $http->postVariable( $base . '_date_month_' . $contentObjectAttribute->attribute( 'id' ) );
             $day   = $http->postVariable( $base . '_date_day_' . $contentObjectAttribute->attribute( 'id' ) );
-            $date = new eZDate();
             $contentClassAttribute = $contentObjectAttribute->contentClassAttribute();
 
             if ( ( $year == '' and $month == '' and $day == '' ) or
-                 !checkdate( $month, $day, $year ) or
-                 $year < 1970 )
+                 !checkdate( $month, $day, $year ) )
             {
-                $date->setTimeStamp( 0 );
+                $stamp = null;
             }
             else
             {
+                $date = new eZDate();
                 $date->setMDY( $month, $day, $year );
+                $stamp = $date->timeStamp();
             }
 
-            $contentObjectAttribute->setAttribute( 'data_int', $date->timeStamp() );
+            $contentObjectAttribute->setAttribute( 'data_int', $stamp );
             return true;
         }
         return false;
@@ -184,21 +164,21 @@ class eZDateType extends eZDataType
             $year  = $http->postVariable( $base . '_date_year_' . $contentObjectAttribute->attribute( 'id' ) );
             $month = $http->postVariable( $base . '_date_month_' . $contentObjectAttribute->attribute( 'id' ) );
             $day   = $http->postVariable( $base . '_date_day_' . $contentObjectAttribute->attribute( 'id' ) );
-            $date = new eZDate();
             $contentClassAttribute = $contentObjectAttribute->contentClassAttribute();
 
             if ( ( $year == '' and $month == '' and $day == '' ) or
-                 !checkdate( $month, $day, $year ) or
-                 $year < 1970 )
+                 !checkdate( $month, $day, $year ) )
             {
-                $date->setTimeStamp( 0 );
+                $stamp = null;
             }
             else
             {
+                $date = new eZDate();
                 $date->setMDY( $month, $day, $year );
+                $stamp = $date->timeStamp();
             }
 
-            $collectionAttribute->setAttribute( 'data_int', $date->timeStamp() );
+            $collectionAttribute->setAttribute( 'data_int', $stamp );
             return true;
         }
         return false;
@@ -270,7 +250,7 @@ class eZDateType extends eZDataType
     */
     function metaData( $contentObjectAttribute )
     {
-        return $contentObjectAttribute->attribute( 'data_int' );
+        return (int)$contentObjectAttribute->attribute( 'data_int' );
     }
 
     /*!
@@ -279,11 +259,17 @@ class eZDateType extends eZDataType
     */
     function toString( $contentObjectAttribute )
     {
-        return $contentObjectAttribute->attribute( 'data_int' );
+        $stamp = $contentObjectAttribute->attribute( 'data_int' );
+        return $stamp === null ? '' : $stamp;
     }
 
     function fromString( $contentObjectAttribute, $string )
     {
+        if ( empty( $string ) )
+        {
+            $string = null;
+        }
+
         return $contentObjectAttribute->setAttribute( 'data_int', $string );
     }
 
@@ -293,13 +279,13 @@ class eZDateType extends eZDataType
     function title( $contentObjectAttribute, $name = null )
     {
         $locale = eZLocale::instance();
-        $retVal = $contentObjectAttribute->attribute( "data_int" ) == 0 ? '' : $locale->formatDate( $contentObjectAttribute->attribute( "data_int" ) );
+        $retVal = $contentObjectAttribute->attribute( "data_int" ) === null ? '' : $locale->formatDate( $contentObjectAttribute->attribute( "data_int" ) );
         return $retVal;
     }
 
     function hasObjectAttributeContent( $contentObjectAttribute )
     {
-        return $contentObjectAttribute->attribute( "data_int" ) != 0;
+        return $contentObjectAttribute->attribute( "data_int" ) !== null;
     }
 
     function sortKey( $contentObjectAttribute )

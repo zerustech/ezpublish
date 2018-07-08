@@ -1,35 +1,12 @@
 <?php
-//
-// Definition of eZContentCacheManager class
-//
-// Created on: <23-Sep-2004 12:52:38 jb>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
-
-/*! \file
-*/
+/**
+ * File containing the eZContentCacheManager class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 /*!
   \class eZContentCacheManager ezcontentcachemanager.php
@@ -53,8 +30,51 @@ class eZContentCacheManager
     const CLEAR_RELATING_CACHE = 4;
     const CLEAR_KEYWORD_CACHE  = 8;
     const CLEAR_SIBLINGS_CACHE = 16;
-    const CLEAR_ALL_CACHE      = 31;
+    const CLEAR_CHILDREN_CACHE = 32;
+    const CLEAR_ALL_CACHE      = 63;
     const CLEAR_DEFAULT        = 15; // CLEAR_NODE_CACHE and CLEAR_PARENT_CACHE and CLEAR_RELATING_CACHE and CLEAR_KEYWORD_CACHE
+
+    /**
+     * Hash of additional NodeIDs to append the node list, for clearing view cache.
+     * Indexed by contentObjectID.
+     *
+     * @var array
+     */
+    private static $additionalNodeIDsPerObject = array();
+
+    /**
+     * Adds an additional NodeID to be appended to the node list for clearing view cache.
+     *
+     * @param int $contentObjectID
+     * @param int $additionalNodeID
+     */
+    public static function addAdditionalNodeIDPerObject( $contentObjectID, $additionalNodeID )
+    {
+        if ( !isset( self::$additionalNodeIDsPerObject[$contentObjectID] ) )
+        {
+            self::$additionalNodeIDsPerObject[$contentObjectID] = array();
+        }
+
+        self::$additionalNodeIDsPerObject[$contentObjectID][] = $additionalNodeID;
+    }
+
+    /**
+     * Appends additional node IDs.
+     *
+     * @param eZContentObject $contentObject
+     * @param array $nodeIDList
+     */
+    private static function appendAdditionalNodeIDs( eZContentObject $contentObject, &$nodeIDList )
+    {
+        $contentObjectId = $contentObject->attribute( 'id' );
+        if ( !isset( self::$additionalNodeIDsPerObject[$contentObjectId] ) )
+            return;
+
+        foreach ( self::$additionalNodeIDsPerObject[$contentObjectId] as $nodeID )
+        {
+            $nodeIDList[] = $nodeID;
+        }
+    }
 
     /*!
      \static
@@ -277,6 +297,30 @@ class eZContentCacheManager
         }
     }
 
+    /**
+     * For each node in $nodeList finds its children nodes and adds its ids to
+     * the $nodeIDList.
+     *
+     * @param array(eZContentObjectTreeNode) $nodeList
+     * @param array(int) $nodeIDList
+     */
+    public static function appendChildrenNodeIDs( &$nodeList, &$nodeIDList )
+    {
+        $params = array( 'Depth' => 1,
+                         'AsObject' => false );
+        foreach ( $nodeList as $node )
+        {
+            $childNodeList = eZContentObjectTreeNode::subTreeByNodeID( $params, $node->attribute( 'node_id' ) );
+            if ( !empty( $childNodeList ) )
+            {
+                foreach ( $childNodeList as $childNode )
+                {
+                    $nodeIDList[] = $childNode['node_id'];
+                }
+            }
+        }
+    }
+
     /*
      \static
      Reads 'viewcache.ini' file and determines relation between
@@ -343,42 +387,9 @@ class eZContentCacheManager
 
                             if ( in_array( 'siblings', $type ) )
                                 $info['clear_cache_type'] |= self::CLEAR_SIBLINGS_CACHE;
-                        }
-                    }
-                    else
-                    {
-                        // deprecated
-                        if ( $type == 'clear_all_caches' )
-                        {
-                            $info['clear_cache_type'] = self::CLEAR_ALL_CACHE;
-                        }
-                        else
-                        {
-                            if ( $type == 'clear_object_caches_only' ||
-                                 $type == 'clear_object_and_parent_nodes_caches' ||
-                                 $type == 'clear_object_and_relating_objects_caches' )
-                            {
-                                $info['clear_cache_type'] |= self::CLEAR_NODE_CACHE;
-                            }
 
-                            if ( $type == 'clear_object_and_parent_nodes_caches' ||
-                                 $type == 'clear_parent_nodes_caches_only' ||
-                                 $type == 'clear_parent_nodes_and_relating_caches' )
-                            {
-                                $info['clear_cache_type'] |= self::CLEAR_PARENT_CACHE;
-                            }
-
-                            if ( $type == 'clear_object_and_relating_objects_caches' ||
-                                 $type == 'clear_parent_nodes_and_relating_caches' ||
-                                 $type == 'clear_relating_caches_only' )
-                            {
-                                $info['clear_cache_type'] |= self::CLEAR_RELATING_CACHE;
-                            }
-
-                            if ( $type == 'clear_keyword_caches_only' )
-                            {
-                                $info['clear_cache_type'] |= self::CLEAR_KEYWORD_CACHE;
-                            }
+                            if ( in_array( 'children', $type ) )
+                                $info['clear_cache_type'] |= self::CLEAR_CHILDREN_CACHE;
                         }
                     }
                 }
@@ -418,7 +429,7 @@ class eZContentCacheManager
             $msg .= "\r\n";
         }
 
-        eZDebug::writeDebug( $msg, 'eZContentCacheManager::writeDebugBits()' );
+        eZDebug::writeDebug( $msg, __METHOD__ );
     }
 
     /*!
@@ -524,6 +535,23 @@ class eZContentCacheManager
             $dependentClassInfo['clear_cache_type'] &= ~self::CLEAR_SIBLINGS_CACHE;
         }
 
+        if ( $clearCacheType & self::CLEAR_CHILDREN_CACHE )
+        {
+            eZContentCacheManager::appendChildrenNodeIDs( $assignedNodes, $nodeList );
+        }
+
+        if ( $dependentClassInfo['clear_cache_type'] & self::CLEAR_CHILDREN_CACHE )
+        {
+            if ( !( $clearCacheType & self::CLEAR_CHILDREN_CACHE ) )
+            {
+                eZContentCacheManager::appendChildrenNodeIDs( $assignedNodes, $nodeList );
+                $handledObjectList[$contentObjectID] |= self::CLEAR_CHILDREN_CACHE;
+            }
+            // drop 'children' bit and process parent nodes.
+            // since 'children' mode is affected to the current object
+            $dependentClassInfo['clear_cache_type'] &= ~self::CLEAR_CHILDREN_CACHE;
+        }
+
         if ( isset( $dependentClassInfo['additional_objects'] ) )
         {
             foreach( $dependentClassInfo['additional_objects'] as $objectID )
@@ -602,6 +630,8 @@ class eZContentCacheManager
             }
         }
 
+        self::appendAdditionalNodeIDs( $contentObject, $nodeList );
+
         //self::writeDebugBits( $handledObjectList, self::CLEAR_SIBLINGS_CACHE );
     }
 
@@ -634,25 +664,14 @@ class eZContentCacheManager
         return $nodeList;
     }
 
-    /*!
-     \static
-     Depreciated. Use 'clearObjectViewCache' instead
-    */
-    static function clearViewCache( $objectID, $versionNum = true , $additionalNodeList = false )
-    {
-        eZDebug::writeWarning( "'clearViewCache' function was depreciated. Use 'clearObjectViewCache' instead", 'eZContentCacheManager::clearViewCache' );
-        eZContentCacheManager::clearObjectViewCache( $objectID, $versionNum, $additionalNodeList );
-    }
-
-    /*!
-     \static
-     Clears view caches of nodes, parent nodes and relating nodes
-     of content objects with id \a $objectID.
-     It will use 'viewcache.ini' to determine additional nodes.
-
-     \param $versionNum The version of the object to use or \c true for current version
-     \param $additionalNodeList An array with node IDs to add to clear list,
-                                or \c false for no additional nodes.
+    /**
+     * Clears view caches of nodes, parent nodes and relating nodes
+     * of content object with $objectID.
+     * It will use 'viewcache.ini' to determine additional nodes.
+     *
+     * @param int    $objectID           The object ID
+     * @param int    $versionNum         The version of the object to use, or true for current version
+     * @param array  $additionalNodeList An array with node IDs to add to clear list, or false for no additional nodes.
     */
     static function clearObjectViewCache( $objectID, $versionNum = true, $additionalNodeList = false )
     {
@@ -673,23 +692,75 @@ class eZContentCacheManager
             array_splice( $nodeList, count( $nodeList ), 0, $additionalNodeList );
         }
 
-        if ( count( $nodeList ) == 0 )
+        $nodeList = array_unique( $nodeList );
+
+        eZDebug::accumulatorStop( 'node_cleanup_list' );
+
+        return self::clearNodeViewCacheArray( $nodeList, array( $objectID ) );
+    }
+
+    /**
+     * Clears view caches of nodes, parent nodes and relating nodes
+     * of content objects with ids contained in $objectIDList.
+     * It will use 'viewcache.ini' to determine additional nodes.
+     *
+     * @see clearObjectViewCache
+     *
+     * @param array $objectIDList List of object ID
+     */
+    public static function clearObjectViewCacheArray( array $objectIDList )
+    {
+        eZDebug::accumulatorStart( 'node_cleanup_list', '', 'Node cleanup list' );
+
+        $nodeList = array();
+
+        foreach ( $objectIDList as $objectID )
         {
-            return false;
+            $tempNodeList = self::nodeList( $objectID, true );
+
+            if ( $tempNodeList !== false )
+            {
+                $nodeList = array_merge( $nodeList, $tempNodeList );
+            }
         }
 
         $nodeList = array_unique( $nodeList );
 
         eZDebug::accumulatorStop( 'node_cleanup_list' );
 
+        return self::clearNodeViewCacheArray( $nodeList, $objectIDList );
+    }
+
+    /**
+     * Clears view caches for an array of nodes.
+     *
+     * @param  array   $nodeList List of node IDs to clear
+     * @param  array|null   $contentObjectList List of content object IDs to clear
+     * @return boolean returns true on success
+     */
+    public static function clearNodeViewCacheArray( array $nodeList, array $contentObjectList = null )
+    {
+        if ( count( $nodeList ) == 0 )
+        {
+            return false;
+        }
+
         eZDebugSetting::writeDebug( 'kernel-content-edit', count( $nodeList ), "count in nodeList" );
 
-        $ini = eZINI::instance();
-        if ( $ini->variable( 'ContentSettings', 'StaticCache' ) == 'enabled' )
+        if ( eZINI::instance()->variable( 'ContentSettings', 'StaticCache' ) === 'enabled' )
         {
-            $staticCache = new eZStaticCache();
-            $staticCache->generateAlwaysUpdatedCache();
-            $staticCache->generateNodeListCache( $nodeList );
+            $staticCacheHandler = eZExtension::getHandlerClass(
+                new ezpExtensionOptions(
+                    array(
+                        'iniFile' => 'site.ini',
+                        'iniSection' => 'ContentSettings',
+                        'iniVariable' => 'StaticCacheHandler',
+                    )
+                )
+            );
+
+            $staticCacheHandler->generateAlwaysUpdatedCache();
+            $staticCacheHandler->generateNodeListCache( $nodeList );
         }
 
         eZDebug::accumulatorStart( 'node_cleanup', '', 'Node cleanup' );
@@ -698,71 +769,112 @@ class eZContentCacheManager
         $cleanupValue = eZContentCache::calculateCleanupValue( count( $nodeList ) );
 
         if ( eZContentCache::inCleanupThresholdRange( $cleanupValue ) )
+        {
+            $nodeList = ezpEvent::getInstance()->filter( 'content/cache', $nodeList, $contentObjectList );
             eZContentCache::cleanup( $nodeList );
+        }
         else
+        {
+            eZDebug::writeDebug( "Expiring all view cache since list of nodes({$cleanupValue}) exceeds site.ini\[ContentSettings]\CacheThreshold", __METHOD__ );
+            ezpEvent::getInstance()->notify( 'content/cache/all' );
             eZContentObject::expireAllViewCache();
+        }
 
         eZDebug::accumulatorStop( 'node_cleanup' );
         return true;
     }
 
-    /*!
-     \static
-     Clears view cache for specified object.
-     Checks 'ViewCaching' ini setting to determine whether cache is enabled or not.
-    */
-    static function clearObjectViewCacheIfNeeded( $objectID, $versionNum = true, $additionalNodeList = false )
+    /**
+     * Clears view cache for specified object(s).
+     * Checks 'ViewCaching' ini setting to determine whether cache is enabled or not.
+     *
+     * @param array $objectID (list of) object ID
+     * @param bool|int $versionNum
+     * @param bool|array $additionalNodeList
+     */
+    public static function clearObjectViewCacheIfNeeded( $objectID, $versionNum = true, $additionalNodeList = false )
     {
-        $ini = eZINI::instance();
-        if ( $ini->variable( 'ContentSettings', 'ViewCaching' ) === 'enabled' )
-            eZContentCacheManager::clearObjectViewCache( $objectID, $versionNum, $additionalNodeList );
+        if ( eZINI::instance()->variable( 'ContentSettings', 'ViewCaching' ) !== 'enabled' )
+            return;
+
+        if ( is_array( $objectID ) )
+        {
+            if ( $versionNum !== true || $additionalNodeList !== false )
+            {
+                trigger_error( "This method does not support second and third parameters when operating on many objects!" );
+                return false;
+            }
+
+            self::clearObjectViewCacheArray( $objectID );
+        }
+        else
+        {
+            self::clearObjectViewCache( $objectID, $versionNum, $additionalNodeList );
+        }
     }
 
-    /*!
-     \static
-     Clears template-block cache and template-block with subtree_expiry parameter caches for specified object.
-     Checks 'TemplateCache' ini setting to determine whether cache is enabled or not.
-     If $objectID is \c false all template block caches will be cleared.
-    */
-    static function clearTemplateBlockCacheIfNeeded( $objectID )
+    /**
+     * Clears template-block cache and template-block with subtree_expiry parameter caches for specified object(s).
+     * Checks 'TemplateCache' ini setting to determine whether cache is enabled or not.
+     * If $objectID is \c false all template block caches will be cleared.
+     *
+     * @param int|array $objectID (list of) object ID.
+     */
+    public static function clearTemplateBlockCacheIfNeeded( $objectID )
     {
         $ini = eZINI::instance();
         if ( $ini->variable( 'TemplateSettings', 'TemplateCache' ) === 'enabled' )
-            eZContentCacheManager::clearTemplateBlockCache( $objectID, true );
+            self::clearTemplateBlockCache( $objectID, true );
     }
 
-    /*!
-     \static
-     Clears template-block cache and template-block with subtree_expiry parameter caches for specified object
-     without checking 'TemplateCache' ini setting. If $objectID is \c false all template block caches will be cleared.
-    */
-    static function clearTemplateBlockCache( $objectID, $checkViewCacheClassSettings = false )
+    /**
+     * Clears template-block cache and template-block with subtree_expiry parameter caches for specified object
+     * without checking 'TemplateCache' ini setting.
+     *
+     * @param int|array|bool $objectID (list of) object ID, if false only ordinary template block caches will be cleared
+     *                                 Support for array value available {@since 5.0}.
+     * @param bool $checkViewCacheClassSettings Check whether ViewCache class settings should be verified
+     */
+    public static function clearTemplateBlockCache( $objectID, $checkViewCacheClassSettings = false )
     {
         // ordinary template block cache
         eZContentObject::expireTemplateBlockCache();
 
+        if ( empty( $objectID ) )
+            return;
+
         // subtree template block cache
         $nodeList = false;
-        $object = false;
-        if ( $objectID )
-            $object = eZContentObject::fetch( $objectID );
-        if ( $object instanceof eZContentObject )
-        {
-            $getAssignedNodes = true;
-            if ( $checkViewCacheClassSettings )
-            {
-                $ini = eZINI::instance('viewcache.ini');
-                $objectClassIdentifier = $object->attribute('class_identifier');
-                if ( $ini->hasVariable( $objectClassIdentifier, 'ClearCacheBlocks' )
-                  && $ini->variable( $objectClassIdentifier, 'ClearCacheBlocks' ) === 'disabled' )
-                {
-                    $getAssignedNodes = false;
-                }
-            }
 
-            if ( $getAssignedNodes )
+        if ( is_array( $objectID ) )
+        {
+            $objects = eZContentObject::fetchIDArray( $objectID );
+        }
+        else
+        {
+            $objects = array( $objectID => eZContentObject::fetch( $objectID ) );
+        }
+
+        $ini = eZINI::instance( 'viewcache.ini' );
+        foreach ( $objects as $object )
+        {
+            if ( $object instanceof eZContentObject )
             {
-                $nodeList = $object->assignedNodes();
+                $getAssignedNodes = true;
+                if ( $checkViewCacheClassSettings )
+                {
+                    $objectClassIdentifier = $object->attribute('class_identifier');
+                    if ( $ini->hasVariable( $objectClassIdentifier, 'ClearCacheBlocks' )
+                      && $ini->variable( $objectClassIdentifier, 'ClearCacheBlocks' ) === 'disabled' )
+                    {
+                        $getAssignedNodes = false;
+                    }
+                }
+
+                if ( $getAssignedNodes )
+                {
+                    $nodeList = array_merge( ( $nodeList !== false ? $nodeList : array() ), $object->assignedNodes() );
+                }
             }
         }
 
@@ -791,7 +903,7 @@ class eZContentCacheManager
             $currentSiteAccess = $GLOBALS['eZCurrentAccess'];
 
             // This is the default view parameters for content/view
-            $viewParameters = array( 'offset' => 0,
+            $viewParameters = array( 'offset' => false,
                                      'year' => false,
                                      'month' => false,
                                      'day' => false,
@@ -840,11 +952,11 @@ class eZContentCacheManager
 
                             // Before we generate the view cache we must change the currently logged in user to $previewCacheUser
                             // If not the templates might read in wrong personalized data (preferences etc.)
-                            eZUser::setCurrentlyLoggedInUser( $previewCacheUser, $previewCacheUser->attribute( 'contentobject_id' ) );
+                            eZUser::setCurrentlyLoggedInUser( $previewCacheUser, $previewCacheUser->attribute( 'contentobject_id' ), eZUser::NO_SESSION_REGENERATE );
 
                             // Cache the current node
-                            $cacheFileArray = eZNodeviewfunctions::generateViewCacheFile( $previewCacheUser, $node->attribute( 'node_id' ), 0, false, $language, $viewMode, $viewParameters, $cachedViewPreferences );
-                            $tmpRes = eZNodeviewfunctions::generateNodeView( $tpl, $node, $node->attribute( 'object' ), $language, $viewMode, 0, $cacheFileArray['cache_dir'], $cacheFileArray['cache_path'], true, $viewParameters );
+                            $cacheFileArray = eZNodeviewfunctions::generateViewCacheFile( $previewCacheUser, $node->attribute( 'node_id' ), false, false, $language, $viewMode, $viewParameters, $cachedViewPreferences );
+                            $tmpRes = eZNodeviewfunctions::generateNodeView( $tpl, $node, $node->attribute( 'object' ), $language, $viewMode, false, $cacheFileArray['cache_dir'], $cacheFileArray['cache_path'], true, $viewParameters );
 
                             // Cache the parent node
                             $parentNode = $node->attribute( 'parent' );
@@ -859,7 +971,7 @@ class eZContentCacheManager
                     }
                 }
                 // Restore the old user as the current one
-                eZUser::setCurrentlyLoggedInUser( $user, $user->attribute( 'contentobject_id' ) );
+                eZUser::setCurrentlyLoggedInUser( $user, $user->attribute( 'contentobject_id' ), eZUser::NO_SESSION_REGENERATE );
 
                 // restore siteaccess
                 eZSiteAccess::load( $currentSiteAccess );
@@ -870,9 +982,16 @@ class eZContentCacheManager
         {
             $nodes = array();
             $ini = eZINI::instance();
-            $staticCache = new eZStaticCache();
             $useURLAlias =& $GLOBALS['eZContentObjectTreeNodeUseURLAlias'];
             $pathPrefix = $ini->variable( 'SiteAccessSettings', 'PathPrefix' );
+
+            // get staticCacheHandler instance
+            $optionArray = array( 'iniFile'      => 'site.ini',
+                                  'iniSection'   => 'ContentSettings',
+                                  'iniVariable'  => 'StaticCacheHandler' );
+
+            $options = new ezpExtensionOptions( $optionArray );
+            $staticCacheHandler = eZExtension::getHandlerClass( $options );
 
             if ( !isset( $useURLAlias ) )
             {
@@ -906,9 +1025,9 @@ class eZContentCacheManager
                     {
                         $urlAlias = 'content/view/full/' . $nodeID;
                     }
-                    $staticCache->cacheURL( '/' . $urlAlias, $nodeID );
+                    $staticCacheHandler->cacheURL( '/' . $urlAlias, $nodeID );
                 }
-                $staticCache->generateAlwaysUpdatedCache();
+                $staticCacheHandler->generateAlwaysUpdatedCache();
             }
         }
         eZDebug::accumulatorStop( 'generate_cache' );
@@ -923,24 +1042,29 @@ class eZContentCacheManager
         // fetch all objects of this section
         $objectList = eZContentObject::fetchList( false, array( 'section_id' => "$sectionID" ) );
         // Clear cache
+        $objectIDList = array();
         foreach ( $objectList as $object )
         {
-            eZContentCacheManager::clearContentCacheIfNeeded( $object['id'] );
+            $objectIDList[] = $object['id'];
         }
+        self::clearContentCacheIfNeeded( $objectIDList );
         return true;
     }
 
-    /*!
-     \static
-     Clears content cache for specified object: view cache, template-block cache, template-block with subtree_expiry parameter cache.
-     Checks appropriate ini settings to determine whether caches are enabled or not.
-    */
-    static function clearContentCacheIfNeeded( $objectID, $versionNum = true, $additionalNodeList = false )
+    /**
+     * Clears content cache for specified (list of) object: view cache, template-block cache, template-block with subtree_expiry parameter cache.
+     * Checks appropriate ini settings to determine whether caches are enabled or not.
+     *
+     * @param int|array $objectID (list of) object ID
+     * @param bool|int $versionNum
+     * @param bool|array $additionalNodeList
+     */
+    public static function clearContentCacheIfNeeded( $objectID, $versionNum = true, $additionalNodeList = false )
     {
         eZDebug::accumulatorStart( 'check_cache', '', 'Check cache' );
 
-        eZContentCacheManager::clearObjectViewCacheIfNeeded( $objectID, $versionNum, $additionalNodeList );
-        eZContentCacheManager::clearTemplateBlockCacheIfNeeded( $objectID );
+        self::clearObjectViewCacheIfNeeded( $objectID, $versionNum, $additionalNodeList );
+        self::clearTemplateBlockCacheIfNeeded( $objectID );
 
         // Clear cached path strings of content SSL zones.
         eZSSLZone::clearCacheIfNeeded();
@@ -949,17 +1073,34 @@ class eZContentCacheManager
         return true;
     }
 
-    /*!
-     \static
-     Clears content cache for specified object: view cache, template-block cache, template-block with subtree_expiry parameter cache
-     without checking of ini settings.
-    */
+    /**
+     * Clears content cache for specified object: view cache, template-block cache, template-block with subtree_expiry parameter cache
+     * without checking of ini settings.
+     *
+     * @param int|array $objectID (list of) object ID
+     * @param bool|int $versionNum
+     * @param bool|array $additionalNodeList
+     */
     static function clearContentCache( $objectID, $versionNum = true, $additionalNodeList = false )
     {
         eZDebug::accumulatorStart( 'check_cache', '', 'Check cache' );
 
-        eZContentCacheManager::clearObjectViewCache( $objectID, $versionNum, $additionalNodeList );
-        eZContentCacheManager::clearTemplateBlockCache( $objectID );
+        if ( is_array( $objectID ) )
+        {
+            if ( $versionNum !== true || $additionalNodeList !== false )
+            {
+                trigger_error( "This method does not support second and third parameters when operating on many objects!" );
+                return false;
+            }
+
+            self::clearObjectViewCacheArray( $objectID );
+        }
+        else
+        {
+            self::clearObjectViewCache( $objectID, $versionNum, $additionalNodeList );
+        }
+
+        self::clearTemplateBlockCache( $objectID );
 
         // Clear cached path strings of content SSL zones.
         eZSSLZone::clearCache();
@@ -990,6 +1131,8 @@ class eZContentCacheManager
         {
             // view cache and/or ordinary template block cache
             eZContentObject::expireAllCache();
+
+            ezpEvent::getInstance()->notify( 'content/cache/all' );
 
             // subtree template block caches
             if ( $templateCacheEnabled )

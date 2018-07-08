@@ -2,8 +2,9 @@
 /**
  * File containing the eZCountryTypeTest class
  *
- * @copyright Copyright (C) 1999-2010 eZ Systems AS. All rights reserved.
- * @license http://ez.no/licenses/gnu_gpl GNU GPLv2
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
  * @package tests
  */
 
@@ -16,8 +17,8 @@ class eZCountryTypeTest extends ezpDatabaseTestCase
     }
 
     /**
-    * Test for the sort feature of country list
-    **/
+     * Test for the sort feature of country list
+     */
     public function testFetchTranslatedNamesSort()
     {
         $translatedCountriesList = array(
@@ -30,7 +31,7 @@ class eZCountryTypeTest extends ezpDatabaseTestCase
         ezpINIHelper::setINISetting( 'site.ini', 'RegionalSettings', 'Locale', 'fre-FR' );
 
         $countries = eZCountryType::fetchCountryList();
-        $this->assertType( 'array', $countries, "eZCountryType::fetchCountryList() didn't return an array" );
+        $this->assertInternalType( 'array', $countries, "eZCountryType::fetchCountryList() didn't return an array" );
 
         $countryListIsSorted = true;
         foreach( $countries as $country )

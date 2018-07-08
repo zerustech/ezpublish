@@ -1,35 +1,12 @@
 <?php
-//
-// Definition of eZTranslatorManager class
-//
-// Created on: <10-Jun-2002 11:16:48 amos>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
-
-/*! \file
-*/
+/**
+ * File containing the eZTranslatorManager class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package lib
+ */
 
 /*! \defgroup eZTranslation Translation
     \ingroup eZI18N
@@ -54,7 +31,7 @@ class eZTranslatorManager
 {
     const DYNAMIC_TRANSLATIONS_ENABLED = 'eZTMDynamicTranslationsEnabled';
 
-    function eZTranslatorManager()
+    public function __construct()
     {
         $this->Handlers = array();
     }
@@ -252,7 +229,7 @@ class eZTranslatorManager
         if ( $permanently )
         {
             $siteINI->save( 'site.ini.append', '.php', false, false );
-            eZINI::resetGlobals( "site.ini" );
+            eZINI::resetInstance( "site.ini" );
         }
 
         eZTranslatorManager::resetTranslations();

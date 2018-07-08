@@ -1,56 +1,38 @@
 #!/usr/bin/env php
 <?php
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * File containing the ezpgenerateautoloads.php script.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 if ( file_exists( "config.php" ) )
 {
-    require "config.php";
+    require_once "config.php";
 }
 
 // Setup, includes
 //{
-$useBundledComponents = defined( 'EZP_USE_BUNDLED_COMPONENTS' ) ? EZP_USE_BUNDLED_COMPONENTS === true : file_exists( 'lib/ezc' );
-if ( $useBundledComponents )
-{
-    set_include_path( './lib/ezc' . PATH_SEPARATOR . get_include_path() );
-    require 'Base/src/base.php';
-}
-else if ( defined( 'EZC_BASE_PATH' ) )
-{
-    require EZC_BASE_PATH;
-}
-else
-{
-    if ( !@include 'ezc/Base/base.php' )
-    {
-        require 'Base/src/base.php';
-    }
-}
 
-spl_autoload_register( array( 'ezcBase', 'autoload' ) );
+$platformVendorDir = getcwd() . "/../vendor";
+$legacyVendorDir = getcwd() . "/vendor";
+if ( class_exists( 'Composer\Autoload\ClassLoader', false ) )
+{
+    // Do nothing, composer autoload already loaded
+}
+// Composer if in eZ Platform context
+else if ( file_exists( "{$platformVendorDir}/autoload.php" ) )
+{
+    require_once "{$platformVendorDir}/autoload.php";
+}
+// Composer if in eZ Publish legacy context
+else if ( file_exists( "{$legacyVendorDir}/autoload.php" ) )
+{
+    require_once "{$legacyVendorDir}/autoload.php";
+}
 
 require 'kernel/private/classes/ezautoloadgenerator.php';
 require 'kernel/private/interfaces/ezpautoloadoutput.php';
@@ -68,6 +50,11 @@ $helpOption = new ezcConsoleOption( 'h', 'help' );
 $helpOption->mandatory = false;
 $helpOption->shorthelp = "Show help information";
 $params->registerOption( $helpOption );
+
+$quietOption = new ezcConsoleOption( 'q', 'quiet', ezcConsoleInput::TYPE_NONE );
+$quietOption->mandatory = false;
+$quietOption->shorthelp = "do not give any output except when errors occur";
+$params->registerOption( $quietOption );
 
 $targetOption = new ezcConsoleOption( 't', 'target', ezcConsoleInput::TYPE_STRING );
 $targetOption->mandatory = false;
@@ -179,7 +166,7 @@ if ( defined( 'EZP_AUTOLOAD_OUTPUT' ) )
 }
 else
 {
-    $autoloadCliOutput = new ezpAutoloadCliOutput();
+    $autoloadCliOutput = new ezpAutoloadCliOutput( $quietOption->value );
 }
 
 $autoloadGenerator->setOutputObject( $autoloadCliOutput );

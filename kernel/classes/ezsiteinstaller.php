@@ -1,33 +1,12 @@
 <?php
-//
-// Created on: <01-Jun-2007 15:00:00 dl>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
-
-/*! \file
-*/
+/**
+ * File containing the eZSiteInstaller class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 /*!
   \class eZSiteInstaller ezsiteinstaller.php
@@ -36,7 +15,7 @@
 
   Helps simplify installation process by providing a set of steps
   which will be executed sequentially. This class contains a common functions
-  which can be reused in particular installtions.
+  which can be reused in particular installations.
 
 */
 
@@ -46,7 +25,7 @@ class eZSiteInstaller
     const ERR_ABORT = 1;
     const ERR_CONTINUE = 2;
 
-    function eZSiteInstaller( $parameters = false )
+    public function __construct( $parameters = false )
     {
         $this->initSettings( $parameters );
         $this->initSteps();
@@ -54,9 +33,18 @@ class eZSiteInstaller
         $this->LastErrorCode = eZSiteInstaller::ERR_OK;
     }
 
+    /**
+     * @deprecated Use eZSiteInstaller::__construct() instead
+     * @param bool $parameters
+     */
+    function eZSiteInstaller( $parameters = false )
+    {
+        self::__construct( $parameters );
+    }
+
     function &instance( $params )
     {
-        eZDebug::writeWarning( "Your installer doesn't implement 'instance' function", "eZSiteInstaller::instance" );
+        eZDebug::writeWarning( "Your installer doesn't implement 'instance' function", __METHOD__ );
         return false;
     }
 
@@ -66,7 +54,7 @@ class eZSiteInstaller
     */
     function initSettings( $parameters )
     {
-        eZDebug::writeWarning( "Your installer doesn't implement 'initSettings' function", "eZSiteInstaller::initSettings" );
+        eZDebug::writeWarning( "Your installer doesn't implement 'initSettings' function", __METHOD__ );
     }
 
     /*!
@@ -105,7 +93,7 @@ class eZSiteInstaller
     */
     function initSteps()
     {
-        eZDebug::writeWarning( "Your installer doesn't implement 'initSteps' function", "eZSiteInstaller::initSteps" );
+        eZDebug::writeWarning( "Your installer doesn't implement 'initSteps' function", __METHOD__ );
     }
 
     /*!
@@ -128,7 +116,7 @@ class eZSiteInstaller
         }
         else
         {
-            eZDebug::writeWarning( "Setting '$name' doesn't exist", "eZSiteInstaller::setting" );
+            eZDebug::writeWarning( "Setting '$name' doesn't exist", __METHOD__ );
         }
 
         return $value;
@@ -335,7 +323,7 @@ class eZSiteInstaller
         $contentClass = eZContentClass::fetchByIdentifier( $classIdentifier );
         if( !is_object( $contentClass ) )
         {
-            eZDebug::writeWarning( "Content class with identifier '$classIdentifier' doesn't exist.", 'eZSiteInstaller::classByIdentifier' );
+            eZDebug::writeWarning( "Content class with identifier '$classIdentifier' doesn't exist.", __METHOD__ );
         }
 
         return $contentClass;
@@ -434,7 +422,7 @@ class eZSiteInstaller
             }
             else
             {
-                $this->reportError( "neighter 'id' nor 'identifier' is set for content class" ,
+                $this->reportError( "neither 'id' nor 'identifier' is set for content class" ,
                                     'eZSiteInstaller::addClassAttribute' );
             }
         }
@@ -684,7 +672,7 @@ class eZSiteInstaller
         }
         else
         {
-            eZDebug::writeWarning( "Object with name '" . $params['name'] . "' doesn't exist", "eZSiteInstaller::removeContentObject" );
+            eZDebug::writeWarning( "Object with name '" . $params['name'] . "' doesn't exist", __METHOD__ );
         }
     }
 
@@ -1060,6 +1048,20 @@ class eZSiteInstaller
             return false;
         }
 
+        // verify one of the nodes contains children and the other is not a container.
+        if ( !$node->classIsContainer() && $selectedNode->childrenCount() > 0 )
+        {
+            $this->reportError( "Cannot use node $selectedNodeID as the exchanging node for $nodeID, as it contains sub items (node is not container)",
+                                'eZSiteInstaller::swapNodes' );
+            return false;
+        }
+        if ( !$selectedNode->classIsContainer() && $node->childrenCount() > 0 )
+        {
+            $this->reportError( "Cannot use node $selectedNodeID as the exchanging node for $nodeID, as it is not container (node contains sub items)",
+                                'eZSiteInstaller::swapNodes' );
+            return false;
+        }
+
         // clear cache.
         eZContentCacheManager::clearContentCacheIfNeeded( $objectID );
 
@@ -1351,7 +1353,7 @@ class eZSiteInstaller
     */
     function setRSSExport( $params )
     {
-        
+
 
         // Create default rssExport object to use
         $rssExport = eZRSSExport::create( $params['creator'] );
@@ -1405,7 +1407,7 @@ class eZSiteInstaller
         }
         else
         {
-            eZDebug::writeWarning( "'Package' object is not set", 'eZSiteInstaller::packageFileItemPath' );
+            eZDebug::writeWarning( "'Package' object is not set", __METHOD__ );
         }
 
         return $filePath;
@@ -1440,7 +1442,7 @@ class eZSiteInstaller
          $languageName = substr( $locale , 0, $pos );
          return $languageName;
     }
-    
+
     /*!
      Helper function used for extracting hostname from the given \param $uri
     */
@@ -1449,7 +1451,7 @@ class eZSiteInstaller
         $hostname = false;
 
         $parts = parse_url( $uri );
-        
+
         if ( isset( $parts['host'] ) )
             $hostname = $parts['host'];
 
@@ -1491,7 +1493,7 @@ class eZSiteInstaller
             case 'port':
                 {
                     $port = $accessTypeValue;
-                    
+
                     // build urls
                     foreach( $siteaccessList as $siteaccess )
                     {
@@ -1592,12 +1594,14 @@ class eZSiteInstaller
 
     function solutionVersion()
     {
-        eZDebug::writeWarning( "Your installer doesn't implement 'solutionVersion' function", "eZSiteInstaller::initSettings" );
+        eZDebug::writeWarning( "Your installer doesn't implement 'solutionVersion' function", __METHOD__ );
+        return false;
     }
 
     function solutionName()
     {
-        eZDebug::writeWarning( "Your installer doesn't implement 'solutionName' function", "eZSiteInstaller::initSettings" );
+        eZDebug::writeWarning( "Your installer doesn't implement 'solutionName' function", __METHOD__ );
+        return false;
     }
 
     /*!

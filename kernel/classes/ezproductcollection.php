@@ -1,44 +1,19 @@
 <?php
-//
-// Definition of eZProductCollection class
-//
-// Created on: <04-Jul-2002 13:40:41 bf>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * File containing the eZProductCollection class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 /**
  * eZProductCollection is a container class which handles groups of products
- **/
+ */
 
 class eZProductCollection extends eZPersistentObject
 {
-    function eZProductCollection( $row )
-    {
-        $this->eZPersistentObject( $row );
-    }
-
     static function definition()
     {
         return array( "fields" => array( "id" => array( 'name' => 'ID',
@@ -63,7 +38,7 @@ class eZProductCollection extends eZPersistentObject
      * Creates a new empty collection and returns it.
      *
      * @return eZProductCollection
-     **/
+     */
     static function create( )
     {
         $row = array( "created" => time() );
@@ -73,7 +48,7 @@ class eZProductCollection extends eZPersistentObject
     /**
      * Clones the collection object and returns it.
      * The ID of the clone is erased.
-     **/
+     */
     function __clone()
     {
         $this->setAttribute( 'id', null );
@@ -85,7 +60,7 @@ class eZProductCollection extends eZPersistentObject
      * @note The new collection will already be present in the database.
      *
      * @return eZProductCollection The new collection object.
-     **/
+     */
     function copy()
     {
         $collection = clone $this;
@@ -111,7 +86,7 @@ class eZProductCollection extends eZPersistentObject
      *        If true, return an object. if false, returns an array
      *
      * @return array|eZProductCollection
-     **/
+     */
     static function fetch( $productCollectionID, $asObject = true )
     {
         return eZPersistentObject::fetchObject( eZProductCollection::definition(),
@@ -127,7 +102,7 @@ class eZProductCollection extends eZPersistentObject
      *        If true, return an object. if false, returns an array
      *
      * @return array(eZProductCollection|array)
-     **/
+     */
     function itemList( $asObject = true )
     {
         return eZPersistentObject::fetchObjectList( eZProductCollectionItem::definition(),
@@ -174,7 +149,7 @@ class eZProductCollection extends eZPersistentObject
      * @param array $productCollectionIDList array of eZProductCollection IDs
      *
      * @return void
-     **/
+     */
     static function cleanupList( $productCollectionIDList )
     {
         $db = eZDB::instance();

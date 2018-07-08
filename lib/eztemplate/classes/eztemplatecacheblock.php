@@ -1,32 +1,12 @@
 <?php
-//
-// Definition of eZTemplateCacheBlock class
-//
-// Created on: <27-Mar-2007 11:20:14 amos>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * File containing the eZTemplateCacheBlock class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package lib
+ */
 
 /*!
   \class eZTemplateCacheBlock eztemplatecacheblock.php
@@ -69,9 +49,36 @@ class eZTemplateCacheBlock
      */
     static function retrieve( $keys, $subtreeExpiry, $ttl, $useGlobalExpiry = true )
     {
+        $keys = (array)$keys;
+        self::filterKeys( $keys );
         $nodeID = $subtreeExpiry ? eZTemplateCacheBlock::decodeNodeID( $subtreeExpiry ) : false;
         $cachePath = eZTemplateCacheBlock::cachePath( eZTemplateCacheBlock::keyString( $keys ), $nodeID );
         return eZTemplateCacheBlock::handle( $cachePath, $nodeID, $ttl, $useGlobalExpiry );
+    }
+
+    /**
+     * Filters cache keys when needed.
+     * Useful to avoid having current URI as a cache key if an error has occurred and has been caught by error module.
+     *
+     * @param array $keys
+     */
+    static private function filterKeys( array &$keys )
+    {
+        if ( isset( $GLOBALS['eZRequestError'] ) && $GLOBALS['eZRequestError'] === true )
+        {
+            $requestUri = eZSys::requestURI();
+            foreach ( $keys as $i => &$key )
+            {
+                if ( is_array( $key ) )
+                {
+                    self::filterKeys( $key );
+                }
+                else if ( $key === $requestUri )
+                {
+                    unset( $keys[$i] );
+                }
+            }
+        }
     }
 
     /*!
@@ -81,7 +88,6 @@ class eZTemplateCacheBlock
     static function handle( $cachePath, $nodeID, $ttl, $useGlobalExpiry = true )
     {
         $globalExpiryTime = -1;
-        eZExpiryHandler::registerShutdownFunction();
         if ( $useGlobalExpiry )
         {
             $globalExpiryTime = eZExpiryHandler::getTimestamp( 'template-block-cache', -1 );
@@ -93,7 +99,7 @@ class eZTemplateCacheBlock
         // Perform an extra check if the DB handler is in use,
         // get the modified_subnode value from the specified node ($nodeID)
         // and use it as an extra expiry value.
-        if ( $cacheHandler instanceof eZDBFileHandler or $cacheHandler instanceof eZDFSFileHandler )
+        if ( $cacheHandler instanceof eZDFSFileHandler )
         {
             $subtreeExpiry = eZTemplateCacheBlock::getSubtreeModification( $nodeID );
         }
@@ -161,7 +167,7 @@ class eZTemplateCacheBlock
      */
     static function cachePath( $keyString, $nodeID = false )
     {
-        $filename = eZSys::ezcrc32( $keyString ) . ".cache";
+        $filename = md5( $keyString ) . ".cache";
 
         $phpDir = eZTemplateCacheBlock::templateBlockCacheDir();
         if ( is_numeric( $nodeID ) )
@@ -229,7 +235,7 @@ class eZTemplateCacheBlock
                     $nodeID = eZURLAliasML::fetchNodeIDByPath( $subtree );
                     if ( !$nodeID )
                     {
-                        eZDebug::writeError( "Could not find path_string '$subtree' for 'subtree_expiry' node.", 'eZTemplateCacheBlock::subtreeExpiryCacheDir()' );
+                        eZDebug::writeError( "Could not find path_string '$subtree' for 'subtree_expiry' node.", __METHOD__ );
                     }
                     else
                     {
@@ -294,7 +300,7 @@ class eZTemplateCacheBlock
         }
         else
         {
-            eZDebug::writeWarning( "Unable to determine cacheDir for nodeID = $nodeID", 'eZtemplateCacheFunction::subtreeCacheSubDirForNode' );
+            eZDebug::writeWarning( "Unable to determine cacheDir for nodeID = $nodeID", __METHOD__ );
         }
 
         $cacheDir .= '/cache';

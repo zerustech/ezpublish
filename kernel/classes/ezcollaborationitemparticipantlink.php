@@ -1,35 +1,12 @@
 <?php
-//
-// Definition of eZCollaborationItemParticipantLink class
-//
-// Created on: <22-Jan-2003 16:08:22 amos>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
-
-/*! \file
-*/
+/**
+ * File containing the eZCollaborationItemParticipantLink class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 /*!
   \class eZCollaborationItemParticipantLink ezcollaborationitemparticipantlink.php
@@ -53,14 +30,6 @@ class eZCollaborationItemParticipantLink extends eZPersistentObject
 
     // Everything from 1024 and above is considered custom and is specific per collaboration handler.
     const ROLE_CUSTOM = 1024;
-
-    /*!
-     Constructor
-    */
-    function eZCollaborationItemParticipantLink( $row )
-    {
-        $this->eZPersistentObject( $row );
-    }
 
     static function definition()
     {
@@ -167,26 +136,32 @@ class eZCollaborationItemParticipantLink extends eZPersistentObject
                                           'limit' => false,
                                           'sort_by' => false ),
                                    $parameters );
+
+        $cacheHashKey = md5( serialize( $parameters ) );
+
+        if ( isset( $GLOBALS['eZCollaborationItemParticipantLinkListCache'][$cacheHashKey] ) )
+        {
+            return $GLOBALS['eZCollaborationItemParticipantLinkListCache'][$cacheHashKey];
+        }
+
         $itemID = $parameters['item_id'];
         $asObject = $parameters['as_object'];
         $offset = $parameters['offset'];
         $limit = $parameters['limit'];
         $linkList = null;
-        if ( !$offset and !$limit )
-        {
-            if ( !empty( $GLOBALS['eZCollaborationItemParticipantLinkListCache'] ) )
-            {
-                return $GLOBALS['eZCollaborationItemParticipantLinkListCache'];
-            }
-        }
         $limitArray = null;
+
         if ( $offset and $limit )
+        {
             $limitArray = array( 'offset' => $offset, 'length' => $limit );
+        }
+
         $linkList = eZPersistentObject::fetchObjectList( eZCollaborationItemParticipantLink::definition(),
                                                           null,
                                                           array( "collaboration_id" => $itemID ),
                                                           null, $limitArray,
                                                           $asObject );
+
         foreach( $linkList as $linkItem )
         {
             if ( $asObject )
@@ -197,12 +172,13 @@ class eZCollaborationItemParticipantLink extends eZPersistentObject
             {
                 $participantID = $linkItem['participant_id'];
             }
-            if ( empty( $GLOBALS["eZCollaborationItemParticipantLinkCache"][$itemID][$participantID] ) )
+            if ( !isset( $GLOBALS["eZCollaborationItemParticipantLinkCache"][$itemID][$participantID] ) )
             {
                 $GLOBALS["eZCollaborationItemParticipantLinkCache"][$itemID][$participantID] = $linkItem;
             }
         }
-        return $GLOBALS['eZCollaborationItemParticipantLinkListCache'] = $linkList;
+
+        return $GLOBALS['eZCollaborationItemParticipantLinkListCache'][$cacheHashKey] = $linkList;
     }
 
     static function fetchParticipantMap( $originalParameters = array() )
@@ -283,7 +259,7 @@ class eZCollaborationItemParticipantLink extends eZPersistentObject
         {
             if ( empty( $GLOBALS['eZCollaborationParticipantRoleNameMap'] ) )
             {
-                
+
                 $GLOBALS['eZCollaborationParticipantRoleNameMap'] =
                     array( self::ROLE_STANDARD => ezpI18n::tr( 'kernel/classes', 'Standard' ),
                            self::ROLE_OBSERVER => ezpI18n::tr( 'kernel/classes', 'Observer' ),

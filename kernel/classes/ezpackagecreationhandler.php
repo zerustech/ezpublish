@@ -1,35 +1,12 @@
 <?php
-//
-// Definition of eZPackageCreationHandler class
-//
-// Created on: <21-Nov-2003 11:52:36 amos>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
-
-/*! \file
-*/
+/**
+ * File containing the eZPackageCreationHandler class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 /*!
   \ingroup package
@@ -40,10 +17,14 @@
 
 class eZPackageCreationHandler
 {
-    /*!
-     Constructor
-    */
-    function eZPackageCreationHandler( $id, $name, $steps )
+    /**
+     * Constructor
+     *
+     * @param int $id
+     * @param string $name
+     * @param array $steps
+     */
+    public function __construct( $id, $name, $steps )
     {
         $this->Attributes = array( 'id' => $id,
                                    'name' => $name,
@@ -131,7 +112,7 @@ class eZPackageCreationHandler
             return $this->Attributes[$name];
         }
 
-        eZDebug::writeError( "Attribute '$name' does not exist", 'eZPackageCreationHandler::attribute' );
+        eZDebug::writeError( "Attribute '$name' does not exist", __METHOD__ );
         return null;
     }
 
@@ -353,7 +334,7 @@ class eZPackageCreationHandler
      * Returns a shared instance of the eZPackageCreationHandler class
      * pr $handlerName as defined in package.ini[CreationSettings]HandlerAlias
      *
-     * @param $handlerName string
+     * @param string $handlerName
      * @return eZPackageCreationHandler
      */
     static function instance( $handlerName )
@@ -947,6 +928,11 @@ class eZPackageCreationHandler
         if ( !eZHTTPFile::canFetch( 'PackageThumbnail' ) )
             return true;
 
+        if ( !self::httpFileIsImage( ezpI18n::tr( 'kernel/package', 'PackageThumbnail' ), $errorList ) )
+        {
+            return false;
+        }
+
         $file = eZHTTPFile::fetch( 'PackageThumbnail' );
 
         $result = true;
@@ -959,6 +945,39 @@ class eZPackageCreationHandler
             $persistentData['thumbnail'] = $mimeData;
         }
         return $result;
+    }
+
+    /*!
+     Check if the HTTP file is an image.
+    */
+    static function httpFileIsImage( $httpFileName, &$errorList )
+    {
+        if ( !isset( $_FILES[$httpFileName] ) || $_FILES[$httpFileName]["tmp_name"] === "" )
+        {
+            $errorList[] = array( 'field' => $httpFileName,
+                                  'description' => ezpI18n::tr( 'kernel/package', 'The file does not exist.' ) );
+            return false;
+        }
+
+        $imagefile = $_FILES[$httpFileName]['tmp_name'];
+        if ( !$_FILES[$httpFileName]["size"] )
+        {
+            $errorList[] = array( 'field' => $httpFileName,
+                                  'description' => ezpI18n::tr( 'kernel/package', 'The image file must have non-zero size.' ) );
+            return false;
+        }
+
+        $mimeType = eZMimeType::findByURL( $_FILES[$httpFileName]['name'] );
+        $nameMimeType = $mimeType['name'];
+        $nameMimeTypes = explode("/", $nameMimeType);
+        if ( $nameMimeTypes[0] != 'image' )
+        {
+            $errorList[] = array( 'field' => $httpFileName,
+                                  'description' => ezpI18n::tr( 'kernel/package', 'A valid image file is required.' ) );
+            return false;
+        }
+
+        return true;
     }
 
     /*!

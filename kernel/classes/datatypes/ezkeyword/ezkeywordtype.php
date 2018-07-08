@@ -1,32 +1,12 @@
 <?php
-//
-// Definition of eZKeywordType class
-//
-// Created on: <29-Apr-2003 14:59:12 bf>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * File containing the eZKeywordType class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 /*!
   \class eZKeywordType ezkeywordtype.php
@@ -41,12 +21,9 @@ class eZKeywordType extends eZDataType
 {
     const DATA_TYPE_STRING = 'ezkeyword';
 
-    /*!
-     Initializes with a keyword id and a description.
-    */
-    function eZKeywordType()
+    public function __construct()
     {
-        $this->eZDataType( self::DATA_TYPE_STRING, ezpI18n::tr( 'kernel/classes/datatypes', 'Keywords', 'Datatype name' ),
+        parent::__construct( self::DATA_TYPE_STRING, ezpI18n::tr( 'kernel/classes/datatypes', 'Keywords', 'Datatype name' ),
                            array( 'serialize_supported' => true ) );
     }
 
@@ -255,10 +232,13 @@ class eZKeywordType extends eZDataType
         return true;
     }
 
-    /*!
-     \return string representation of an contentobjectattribute data for simplified export
-
-    */
+    /**
+     *
+     * Returns string representation of an contentobjectattribute data for simplified export
+     *
+     * @param eZContentObjectAttribute $contentObjectAttribute
+     * @return string
+     */
     function toString( $contentObjectAttribute )
     {
         $keyword = new eZKeyword();
@@ -268,12 +248,9 @@ class eZKeywordType extends eZDataType
 
     function fromString( $contentObjectAttribute, $string )
     {
-        if ( $string != '' )
-        {
-            $keyword = new eZKeyword();
-            $keyword->initializeKeyword( $string );
-            $contentObjectAttribute ->setContent( $keyword );
-        }
+        $keyword = new eZKeyword();
+        $keyword->initializeKeyword( $string );
+        $contentObjectAttribute->setContent( $keyword );
         return true;
     }
 

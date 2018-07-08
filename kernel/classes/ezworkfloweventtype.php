@@ -1,32 +1,12 @@
 <?php
-//
-// Definition of eZWorkflowEventType class
-//
-// Created on: <16-Apr-2002 11:08:14 amos>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * File containing the eZWorkflowEventType class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 //!! eZKernel
 //! The class eZWorkflowEventType does
@@ -36,9 +16,25 @@
 
 class eZWorkflowEventType extends eZWorkflowType
 {
-    function eZWorkflowEventType( $typeString, $name )
+    /**
+     * Constructor
+     *
+     * @param string $typeString
+     * @param string $name
+     */
+    public function __construct( $typeString, $name )
     {
-        $this->eZWorkflowType( "event", $typeString, ezpI18n::tr( 'kernel/workflow/event', "Event" ), $name );
+        parent::__construct( "event", $typeString, ezpI18n::tr( 'kernel/workflow/event', "Event" ), $name );
+    }
+
+    /**
+     * @deprecated
+     * @param string $typeString
+     * @param string $name
+     */
+    public function eZWorkflowEventType( $typeString, $name )
+    {
+        self::__construct( $typeString, $name );
     }
 
     static function registerEventType( $typeString, $class_name )

@@ -1,32 +1,12 @@
 <?php
-//
-// Created on: <21-Nov-2004 21:58:43 hovik>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
-/*! \file
+/*!
 
     On multilingual previews
 
@@ -114,8 +94,23 @@ if ( $Module->isCurrentAction( 'Publish' ) and
         return $Result;
     }
 
+    $behaviour = new ezpContentPublishingBehaviour();
+    $behaviour->isTemporary = true;
+    $behaviour->disableAsynchronousPublishing = false;
+    ezpContentPublishingBehaviour::setBehaviour( $behaviour );
+
     $operationResult = eZOperationHandler::execute( 'content', 'publish', array( 'object_id' => $ObjectID,
                                                                                  'version' => $EditVersion ) );
+    // redirect if requested by the publishing operation
+    if ( isset( $operationResult['status'] ) && ( $operationResult['status'] == eZModuleOperationInfo::STATUS_HALTED ) )
+    {
+        if (isset( $operationResult['redirect_url'] ))
+        {
+            $Module->redirectTo( $operationResult['redirect_url'] );
+            return;
+        }
+    }
+
     $object = eZContentObject::fetch( $ObjectID );
     $http = eZHTTPTool::instance();
     if ( $object->attribute( 'main_node_id' ) != null )
@@ -135,6 +130,10 @@ if ( $Module->isCurrentAction( 'Publish' ) and
             $Module->redirectToView( 'view', array( 'full', $object->attribute( 'main_parent_node_id' ) ) );
         }
     }
+    else if ( $node instanceof eZContentObjectTreeNode && $node->attribute( 'parent_node_id' ) )
+    {
+        $Module->redirectToView( 'view', array( 'full', $node->attribute( 'parent_node_id' ) ) );
+    }
     else
     {
         $Module->redirectToView( 'view', array( 'sitemap', 2 ) );
@@ -147,7 +146,7 @@ $contentObject->setAttribute( 'current_version', $EditVersion );
 
 $ini = eZINI::instance();
 
-$siteaccess = $ini->variable( 'SiteSettings', 'DefaultAccess' );
+$siteaccess = false;
 if ( $Module->hasActionParameter( 'SiteAccess' ) )
 {
     $siteaccess = $Module->actionParameter( 'SiteAccess' );
@@ -156,7 +155,19 @@ if ( $Module->hasActionParameter( 'SiteAccess' ) )
 // Find ContentObjectLocale for all site accesses in RelatedSiteAccessList
 foreach ( $ini->variable( 'SiteAccessSettings', 'RelatedSiteAccessList' ) as $relatedSA )
 {
-    $siteaccessLocaleMap[$relatedSA] = eZSiteAccess::getIni( $relatedSA, 'site.ini' )->variable( 'RegionalSettings', 'ContentObjectLocale' );
+    $relatedSALocale = eZSiteAccess::getIni( $relatedSA, 'site.ini' )->variable(
+        'RegionalSettings', 'ContentObjectLocale'
+    );
+    $siteaccessLocaleMap[$relatedSA] = $relatedSALocale;
+    if ( !$siteaccess && $LanguageCode && $LanguageCode === $relatedSALocale )
+    {
+        $siteaccess = $relatedSA;
+    }
+}
+
+if ( !$siteaccess )
+{
+    $siteaccess = $ini->variable( 'SiteSettings', 'DefaultAccess' );
 }
 
 // Try to find a version that has the language we want, by going backwards in the version history

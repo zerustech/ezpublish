@@ -2,8 +2,9 @@
 /**
  * File containing the ezpExtensionHelper class
  *
- * @copyright Copyright (C) 1999-2010 eZ Systems AS. All rights reserved.
- * @license http://ez.no/licenses/gnu_gpl GNU GPLv2
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
  * @package tests
  * @since 4.4
  */
@@ -19,12 +20,11 @@
 <code>
      public function setUp()
     {
+        parent::setUp();
         // make sure extension is enabled and settings are read
         // give a warning if it is already enabled
         if ( !ezpExtensionHelper::load( 'ezoe' ) )
             trigger_error( __METHOD__ . ': extension is already loaded, this hints about missing cleanup in other tests that uses it!', E_USER_WARNING );
-
-        parent::setUp();
     }
 
     public function tearDown()
@@ -46,7 +46,7 @@ class ezpExtensionHelper
      *
      * @param string $extension Extension name to load
      * @return bool True on success, false if already loaded
-     **/
+     */
     public static function load( $extension )
     {
         $ini = eZINI::instance();
@@ -59,7 +59,9 @@ class ezpExtensionHelper
         $activeExtensions[] = $extension;
         $ini->setVariable( 'ExtensionSettings', 'ActiveExtensions', $activeExtensions );
         $extensionDirectory = eZExtension::baseDirectory();
+        $ini->prependOverrideDir( $extensionDirectory . '/' . $extension . '/tests/settings', true, 'extension-tests:' . $extension, 'extension' );
         $ini->prependOverrideDir( $extensionDirectory . '/' . $extension . '/settings', true, 'extension:' . $extension, 'extension' );
+        $ini->resetAllInstances(false);
         eZExtension::clearActiveExtensionsMemoryCache();
         return true;
     }
@@ -70,7 +72,7 @@ class ezpExtensionHelper
      *
      * @param string $extension Extension name to unload
      * @return bool True on success, false if not loaded
-     **/
+     */
     public static function unload( $extension )
     {
         $ini = eZINI::instance();

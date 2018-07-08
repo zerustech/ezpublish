@@ -1,35 +1,12 @@
 <?php
-//
-// Definition of eZPackage class
-//
-// Created on: <23-Jul-2003 12:34:55 amos>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
-
-/*! \file
-*/
+/**
+ * File containing the eZPackage class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 /*!
   \defgroup package The package manager system
@@ -51,10 +28,13 @@ class eZPackage
 
     const NON_INTERACTIVE = -1;
 
-    /*!
-     Constructor
-    */
-    function eZPackage( $parameters = array(), $repositoryPath = false )
+    /**
+     * Constructor
+     *
+     * @param array $parameters
+     * @param string|bool $repositoryPath
+     */
+    public function __construct( $parameters = array(), $repositoryPath = false )
     {
         $this->setParameters( $parameters );
         if ( !$repositoryPath )
@@ -65,7 +45,7 @@ class eZPackage
 
     /**
      * Removes the package directory and all it's subfiles/directories.
-    **/
+     */
     function remove()
     {
         $path = $this->path();
@@ -307,7 +287,7 @@ class eZPackage
             return ( $repositoryInformation['type'] == 'local' );
         }
 
-        eZDebug::writeError( "No such attribute: $attributeName for eZPackage", 'eZPackage::attribute' );
+        eZDebug::writeError( "No such attribute: $attributeName for eZPackage", __METHOD__ );
         return null;
     }
 
@@ -526,7 +506,7 @@ class eZPackage
     {
         if ( function_exists( 'md5_file' ) )
         {
-            if ( file_exists( $file ) )
+            if ( is_file( $file ) )
             {
                 return md5_file( $file );
             }
@@ -1125,7 +1105,7 @@ class eZPackage
      *
      * @return eZPackage The eZPackage object if successfull, or one of the
      *         STATUS_* class constants if an error occurs
-     **/
+     */
     static function import( $archiveName, &$packageName, $dbAvailable = true, $repositoryID = false )
     {
         if ( is_dir( $archiveName ) )
@@ -1275,7 +1255,7 @@ class eZPackage
         }
         else
         {
-            eZDebug::writeError( "Saving DOM tree to $filename failed", 'eZPackage::storeDOM' );
+            eZDebug::writeError( "Saving DOM tree to $filename failed", __METHOD__ );
         }
 
         return false;
@@ -1667,6 +1647,17 @@ class eZPackage
     }
 
     /*!
+     \static
+     \return information on the eZ system repository or \c false if does not exist.
+    */
+    static function systemRepositoryInformation()
+    {
+        $ini = eZINI::instance( 'package.ini' );
+        $vendor = $ini->variable( 'RepositorySettings', 'Vendor' );
+        return eZPackage::repositoryInformation( $vendor );
+    }
+
+    /*!
      Sets the current repository information for the package.
      \sa currentRepositoryInformation, packageRepositories
     */
@@ -1779,21 +1770,21 @@ class eZPackage
 
                             if ( $requiredPriority !== null )
                             {
-                                $type = $package->attribute( 'priority' );
+                                $priority = $package->attribute( 'priority' );
                                 if ( $priority != $requiredPriority )
                                     continue;
                             }
 
                             if ( $requiredExtension !== null )
                             {
-                                $type = $package->attribute( 'extension' );
+                                $extension = $package->attribute( 'extension' );
                                 if ( $extension != $requiredExtension )
                                     continue;
                             }
 
                             if ( $requiredVendor !== null )
                             {
-                                $type = $package->attribute( 'vendor' );
+                                $vendor = $package->attribute( 'vendor' );
                                 if ( $vendor != $requiredVendor )
                                     continue;
                             }
@@ -1848,7 +1839,7 @@ class eZPackage
                     }
                     else
                     {
-                        eZDebug::writeError( "Failed fetching dom from file $filepath", 'eZPackage::installItem' );
+                        eZDebug::writeError( "Failed fetching dom from file $filepath", __METHOD__ );
                     }
                 }
             }
@@ -1869,7 +1860,7 @@ class eZPackage
      * @param array $installParameters
      *
      * @return bool true if all items installed correctly, false otherwise
-     **/
+     */
     function install( &$installParameters )
     {
         if ( $this->Parameters['install_type'] != 'install' )
@@ -1923,7 +1914,7 @@ class eZPackage
                     }
                     else
                     {
-                        eZDebug::writeError( "Failed fetching dom from file $filepath", 'eZPackage::uninstallItem' );
+                        eZDebug::writeError( "Failed fetching dom from file $filepath", __METHOD__ );
                     }
                 }
             }
@@ -1954,7 +1945,7 @@ class eZPackage
             return;
         if ( !$this->isInstalled() )
             return;
-        $uninstallItems = $this->uninstallItemsList();
+        $uninstallItems = $this->installItemsList();
         if ( !isset( $installParameters['path'] ) )
             $installParameters['path'] = false;
 
@@ -1985,13 +1976,21 @@ class eZPackage
         $vendorNode = $root->getElementsByTagName( 'vendor' )->item( 0 );
         $parameters['vendor'] = is_object( $vendorNode ) ? $vendorNode->textContent : false;
         $parameters['summary'] = $root->getElementsByTagName( 'summary' )->item( 0 )->textContent;
-        $parameters['description'] = $root->getElementsByTagName( 'description' )->item( 0 )->textContent;
+        $description = $root->getElementsByTagName( 'description' );
+        if ( $description->length > 0 )
+        {
+            $parameters['description'] = $description->item( 0 )->textContent;
+        }
         $priorities = $root->getElementsByTagName( 'priority' );
         if ( $priorities->length > 0 )
         {
             $parameters['priority'] = $priorities->item( 0 )->getAttribute( 'value' );
         }
-        $parameters['type'] = $root->getElementsByTagName( 'type' )->item( 0 )->getAttribute( 'value' );
+        $type = $root->getElementsByTagName( 'type' );
+        if ( $type->length > 0 )
+        {
+            $parameters['type'] = $type->item( 0 )->getAttribute( 'value' );
+        }
 
         if ( $parameters['vendor'] )
         {
@@ -2745,10 +2744,10 @@ class eZPackage
             $installNode->appendChild( $installItemNode );
 
             if ( $installItem['os'] )
-                $installItemNode->setAttribute( 'os', $installIItem['os'] );
+                $installItemNode->setAttribute( 'os', $installItem['os'] );
 
             if ( $installItem['name'] )
-                $installItemNode->setAttribute( 'name', $installIItem['name'] );
+                $installItemNode->setAttribute( 'name', $installItem['name'] );
 
             if ( $installItem['filename'] )
             {
@@ -2891,7 +2890,7 @@ class eZPackage
      *
      * \static
      * \return Package version (string).
-    */
+     */
     function getVersion()
     {
         return $this->Parameters['version-number'] . '-' . $this->Parameters['release-number'];
@@ -2987,7 +2986,7 @@ class eZPackage
             }
             else
             {
-                eZDebug::writeWarning( "Unable to fetch package '$packageName'", 'eZPackage::languageInfoFromPackageList' );
+                eZDebug::writeWarning( "Unable to fetch package '$packageName'", __METHOD__ );
             }
         }
 

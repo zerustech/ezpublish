@@ -2,13 +2,13 @@
 
 <div class="context-block">
 
-{* DESIGN: Header START *}<div class="box-header"><div class="box-tc"><div class="box-ml"><div class="box-mr"><div class="box-tl"><div class="box-tr">
+{* DESIGN: Header START *}<div class="box-header"><div class="box-ml">
 
 <h1 class="context-title">{'Order confirmation'|i18n( 'design/admin/shop/confirmorder' )}</h1>
 
 {* DESIGN: Mainline *}<div class="header-mainline"></div>
 
-{* DESIGN: Header END *}</div></div></div></div></div></div>
+{* DESIGN: Header END *}</div></div>
 
 {* DESIGN: Content START *}<div class="box-ml"><div class="box-mr"><div class="box-content">
 
@@ -47,7 +47,7 @@
 <tr class="{$Items.sequence}">
     <td>
     <input type="hidden" name="ProductItemIDList[]" value="{$Items.item.id}" />
-    <a href={concat( '/content/view/full/', $Items.item.node_id, '/' )|ezurl}>{$Items.item.object_name}</a>
+    <a href={concat( '/content/view/full/', $Items.item.node_id, '/' )|ezurl}>{$Items.item.object_name|wash}</a>
     </td>
     <td class="number" align="right">{$Items.item.item_count}</td>
     <td class="number" align="right">{$Items.item.vat_value}%</td>
@@ -67,7 +67,7 @@
     {section var=Options loop=$Items.item.item_object.option_list}
     <tr>
         <td>{$Options.item.name|wash}</td>
-        <td>{$Options.item.value}</td>
+        <td>{$Options.item.value|wash}</td>
         <td class="number" align="right">{$Options.item.price|l10n( 'currency', $locale, $symbol )}</td>
     </tr>
     {/section}
@@ -92,7 +92,7 @@
 
 {section var=OrderItems loop=$order.order_items show=$order.order_items}
 <tr>
-    <td>{$OrderItems.item.description}:</td>
+    <td>{$OrderItems.item.description|wash}:</td>
     <td class="number" align="right">{$OrderItems.item.price_ex_vat|l10n( 'currency', $locale, $symbol )}</td>
     <td class="number" align="right">{$OrderItems.item.price_inc_vat|l10n( 'currency', $locale, $symbol )}</td>
 </tr>
@@ -110,12 +110,12 @@
 {* DESIGN: Content END *}</div></div></div>
 
 <div class="controlbar">
-{* DESIGN: Control bar START *}<div class="box-bc"><div class="box-ml"><div class="box-mr"><div class="box-tc"><div class="box-bl"><div class="box-br">
+{* DESIGN: Control bar START *}<div class="box-bc"><div class="box-ml">
 <div class="block">
 <input class="button" type="submit" name="ConfirmOrderButton" value="{'Confirm order'|i18n( 'design/admin/shop/confirmorder' )}" />
 <input class="button" type="submit" name="CancelButton" value="{'Cancel'|i18n( 'design/admin/shop/confirmorder' )}" />
 </div>
-{* DESIGN: Control bar END *}</div></div></div></div></div></div>
+{* DESIGN: Control bar END *}</div></div>
 </div>
 
 </div>

@@ -2,8 +2,8 @@
 /**
  * File containing the eZNamePatternResolver class
  *
- * @copyright Copyright (C) 1999-2010 eZ Systems AS. All rights reserved.
- * @license http://ez.no/licenses/gnu_gpl GNU GPL v2
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
  * @version //autogentag//
  * @package kernel
  *
@@ -27,7 +27,7 @@
  *
  * Tokens are looked up from left to right. If a match is found for the
  * leftmost token, the 2nd token will not be used. Tokens are representations
- * of atttributes. So a match means that that the current attribute has data.
+ * of attributes. So a match means that that the current attribute has data.
  *
  * tokens are the class attribute identifiers which are used in the class
  * edit-interface.
@@ -37,6 +37,8 @@
  */
 class eZNamePatternResolver
 {
+    const FIELD_NAME_MAX_SIZE = 255;
+
     /**
      * Holds token groups
      *
@@ -102,26 +104,27 @@ class eZNamePatternResolver
      *
      * @param string $namePattern
      * @param eZContentObject $contentObject
-     * @param int $contentVersion
-     * @param string $contentTranslation
+     * @param int|false $contentVersion
+     * @param string|false $contentTranslation
      */
-    public function __construct( $namePattern, $contentObject, $contentVersion = false, $contentTranslation = false )
+    public function __construct( $namePattern, eZContentObject $contentObject, $contentVersion = false, $contentTranslation = false )
     {
         $this->origNamePattern = $namePattern;
         $this->contentObject = $contentObject;
         $this->version = $contentVersion;
         $this->translation = $contentTranslation;
 
-        $this->namePattern = $this->filterNamePattern( $namePattern);
+        $this->namePattern = $this->filterNamePattern( $namePattern );
     }
 
     /**
      * Return the real name for an object name pattern
      *
-     * @param string $namePattern
+     * @param int $limit The limit on the string length, by defaul 0 aka none
+     * @param string $sequence End sequence applied to string if limit has been reached
      * @return string
      */
-    public function resolveNamePattern()
+    public function resolveNamePattern( $limit = 0, $sequence = '' )
     {
         // Fetch attributes for present identifiers
         $this->fetchContentAttributes();
@@ -129,7 +132,20 @@ class eZNamePatternResolver
         // Replace tokens with real values
         $objectName = $this->translatePattern();
 
-        return $objectName;
+        $db = eZDB::instance();
+
+        $limit = $limit ?: self::FIELD_NAME_MAX_SIZE;
+
+        if ( $db->countStringSize( $objectName ) <= $limit )
+        {
+            return $objectName;
+        }
+
+        return preg_replace(
+            "/[\pZ\pC]+$/u",
+            '',
+            $db->truncateString( $objectName, $limit, 'name', $sequence )
+        ). $sequence;
     }
 
     /**
@@ -232,7 +248,7 @@ class eZNamePatternResolver
             }
             else
             {
-                if ( array_key_exists( $tokenPart, $this->attributeArray ) and $this->attributeArray[$tokenPart] !== '' and $this->attributeArray[$tokenPart] !== NULL )
+                if ( isset( $this->attributeArray[$tokenPart] ) && $this->attributeArray[$tokenPart] !== '' && $this->attributeArray[$tokenPart] !== false )
                 {
                     $replaceString = $this->attributeArray[$tokenPart];
                     // We want to stop after the first matching token part / identifier is found

@@ -1,32 +1,12 @@
 <?php
 //
 // eZSetup
-//
-// Created on: <08-Nov-2002 11:00:54 kd>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 $GLOBALS['eZSiteBasics']['no-cache-adviced'] = false;
 
@@ -74,7 +54,7 @@ if ( file_exists( $stepDataFile ) )
 if ( $stepData == null )
 {
     print "<h1>Setup step data file not found. Setup is exiting...</h1>"; //TODO : i18n translate
-    eZDisplayResult( $templateResult, eZDisplayDebug() );
+    eZDisplayResult( $templateResult );
     eZExecution::cleanExit();
 }
 
@@ -158,16 +138,18 @@ $result = null;
 
 while( !$done && $step != null )
 {
-// Some common variables for all steps
-    $tpl->setVariable( "script", eZSys::serverVariable( 'PHP_SELF' ) );
+    // Some common variables for all steps
+    $uriPrefix = '';
+    if ( strpos( eZSys::serverVariable( 'PHP_SELF' ), '/ezsetup' ) )
+        $uriPrefix = '/ezsetup';
 
     $siteBasics = $GLOBALS['eZSiteBasics'];
     $useIndex = $siteBasics['validity-check-required'];
 
     if ( $useIndex )
-        $script = eZSys::wwwDir() . eZSys::indexFileName();
+        $script = eZSys::wwwDir() . eZSys::indexFileName() . $uriPrefix;
     else
-        $script = eZSys::indexFile() . "/setup/$partName";
+        $script = eZSys::indexFile() . "$uriPrefix/setup/$partName";
     $tpl->setVariable( 'script', $script );
 
     $tpl->setVariable( "version", array( "text" => eZPublishSDK::version(),
@@ -218,7 +200,7 @@ while( !$done && $step != null )
     else
     {
         print( '<h1>Step '.$step['class'].' is not valid, no such file '.$includeFile.'. I\'m exiting...</h1>' ); //TODO : i18n
-        eZDisplayResult( $templateResult, eZDisplayDebug() );
+        eZDisplayResult( $templateResult );
         eZExecution::cleanExit();
     }
 }
@@ -235,7 +217,7 @@ eZDebug::addTimingPoint( "End" );
 
 return $result;
 
-//eZDisplayResult( $templateResult, eZDisplayDebug() );
+//eZDisplayResult( $templateResult );
 
 //eZExecution::cleanExit();
 ?>

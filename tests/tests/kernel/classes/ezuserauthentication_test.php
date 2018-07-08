@@ -2,8 +2,9 @@
 /**
  * File containing the eZUserAuthenticationTest class
  *
- * @copyright Copyright (C) 1999-2010 eZ Systems AS. All rights reserved.
- * @license http://ez.no/licenses/gnu_gpl GNU GPLv2
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
  * @package tests
  */
 
@@ -71,6 +72,9 @@ class eZUserAuthenticationTest extends ezpTestCase
             array( 'AVeryLongUsername', 'wîŧħAQuiteßécurePasswörð', 'ezpublish.no', eZUser::PASSWORD_HASH_MD5_SITE, false, 'a76f77e805be362fc90765451d630d77' ),
             array( 'admin', 'password', 'ez.no', eZUser::PASSWORD_HASH_PLAINTEXT, false, 'passwordx' ),
             array( 'AVeryLongUsername', 'wîŧħAQuiteßécurePasswörð', 'ez.no', eZUser::PASSWORD_HASH_PLAINTEXT, false, 'wîŧħAQuiteßécurePasswörðx' ),
+
+            // Test with a very long login and password, it will be trimmed so the hash should not be valid
+            array( str_repeat( 'user', 1100 ), str_repeat( 'pass', 1100 ), 'ez.no', eZUser::PASSWORD_HASH_MD5_USER, false, '0d37bb08a57694b888ff71dd84280eaa' ),
 
             // Wrong type used
             array( true, 'password', 'ez.no', eZUser::PASSWORD_HASH_MD5_USER, false, '51f9ee797053cbfa8c77e8fa273f5518' ),

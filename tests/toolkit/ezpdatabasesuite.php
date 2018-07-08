@@ -2,8 +2,9 @@
 /**
  * File containing the ezpDatabaseTestSuite class
  *
- * @copyright Copyright (C) 1999-2010 eZ Systems AS. All rights reserved.
- * @license http://ez.no/licenses/gnu_gpl GNU GPLv2
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
  * @package tests
  */
 
@@ -30,11 +31,23 @@ class ezpDatabaseTestSuite extends ezpTestSuite
     protected $insertDefaultData = true;
 
     /**
-     * Sets up the database enviroment
+     * Flag controlling that database is only setup once
+     *
+     * @var bool
      */
+    protected static $isDatabaseSetup = false;
+
     protected function setUp()
     {
-        if ( !ezpTestRunner::dbPerTest() )
+        $this->setDatabaseEnv();
+    }
+
+    /**
+     * Sets up the database environment
+     */
+    protected function setDatabaseEnv()
+    {
+        if ( !ezpTestRunner::dbPerTest() && !self::$isDatabaseSetup )
         {
             $dsn = ezpTestRunner::dsn();
             $this->sharedFixture = ezpTestDatabaseHelper::create( $dsn );
@@ -42,11 +55,15 @@ class ezpDatabaseTestSuite extends ezpTestSuite
             if ( $this->insertDefaultData === true )
                 ezpTestDatabaseHelper::insertDefaultData( $this->sharedFixture );
 
-            if ( count( $this->sqlFiles > 0 ) )
+            if ( count( $this->sqlFiles ) > 0 )
+            {
                 ezpTestDatabaseHelper::insertSqlData( $this->sharedFixture, $this->sqlFiles );
+            }
 
             eZDB::setInstance( $this->sharedFixture );
+            self::$isDatabaseSetup = true;
         }
     }
 }
+
 ?>

@@ -1,34 +1,12 @@
 <?php
-
-//
-// Created on: <26-Aug-2003 15:15:32 kk>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
-
-/*! \file
-*/
+/**
+ * File containing the Cezpdf class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package lib
+ */
 
 /*!
   \class Cezpdf class.ezpdf.php
@@ -46,7 +24,13 @@ class Cezpdf extends Cpdf
 
 // ------------------------------------------------------------------------------
 
-    function Cezpdf( $paper = 'a4', $orientation = 'portrait' )
+    /**
+     * Constructor
+     *
+     * @param string $paper
+     * @param string $orientation
+     */
+    public function __construct( $paper = 'a4', $orientation = 'portrait' )
     {
         // Assuming that people don't want to specify the paper size using the absolute coordinates
         // allow a couple of options:
@@ -139,7 +123,7 @@ class Cezpdf extends Cpdf
                 $size[3] = ( $paper[1] / 2.54 ) * 72;
             }
         }
-        $this->Cpdf( $size );
+        parent::__construct( $size );
         $this->ez['pageWidth']=$size[2];
         $this->ez['pageHeight']=$size[3];
 
@@ -176,7 +160,7 @@ class Cezpdf extends Cpdf
     }
 
 // ------------------------------------------------------------------------------
-// 2003-11-04 Kåre Køhler Høvik ( eZ Systems, http://ez.no )
+// 2003-11-04 KÃ¥re KÃ¸hler HÃ¸vik ( eZ Systems, http://ez.no )
 // Set fontsize
 
     function setFontSize( $size )
@@ -185,7 +169,7 @@ class Cezpdf extends Cpdf
     }
 
 // ------------------------------------------------------------------------------
-// 2003-11-06 Kåre Køhler Høvik ( eZ Systems, http://ez.no )
+// 2003-11-06 KÃ¥re KÃ¸hler HÃ¸vik ( eZ Systems, http://ez.no )
 // Set justification
 
     function setJustification( $align )
@@ -194,7 +178,7 @@ class Cezpdf extends Cpdf
     }
 
 // ------------------------------------------------------------------------------
-// 2003-11-06 Kåre Køhler Høvik ( eZ Systems, http://ez.no )
+// 2003-11-06 KÃ¥re KÃ¸hler HÃ¸vik ( eZ Systems, http://ez.no )
 // Get justification
 
     function justification()
@@ -203,7 +187,7 @@ class Cezpdf extends Cpdf
     }
 
 // ------------------------------------------------------------------------------
-// 2003-11-04 Kåre Køhler Høvik ( eZ Systems, http://ez.no )
+// 2003-11-04 KÃ¥re KÃ¸hler HÃ¸vik ( eZ Systems, http://ez.no )
 // Get fontsize
 
     function fontSize()
@@ -1331,7 +1315,7 @@ class Cezpdf extends Cpdf
     }
 
 // ------------------------------------------------------------------------------
-// 2003-11-04 Kåre Køhler Høvik ( eZ Systems, http://ez.no )
+// 2003-11-04 KÃ¥re KÃ¸hler HÃ¸vik ( eZ Systems, http://ez.no )
 // Set fontsize
 
     function strike( $info )

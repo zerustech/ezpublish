@@ -1,32 +1,12 @@
 <?php
-//
-// Definition of eZUserType class
-//
-// Created on: <30-Apr-2002 13:06:21 bf>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * File containing the eZUserType class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 /*!
   \class eZUserType ezusertype.php
@@ -39,9 +19,9 @@ class eZUserType extends eZDataType
 {
     const DATA_TYPE_STRING = "ezuser";
 
-    function eZUserType( )
+    public function __construct()
     {
-        $this->eZDataType( self::DATA_TYPE_STRING, ezpI18n::tr( 'kernel/classes/datatypes', "User account", 'Datatype name' ),
+        parent::__construct( self::DATA_TYPE_STRING, ezpI18n::tr( 'kernel/classes/datatypes', "User account", 'Datatype name' ),
                            array( 'translation_allowed' => false,
                                   'serialize_supported' => true ) );
     }
@@ -57,7 +37,8 @@ class eZUserType extends eZDataType
         $res = $db->arrayQuery( "SELECT COUNT(*) AS version_count FROM ezcontentobject_version WHERE contentobject_id = $userID" );
         $versionCount = $res[0]['version_count'];
 
-        if ( $version == null || $versionCount <= 1 )
+        if ( ( $version == null || $versionCount <= 1 )
+                && eZUser::fetch( $userID ) !== null )
         {
             eZUser::removeUser( $userID );
             $db->query( "DELETE FROM ezuser_role WHERE contentobject_id = '$userID'" );
@@ -76,7 +57,7 @@ class eZUserType extends eZDataType
              $http->hasPostVariable( $base . "_data_user_password_confirm_" . $contentObjectAttribute->attribute( "id" ) ) )
         {
             $classAttribute = $contentObjectAttribute->contentClassAttribute();
-            $loginName = $http->postVariable( $base . "_data_user_login_" . $contentObjectAttribute->attribute( "id" ) );
+            $loginName = strip_tags( $http->postVariable( $base . "_data_user_login_" . $contentObjectAttribute->attribute( "id" ) ) );
             $email = $http->postVariable( $base . "_data_user_email_" . $contentObjectAttribute->attribute( "id" ) );
             $password = $http->postVariable( $base . "_data_user_password_" . $contentObjectAttribute->attribute( "id" ) );
             $passwordConfirm = $http->postVariable( $base . "_data_user_password_confirm_" . $contentObjectAttribute->attribute( "id" ) );
@@ -110,6 +91,7 @@ class eZUserType extends eZDataType
                                                                          'The email address is not valid.' ) );
                     return eZInputValidator::STATE_INVALID;
                 }
+
                 $authenticationMatch = eZUser::authenticationMatch();
                 if ( $authenticationMatch & eZUser::AUTHENTICATE_EMAIL )
                 {
@@ -147,7 +129,7 @@ class eZUserType extends eZDataType
                                                                              'eZUserType' ) );
                         return eZInputValidator::STATE_INVALID;
                     }
-                    if ( $password != $passwordConfirm )
+                    if ( $password !== $passwordConfirm )
                     {
                         $contentObjectAttribute->setValidationError( ezpI18n::tr( 'kernel/classes/datatypes',
                                                                              'The passwords do not match.',
@@ -156,7 +138,7 @@ class eZUserType extends eZDataType
                     }
                     if ( !eZUser::validatePassword( $password ) )
                     {
-                        $minPasswordLength = $ini->hasVariable( 'UserSettings', 'MinPasswordLength' ) ? $ini->variable( 'UserSettings', 'MinPasswordLength' ) : 3;
+                        $minPasswordLength = $ini->variable( 'UserSettings', 'MinPasswordLength' );
                         $contentObjectAttribute->setValidationError( ezpI18n::tr( 'kernel/classes/datatypes',
                                                                              'The password must be at least %1 characters long.', null, array( $minPasswordLength ) ) );
                         return eZInputValidator::STATE_INVALID;
@@ -165,6 +147,19 @@ class eZUserType extends eZDataType
                     {
                         $contentObjectAttribute->setValidationError( ezpI18n::tr( 'kernel/classes/datatypes',
                                                                              'The password must not be "password".' ) );
+                        return eZInputValidator::STATE_INVALID;
+                    }
+                }
+
+                // validate confirm email
+                if ( $ini->variable( 'UserSettings', 'RequireConfirmEmail' ) == 'true' )
+                {
+                    $emailConfirm = $http->postVariable( $base . "_data_user_email_confirm_" . $contentObjectAttribute->attribute( "id" ) );
+                    if ( $email != $emailConfirm )
+                    {
+                        $contentObjectAttribute->setValidationError( ezpI18n::tr( 'kernel/classes/datatypes',
+                                                                             'The emails do not match.',
+                                                                             'eZUserType' ) );
                         return eZInputValidator::STATE_INVALID;
                     }
                 }
@@ -185,7 +180,7 @@ class eZUserType extends eZDataType
     {
         if ( $http->hasPostVariable( $base . "_data_user_login_" . $contentObjectAttribute->attribute( "id" ) ) )
         {
-            $login = $http->postVariable( $base . "_data_user_login_" . $contentObjectAttribute->attribute( "id" ) );
+            $login = strip_tags( $http->postVariable( $base . "_data_user_login_" . $contentObjectAttribute->attribute( "id" ) ) );
             $email = $http->hasPostVariable( $base . "_data_user_email_" . $contentObjectAttribute->attribute( "id" ) ) ? $http->postVariable( $base . "_data_user_email_" . $contentObjectAttribute->attribute( "id" ) ) : '';
             $password = $http->hasPostVariable( $base . "_data_user_password_" . $contentObjectAttribute->attribute( "id" ) ) ? $http->postVariable( $base . "_data_user_password_" . $contentObjectAttribute->attribute( "id" ) ) : '';
             $passwordConfirm = $http->hasPostVariable( $base . "_data_user_password_confirm_" . $contentObjectAttribute->attribute( "id" ) ) ? $http->postVariable( $base . "_data_user_password_confirm_" . $contentObjectAttribute->attribute( "id" ) ) : '';
@@ -238,6 +233,8 @@ class eZUserType extends eZDataType
 
     function storeObjectAttribute( $contentObjectAttribute )
     {
+        /** @var eZContentObjectAttribute $contentObjectAttribute */
+        /** @var eZUser $user */
         $user = $contentObjectAttribute->content();
         if ( !( $user instanceof eZUser ) )
         {
@@ -247,9 +244,88 @@ class eZUserType extends eZDataType
             $isEnabled = 1;
             $userSetting = eZUserSetting::create( $userID, $isEnabled );
             $userSetting->store();
+
+            $user->store();
+            $contentObjectAttribute->setContent( $user );
         }
+        else
+        {
+            // No "draft" for version 1 to avoid regression for existing code creating new users.
+            if ( $contentObjectAttribute->attribute( 'version' ) == '1' )
+            {
+                $user->store();
+                $contentObjectAttribute->setContent( $user );
+            }
+
+            // saving information in the object attribute data_text field to simulate a draft
+            $contentObjectAttribute->setAttribute( 'data_text', $this->serializeDraft( $user ) );
+        }
+    }
+
+    function onPublish( $contentObjectAttribute, $contentObject, $publishedNodes )
+    {
+        /** @var eZContentObjectAttribute $contentObjectAttribute */
+        /** @var eZUser $user */
+        $user = $contentObjectAttribute->content();
+
+        // Publishing draft's content
+        $serializedDraft = $contentObjectAttribute->attribute( 'data_text' );
+
+        if ( !empty( $serializedDraft ) )
+        {
+            $user = $this->updateUserDraft( $user, $serializedDraft );
+        }
+
         $user->store();
         $contentObjectAttribute->setContent( $user );
+    }
+
+    /**
+     * Generates a serialized draft of the ezuser content
+     *
+     * @param eZUser $user
+     * @return string
+     */
+    public static function serializeDraft( eZUser $user )
+    {
+        return json_encode(
+            array(
+                 'login' => $user->attribute( 'login' ),
+                 'password_hash' => $user->attribute( 'password_hash' ),
+                 'email' => $user->attribute( 'email' ),
+                 'password_hash_type' => $user->attribute( 'password_hash_type' )
+            )
+        );
+    }
+
+    /**
+     * Unserialize draft data generated with serializeDraft()
+     *
+     * @param $serializedDraft
+     * @return mixed
+     */
+    private function unserializeDraft( $serializedDraft )
+    {
+        return json_decode( $serializedDraft );
+    }
+
+    /**
+     * Updates ezuser with data generated with getSerializedDraft()
+     *
+     * @param eZUser $user
+     * @param $serializedDraft
+     * @return eZUser updated user
+     */
+    private function updateUserDraft( eZUser $user, $serializedDraft )
+    {
+        $draft = $this->unserializeDraft( $serializedDraft );
+
+        $user->setAttribute( 'login', $draft->login );
+        $user->setAttribute( 'password_hash', $draft->password_hash );
+        $user->setAttribute( 'email', $draft->email );
+        $user->setAttribute( 'password_hash_type', $draft->password_hash_type );
+
+        return $user;
     }
 
     /*!
@@ -283,8 +359,19 @@ class eZUserType extends eZDataType
         {
             $GLOBALS['eZUserObject_' . $userID] = eZUser::fetch( $userID );
         }
+
+        /** @var eZUser $user */
         $user = eZUser::fetch( $userID );
         eZDebugSetting::writeDebug( 'kernel-user', $user, 'user' );
+
+        // Looking for a "draft" and loading it's content
+        $serializedDraft = $contentObjectAttribute->attribute( 'data_text' );
+
+        if ( !empty( $serializedDraft ) )
+        {
+            $user = $this->updateUserDraft( $user, $serializedDraft );
+        }
+
         return $user;
     }
 
@@ -450,8 +537,16 @@ class eZUserType extends eZDataType
         $login = $userData[0];
         $email = $userData[1];
 
-        if ( eZUser::fetchByName( $login ) || eZUser::fetchByEmail( $email ) )
+        $userByUsername = eZUser::fetchByName( $login );
+        if( $userByUsername && $userByUsername->attribute( 'contentobject_id' ) != $contentObjectAttribute->attribute( 'contentobject_id' ) )
             return false;
+
+        if( eZUser::requireUniqueEmail() )
+        {
+            $userByEmail = eZUser::fetchByEmail( $email );
+            if( $userByEmail && $userByEmail->attribute( 'contentobject_id' ) != $contentObjectAttribute->attribute( 'contentobject_id' ) )
+                return false;
+        }
 
         $user = eZUser::create( $contentObjectAttribute->attribute( 'contentobject_id' ) );
 

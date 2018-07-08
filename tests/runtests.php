@@ -3,8 +3,9 @@
 /**
  * File containing the runtests CLI script
  *
- * @copyright Copyright (C) 1999-2010 eZ Systems AS. All rights reserved.
- * @license http://ez.no/licenses/gnu_gpl GNU GPLv2
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
  * @package tests
  */
 
@@ -12,48 +13,30 @@ set_time_limit( 0 );
 
 require_once 'autoload.php';
 
-require_once 'PHPUnit/Framework.php';
-require_once 'PHPUnit/TextUI/TestRunner.php';
-
-require_once 'tests/toolkit/ezptestrunner.php';
-
-// Exclude the test system from code coverage reports
-PHPUnit_Util_Filter::addDirectoryToFilter( getcwd() . '/tests' );
-
-// Whitelist all eZ Publish kernel files
-$baseDir = getcwd();
-$autoloadArray = include 'autoload/ezp_kernel.php';
-foreach ( $autoloadArray as $class => $file )
+if ( !class_exists( 'ezpTestRunner', true ) )
 {
-    // Exclude files from the tests directory
-    if ( strpos( $file, 'tests' ) !== 0 )
-    {
-        PHPUnit_Util_Filter::addFileToWhitelist( "{$baseDir}/{$file}" );
-    }
+    echo "The ezpTestRunner class isn't defined. Are the tests autoloads generated ?\n"
+        . "You can generate them using php bin/php/ezpgenerateautoloads.php -s\n";
+    exit(1);
 }
 
-$cli = eZCLI::instance();
-$script = eZScript::instance( array( 'description' => ( "eZ Publish Test Runner\n\n" .
-                                                         "sets up an eZ Publish testing environment" .
-                                                         "\n" ),
-                                      'use-session' => false,
-                                      'use-modules' => true,
-                                      'use-extensions' => true ) );
+$version = PHPUnit_Runner_Version::id();
 
-// Override INI override folder from settings/override to
-// tests/settings to not read local override settings
-$ini = eZINI::instance();
-$ini->setOverrideDirs( array( array( 'tests/settings', true ) ), 'override' );
-$ini->loadCache();
+if ( version_compare( $version, '3.7.0' ) == -1 && $version !== '@package_version@' )
+{
+    echo "PHPUnit 3.7.0 (or later) is required to run this test suite.\n";
+    exit(1);
+}
 
-$script->startup();
-// $options = $script->getOptions();
-$script->initialize();
+try
+{
+    $runner = ezpTestRunner::instance();
+    $runner->run($_SERVER['argv']);
+}
+catch ( Exception $e )
+{
+    echo $e->getMessage() . ' in ' . $e->getFile() . ' on line ' . $e->getLine() . "\n";
+    echo $e->getTraceAsString();
+}
 
-// Avoids Fatal error: eZ Publish did not finish its request if die() is used.
-eZExecution::setCleanExit();
-
-ezpTestRunner::main();
-
-$script->shutdown();
 ?>

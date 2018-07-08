@@ -1,35 +1,12 @@
 <?php
-//
-// Definition of eZCollaborationItemHandler class
-//
-// Created on: <22-Jan-2003 16:24:33 amos>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: eZ Publish
-// SOFTWARE RELEASE: 4.1.x
-// COPYRIGHT NOTICE: Copyright (C) 1999-2010 eZ Systems AS
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
-
-/*! \file
-*/
+/**
+ * File containing the eZCollaborationItemHandler class.
+ *
+ * @copyright Copyright (C) eZ Systems AS. All rights reserved.
+ * @license For full copyright and license information view LICENSE file distributed with this source code.
+ * @version //autogentag//
+ * @package kernel
+ */
 
 /*!
   \class eZCollaborationItemHandler ezcollaborationitemhandler.php
@@ -47,10 +24,16 @@ class eZCollaborationItemHandler
     const NOTIFICATION_COLLECTION_PER_PARTICIPATION_ROLE = 3;
 
     /*!
-     Initializes the handler with identifier and name.
-     Optional parameters can be placed in \a $parameters.
+
     */
-    function eZCollaborationItemHandler( $typeIdentifier, $typeName, $parameters = array() )
+    /**
+     * Initializes the handler with identifier and name and optional parameters
+     *
+     * @param string $typeIdentifier
+     * @param string $typeName
+     * @param array $parameters
+     */
+    public function __construct( $typeIdentifier, $typeName, $parameters = array() )
     {
         $parameters = array_merge( array( 'use-messages' => false,
                                           'type-class-list' => array(),
@@ -96,7 +79,7 @@ class eZCollaborationItemHandler
             return $this->notificationTypes();
         }
 
-        eZDebug::writeError( "Attribute '$attribute' does not exist", 'eZCollaborationItemHandler::attribute' );
+        eZDebug::writeError( "Attribute '$attribute' does not exist", __METHOD__ );
         return null;
     }
 
@@ -159,7 +142,7 @@ class eZCollaborationItemHandler
         {
             $db = eZDB::instance();
             $userIDListText = $db->generateSQLINStatement( $userIDList, 'contentobject_id', false, false, 'int' );
-            $userList = $db->arrayQuery( "SELECT contentobject_id, email FROM ezuser WHERE contentobject_id IN ( $userIDListText )" );
+            $userList = $db->arrayQuery( "SELECT contentobject_id, email FROM ezuser WHERE $userIDListText" );
         }
         else
             return eZNotificationEventHandler::EVENT_SKIPPED;
@@ -258,8 +241,7 @@ class eZCollaborationItemHandler
         }
         else
         {
-            eZDebug::writeError( "Unknown collaboration notification collection handling type '$collectionHandling', skipping notification",
-                                 'eZCollaborationItemHandler::handleCollaborationEvent' );
+            eZDebug::writeError( "Unknown collaboration notification collection handling type '$collectionHandling', skipping notification", __METHOD__ );
         }
         $db->commit();
 
@@ -554,11 +536,11 @@ class eZCollaborationItemHandler
         }
         if ( !$foundHandlerFile )
         {
-            eZDebug::writeWarning( "Collaboration file '$handlerFile' could not be found in " . implode( ', ', $repositories ), 'eZCollaborationItemHandler::fetchList' );
+            eZDebug::writeWarning( "Collaboration file '$handlerFile' could not be found in " . implode( ', ', $repositories ), __METHOD__ );
         }
         else if ( !$foundHandler )
         {
-            eZDebug::writeWarning( "Collaboration class '$handlerClass' does not exist", 'eZCollaborationItemHandler::fetchList' );
+            eZDebug::writeWarning( "Collaboration class '$handlerClass' does not exist", __METHOD__ );
         }
         return $handlerInstance;
     }
